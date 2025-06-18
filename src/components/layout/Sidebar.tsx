@@ -12,6 +12,11 @@ const navItems = [
     label: "Sale",
     to: "/sale",
   },
+   {
+    icon: SettingsIcon,
+    label: "Product",
+    to: "/product",
+  },
   {
     icon: UsersIcon,
     label: "Users",

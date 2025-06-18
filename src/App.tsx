@@ -5,6 +5,7 @@ import { Dashboard } from './pages/Dashboard';
 import { Users } from './pages/Users';
 import { SalesManagement } from './pages/SalesManagement';
 import { StockManagement } from './pages/StockManagement';
+import { ProductManagement } from './pages/ProductManagement';
 
 export function App() {
   return <BrowserRouter>
@@ -16,6 +17,7 @@ export function App() {
           <Route path="/" element={<DashboardLayout />}>
             <Route index element={<Dashboard />} />
                <Route path="sale" element={<SalesManagement />} />
+               <Route path="product" element={<ProductManagement />} />
             <Route path="users" element={<Users />} />
             <Route path="stock" element={<StockManagement />} />
           </Route>
