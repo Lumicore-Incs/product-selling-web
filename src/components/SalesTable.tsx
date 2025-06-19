@@ -1,6 +1,13 @@
 import React from 'react';
 import { EditIcon, Trash2Icon } from 'lucide-react';
 
+interface SaleItem {
+  productId: string;
+  productName: string;
+  quantity: number;
+  price: number;
+}
+
 interface Sale {
   id: string;
   customerName: string;
@@ -8,7 +15,8 @@ interface Sale {
   contact1: string;
   contact2: string;
   status: string;
-  quantity: number;
+  quantity: string;
+  items: SaleItem[];
 }
 
 interface SalesTableProps {
@@ -35,6 +43,10 @@ export const SalesTable: React.FC<SalesTableProps> = ({
       default:
         return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const getTotalAmount = (items: SaleItem[]) => {
+    return items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
   };
 
   if (sales.length === 0) {
@@ -75,7 +87,13 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                 Status
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Quantity
+                Qty
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Products
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Total Amount
               </th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
@@ -108,6 +126,27 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {sale.quantity}
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-500">
+                  <div className="max-w-xs">
+                    {sale.items && sale.items.length > 0 ? (
+                      <div className="space-y-1">
+                        {sale.items.map((item, index) => (
+                          <div key={item.productId} className="text-xs">
+                            {item.productName} (x{item.quantity})
+                          </div>
+                        ))}
+                        <div className="text-xs font-medium text-blue-600 mt-1">
+                          Total: {sale.items.reduce((sum, item) => sum + item.quantity, 0)} items
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-gray-400">No products</span>
+                    )}
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
+                  ${sale.items ? getTotalAmount(sale.items).toFixed(2) : '0.00'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <button

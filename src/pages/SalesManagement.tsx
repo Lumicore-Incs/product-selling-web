@@ -2,13 +2,22 @@ import React, { useState } from 'react';
 import { SalesForm } from '../components/SalesForm';
 import { SalesTable } from '../components/SalesTable';
 
+interface SaleItem {
+  productId: string;
+  productName: string;
+  quantity: number;
+  price: number;
+}
+
 interface Sale {
   id: string;
   customerName: string;
   address: string;
   contact1: string;
   contact2: string;
-  quantity: number;
+  status: string;
+  quantity: string;
+  items: SaleItem[];
 }
 
 export const SalesManagement: React.FC = () => {
@@ -74,8 +83,8 @@ export const SalesManagement: React.FC = () => {
           </button>
         </div>
       </header>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-1">
+      <div className="space-y-8">
+        <div>
           <SalesForm 
             onSave={addSale} 
             onUpdate={updateSale} 
@@ -87,7 +96,7 @@ export const SalesManagement: React.FC = () => {
             }} 
           />
         </div>
-        <div className="lg:col-span-2">
+        <div>
           <SalesTable sales={sales} onEdit={editSale} onDelete={deleteSale} />
         </div>
       </div>
