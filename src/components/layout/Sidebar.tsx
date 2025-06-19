@@ -1,6 +1,6 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
-import { HomeIcon, UsersIcon, SettingsIcon, LogOutIcon } from "lucide-react";
+import { HomeIcon, UsersIcon, SettingsIcon, LogOutIcon, StoreIcon, ProportionsIcon, ScaleIcon } from "lucide-react";
 const navItems = [
   {
     icon: HomeIcon,
@@ -8,12 +8,12 @@ const navItems = [
     to: "/dashboard",
   },
    {
-    icon: SettingsIcon,
+    icon: ScaleIcon,
     label: "Sale",
     to: "/sale",
   },
    {
-    icon: SettingsIcon,
+    icon: ProportionsIcon,
     label: "Product",
     to: "/product",
   },
@@ -23,7 +23,7 @@ const navItems = [
     to: "/users",
   },
   {
-    icon: SettingsIcon,
+    icon: StoreIcon,
     label: "stock",
     to: "/stock",
   },
@@ -40,7 +40,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           fixed md:static left-0 top-0 z-30
           w-64 bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg 
           border-r border-gray-200 transform transition-transform duration-300 ease-in-out
-          ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+          ${isOpen ? "translate-x-0"  : "-translate-x-full md:translate-x-0"}
         `}
       >
         <div className="p-6 flex items-center justify-between">
