@@ -2,12 +2,16 @@ import { useState } from 'react';
 import { InputField } from './InputField';
 import { Button } from './Button';
 import { ToggleSwitch } from './ToggleSwitch';
-import { UserIcon, LockIcon, MailIcon, PhoneIcon, HomeIcon, CreditCardIcon } from 'lucide-react';
+import { UserIcon, LockIcon, MailIcon, PhoneIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { login, register } from '../service/auth';
+import { AlertSnackbar } from './AlertSnackbar';
 
 export const AuthCard = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [error, setError] = useState('');
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertType, setAlertType] = useState<'success' | 'error'>('error');
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -18,7 +22,7 @@ export const AuthCard = () => {
     telephone: '',
   });
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
 
@@ -34,58 +38,53 @@ export const AuthCard = () => {
       }
     }
 
-    const BASE_URL = 'http://ec2-13-203-77-193.ap-south-1.compute.amazonaws.com:8080';
     const url = isLogin
-        ? `${BASE_URL}/user/login`
-        : `${BASE_URL}/user/register`;
+        ? '/user/login'
+        : '/user/register';
 
     try {
-      const payload = isLogin
-          ? { email: formData.email, password: formData.password }
-          : {
-            name: formData.name,
-            email: formData.email,
-            password: formData.password,
-            telephone: formData.telephone,
-            userName: formData.email.split('@')[0], // Generate username from email
-            role: 'USER' // Correct role value from Postman
-          };
-
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        if (isLogin) {
-          localStorage.setItem('token', data.token);
-          navigate('/dashboard');
-        } else {
-          alert('Registered successfully. Please log in.');
-          setIsLogin(true);
-          // Reset form
-          setFormData({
-            name: '',
-            email: '',
-            password: '',
-            confirmPassword: '',
-            telephone: '',
-          });
-        }
+      let data;
+      if (isLogin) {
+        data = await login({ email: formData.email, password: formData.password });
       } else {
-        setError(data.message || 'Something went wrong');
+        data = await register({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          telephone: formData.telephone,
+          userName: formData.email.split('@')[0],
+          role: 'USER',
+        });
       }
-    } catch (error) {
+
+      if (isLogin) {
+        localStorage.setItem('token', (data as { token: string }).token);
+        navigate('/dashboard');
+      } else {
+        setError('Registered successfully. Please log in.');
+        setAlertType('success');
+        setAlertOpen(true);
+        setIsLogin(true);
+        // Reset form
+        setFormData({
+          name: '',
+          email: '',
+          password: '',
+          confirmPassword: '',
+          telephone: '',
+        });
+      }
+    } catch (error: any) {
       console.error('API Error:', error);
-      setError('Server is unavailable. Please try again later.');
+      setError('Wrong UserName Or Password..!');
+      setAlertType('error');
+      setAlertOpen(true);
     }
   };
 
   return (
       <div className="w-full max-w-md transition-all duration-500 ease-in-out">
+        <AlertSnackbar message={error} type={alertType} open={alertOpen} onClose={() => setAlertOpen(false)} />
         <div className="bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-2xl shadow-lg p-8 transition-all duration-500">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-800">
@@ -98,12 +97,6 @@ export const AuthCard = () => {
             </p>
           </div>
 
-          {error && (
-              <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">
-                {error}
-              </div>
-          )}
-
           <form className="space-y-4" onSubmit={handleSubmit}>
             {!isLogin && (
                 <>
@@ -114,7 +107,6 @@ export const AuthCard = () => {
                       icon={<UserIcon size={18} className="text-gray-400" />}
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      required
                   />
 
                   <InputField
@@ -124,9 +116,6 @@ export const AuthCard = () => {
                       icon={<PhoneIcon size={18} className="text-gray-400" />}
                       value={formData.telephone}
                       onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
-                      pattern="[0-9]{10}"
-                      title="10-digit phone number"
-                      required
                   />
                 </>
             )}
@@ -138,7 +127,6 @@ export const AuthCard = () => {
                 icon={<MailIcon size={18} className="text-gray-400" />}
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                required
             />
 
             <InputField
@@ -148,8 +136,6 @@ export const AuthCard = () => {
                 icon={<LockIcon size={18} className="text-gray-400" />}
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                required
-                minLength={6}
             />
 
             {!isLogin && (
@@ -160,12 +146,11 @@ export const AuthCard = () => {
                     icon={<LockIcon size={18} className="text-gray-400" />}
                     value={formData.confirmPassword}
                     onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                    required
                 />
             )}
 
-            <Button type="submit" className="w-full">
-              {isLogin ? 'Sign In' : 'Create Account'}
+            <Button type="submit">
+              {isLogin ? 'Sign In' : 'Sign Up'}
             </Button>
           </form>
 

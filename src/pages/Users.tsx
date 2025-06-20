@@ -65,6 +65,14 @@ export const Users = () => {
     contact: ''
   });
 
+  // Pagination logic
+  const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 5;
+  const totalPages = Math.ceil(users.length / rowsPerPage);
+  const paginatedUsers = users.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+  const handlePrev = () => setCurrentPage((p) => Math.max(1, p - 1));
+  const handleNext = () => setCurrentPage((p) => Math.min(totalPages, p + 1));
+
   // Filter users based on search term
   const filteredUsers = users.filter(user =>
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -235,51 +243,51 @@ export const Users = () => {
       )}
 
       {/* Users Table */}
-      <div className="bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <div className="flex items-center gap-2">
-                    <User className="w-4 h-4" />
-                    Name
-                  </div>
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <div className="flex items-center gap-2">
-                    <Mail className="w-4 h-4" />
-                    Email
-                  </div>
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <div className="flex items-center gap-2">
-                    <Phone className="w-4 h-4" />
-                    Contact
-                  </div>
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <div className="flex items-center gap-2">
-                    <Shield className="w-4 h-4" />
-                    Role
-                  </div>
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    Registration Date
-                  </div>
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {filteredUsers.map((user) => (
+      <div className="bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl p-6 shadow-sm overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <div className="flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  Name
+                </div>
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <div className="flex items-center gap-2">
+                  <Mail className="w-4 h-4" />
+                  Email
+                </div>
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <div className="flex items-center gap-2">
+                  <Phone className="w-4 h-4" />
+                  Contact
+                </div>
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <div className="flex items-center gap-2">
+                  <Shield className="w-4 h-4" />
+                  Role
+                </div>
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Status
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4" />
+                  Registration Date
+                </div>
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {paginatedUsers.length > 0 ? (
+              paginatedUsers.map((user) => (
                 <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
                     {editingUser?.id === user.id ? (
@@ -404,14 +412,37 @@ export const Users = () => {
                     )}
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div className="px-6 py-4 border-t bg-gray-50">
-          <p className="text-sm text-gray-500">
-            Showing {filteredUsers.length} of {users.length} users
-          </p>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
+                  No users found
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+        <div className="px-6 py-4 border-t flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+          <p className="text-sm text-gray-500">Showing {paginatedUsers.length} of {filteredUsers.length} entries</p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handlePrev}
+              disabled={currentPage === 1}
+              className={`px-3 py-1 rounded border ${currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+            >
+              Prev
+            </button>
+            <span className="text-sm text-gray-700">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              onClick={handleNext}
+              disabled={currentPage === totalPages}
+              className={`px-3 py-1 rounded border ${currentPage === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
     </div>

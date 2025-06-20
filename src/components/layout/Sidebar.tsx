@@ -1,6 +1,8 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
-import { HomeIcon, UsersIcon, SettingsIcon, LogOutIcon } from "lucide-react";
+import { HomeIcon, UsersIcon, SettingsIcon, LogOutIcon, StoreIcon, ProportionsIcon, ScaleIcon } from "lucide-react";
+import { getCurrentUser } from '../../service/auth';
+
 const navItems = [
   {
     icon: HomeIcon,
@@ -8,12 +10,12 @@ const navItems = [
     to: "/dashboard",
   },
    {
-    icon: SettingsIcon,
+    icon: ScaleIcon,
     label: "Sale",
     to: "/sale",
   },
    {
-    icon: SettingsIcon,
+    icon: ProportionsIcon,
     label: "Product",
     to: "/product",
   },
@@ -23,16 +25,37 @@ const navItems = [
     to: "/users",
   },
   {
-    icon: SettingsIcon,
+    icon: StoreIcon,
     label: "stock",
     to: "/stock",
   },
 ];
+
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
 }
+
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
+  const [user, setUser] = useState<{ role: string } | null>(null);
+  const [userLoading, setUserLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const userData = await getCurrentUser();
+        setUser(userData);
+      } catch (err) {
+        console.error('Failed to fetch user data:', err);
+        setUser(null);
+      } finally {
+        setUserLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
   return (
     <>
       <aside
@@ -40,11 +63,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           fixed md:static left-0 top-0 z-30
           w-64 bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg 
           border-r border-gray-200 transform transition-transform duration-300 ease-in-out
-          ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+          ${isOpen ? "translate-x-0"  : "-translate-x-full md:translate-x-0"}
         `}
       >
         <div className="p-6 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-800">Admin</h1>
+          <h1 className="text-2xl font-bold text-gray-800">
+            {userLoading ? 'Loading...' : user ? user.role.toUpperCase() : 'USER'}
+          </h1>
           <button
             onClick={onClose}
             className="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"

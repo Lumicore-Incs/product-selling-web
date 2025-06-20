@@ -11,18 +11,22 @@
   },
   "dependencies": {
     "@headlessui/react": "^2.2.4",
+    "@reduxjs/toolkit": "^2.8.2",
     "axios": "^1.10.0",
     "lucide-react": "^0.441.0",
     "magic-patterns-vite-template": "file:",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.56.4",
+    "react-redux": "^9.2.0",
     "react-router-dom": "^6.26.2"
   },
   "devDependencies": {
+    "@types/axios": "^0.9.36",
     "@types/node": "^20.11.18",
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.1",
+    "@types/react-redux": "^7.1.34",
     "@typescript-eslint/eslint-plugin": "^5.54.0",
     "@typescript-eslint/parser": "^5.54.0",
     "@vitejs/plugin-react": "^4.2.1",
