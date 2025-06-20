@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 interface StockItem {
   id: number;
@@ -16,11 +16,17 @@ interface Props {
 }
 
 const StockTable: React.FC<Props> = ({ items, onEdit, onDelete, filterType, filterDate }) => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 5;
   const filteredItems = items.filter((item) => {
     const matchesType = !filterType || filterType === 'All' || item.type === filterType;
     const matchesDate = !filterDate || item.date === filterDate;
     return matchesType && matchesDate;
   });
+  const totalPages = Math.ceil(filteredItems.length / rowsPerPage);
+  const paginatedItems = filteredItems.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+  const handlePrev = () => setCurrentPage((p) => Math.max(1, p - 1));
+  const handleNext = () => setCurrentPage((p) => Math.min(totalPages, p + 1));
 
   return (
     <div className="bg-white rounded shadow overflow-hidden">
@@ -34,8 +40,8 @@ const StockTable: React.FC<Props> = ({ items, onEdit, onDelete, filterType, filt
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
-          {filteredItems.length > 0 ? (
-            filteredItems.map((item) => (
+          {paginatedItems.length > 0 ? (
+            paginatedItems.map((item) => (
               <tr key={item.id} className="hover:bg-gray-50 transition">
                 <td className="px-6 py-4 whitespace-nowrap">{item.type}</td>
                 <td className="px-6 py-4 whitespace-nowrap">{item.date}</td>
@@ -71,6 +77,28 @@ const StockTable: React.FC<Props> = ({ items, onEdit, onDelete, filterType, filt
           )}
         </tbody>
       </table>
+      <div className="px-6 py-4 border-t flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+        <p className="text-sm text-gray-500">Showing {paginatedItems.length} of {filteredItems.length} entries</p>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handlePrev}
+            disabled={currentPage === 1}
+            className={`px-3 py-1 rounded border ${currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+          >
+            Prev
+          </button>
+          <span className="text-sm text-gray-700">
+            Page {currentPage} of {totalPages}
+          </span>
+          <button
+            onClick={handleNext}
+            disabled={currentPage === totalPages}
+            className={`px-3 py-1 rounded border ${currentPage === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+          >
+            Next
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

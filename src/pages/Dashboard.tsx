@@ -1,5 +1,10 @@
-import { UsersIcon, ShoppingCartIcon, CreditCardIcon, TrendingUpIcon } from 'lucide-react';
-import { SalesTable } from '../components/SalesTable';
+import { useState, useEffect } from 'react';
+import { TrendingDownIcon, ScaleIcon, CreditCardIcon, TrendingUpIcon } from 'lucide-react';
+import { SalesTable, Sale } from '../components/SalesTable';
+import { getDashboardStats } from '../service/dashboard';
+import { getOrders, getAllCustomerOrders, Order } from '../service/order';
+import { getCurrentUser } from '../service/auth';
+import { log } from 'console';
 
 type StatCardProps = {
   icon: React.ComponentType<any>;
@@ -32,106 +37,199 @@ const StatCard = ({
 );
 
 export const Dashboard = () => {
-  // Sample sales data
-  const sampleSales = [
-    {
-      id: '1',
-      customerName: 'John Doe',
-      address: '123 Main St, Colombo',
-      contact1: '0712345678',
-      contact2: '0112345678',
-      status:"pending",
-      quantity: 5
-    },
-    {
-      id: '2',
-      customerName: 'Jane Smith',
-      address: '456 Galle Rd, Kandy',
-      contact1: '0776543210',
-      contact2: '0812345678',
-      status:"pending",
-      quantity: 3
-    },
-    {
-      id: '3',
-      customerName: 'Raj Patel',
-      address: '789 Marine Dr, Galle',
-      contact1: '0765432109',
-      contact2: '0912345678',
-      status:"deleverd",
-      quantity: 7
-    },
-    {
-      id: '4',
-      customerName: 'Priya Fernando',
-      address: '321 Hill St, Nuwara Eliya',
-      contact1: '0754321098',
-      contact2: '',
-      status:"processing",
-      quantity: 2
-    },
-    {
-      id: '5',
-      customerName: 'David Perera',
-      address: '654 Beach Rd, Negombo',
-      contact1: '0723456789',
-      contact2: '0312345678',
-      status:"completed",
-      quantity: 4
-    },
-    {
-      id: '5',
-      customerName: 'David Perera',
-      address: '654 Beach Rd, Negombo',
-      contact1: '0723456789',
-      contact2: '0312345678',
-      status:"cancelled",
-      quantity: 4
-    }
-  ];
+  const [stats, setStats] = useState({
+    total_order: '0',
+    todayOrders: '0',
+    confirmedOrders: '0',
+    cancelledOrders: '0',
+    totalOrdersTrend: '+0%',
+    todayOrdersTrend: '+0%',
+    confirmedOrdersTrend: '+0%',
+    cancelledOrdersTrend: '+0%'
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  // Mock functions for table actions
+  const [sales, setSales] = useState<Sale[]>([]);
+  const [salesLoading, setSalesLoading] = useState(true);
+  const [salesError, setSalesError] = useState('');
+  const [showTodayOnly, setShowTodayOnly] = useState(false);
+  
+  const [user, setUser] = useState<{ role: string } | null>(null);
+  const [userLoading, setUserLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const userData = await getCurrentUser();
+        setUser(userData);
+      } catch (err) {
+        console.error('Failed to fetch user data:', err);
+        setUser(null);
+      } finally {
+        setUserLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setSalesLoading(true);
+
+        const [statsData, salesApiData] = await Promise.all([
+          getDashboardStats(),
+          showTodayOnly ? getOrders() : getAllCustomerOrders()
+        ]);
+
+        // Process stats
+        setStats({
+          total_order: String(statsData.total_order || 0),
+          todayOrders: String(statsData.today_order || 0),
+          confirmedOrders: String(statsData.conform_order || 0),
+          cancelledOrders: String(statsData.cancel_order || 0),
+          totalOrdersTrend: statsData.totalOrdersTrend || '+0%',
+          todayOrdersTrend: statsData.todayOrdersTrend || '+0%',
+          confirmedOrdersTrend: statsData.confirmedOrdersTrend || '+0%',
+          cancelledOrdersTrend: statsData.cancelledOrdersTrend || '+0%'
+        });
+        setError('');
+
+        // Process sales
+        const mappedSales: Sale[] = salesApiData.map(order => ({
+          id: String(order.orderId),
+          customerName: order.customerId.name,
+          address: order.customerId.address,
+          contact1: order.customerId.contact01,
+          contact2: order.customerId.contact02 || '-',
+          status: order.status,
+          quantity: String(order.orderDetails.reduce((sum, item) => sum + item.qty, 0)),
+          items: order.orderDetails.map(detail => ({
+            productId: String(detail.productId.productId),
+            productName: detail.productId.name,
+            quantity: detail.qty,
+            price: detail.productId.price,
+          })),
+        }));
+        setSales(mappedSales);
+        setSalesError('');
+
+      } catch (err) {
+        console.error('Failed to fetch dashboard data:', err);
+        setError('Failed to load dashboard statistics');
+        setSalesError('Failed to load recent sales');
+      } finally {
+        setLoading(false);
+        setSalesLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [showTodayOnly]);
+
   const handleEdit = (sale: any) => {
     console.log('Editing:', sale);
-    // Add your edit logic here
   };
 
   const handleDelete = (id: string) => {
     console.log('Deleting:', id);
-    // Add your delete logic here
   };
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-800">Dashboard Overview</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard icon={UsersIcon} label="Total Users" value="2,543" trend="+12.5% from last month" />
-        <StatCard icon={ShoppingCartIcon} label="Total Orders" value="1,234" trend="+8.2% from last month" />
-        <StatCard icon={CreditCardIcon} label="Revenue" value="$45,678" trend="+15.3% from last month" />
-        <StatCard icon={TrendingUpIcon} label="Growth" value="23.5%" trend="+4.1% from last month" />
-      </div>
-      
-      <div className="bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl p-6 shadow-sm">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold text-gray-800">Recent Sales</h2>
+    <div className="space-y-6 overflow-x-hidden">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">Dashboard Overview</h1>
+        {!userLoading && user && user.role.toLowerCase() === 'admin' && (
           <div className="flex space-x-3">
             <button className="px-4 py-2 bg-blue-100 bg-opacity-70 hover:bg-opacity-100 text-blue-600 rounded-lg transition-all duration-200 flex items-center">
               <span>Vac</span>
             </button>
             <button className="px-4 py-2 bg-green-100 bg-opacity-70 hover:bg-opacity-100 text-green-600 rounded-lg transition-all duration-200 flex items-center">
-              <span>Sugur End</span>
+              <span>Sugar End</span>
             </button>
             <button className="px-4 py-2 bg-purple-100 bg-opacity-70 hover:bg-opacity-100 text-purple-600 rounded-lg transition-all duration-200 flex items-center">
               <span>Other</span>
             </button>
           </div>
+        )}
+      </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
+          <span className="block sm:inline">{error}</span>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard 
+          icon={ScaleIcon} 
+          label="Total Order" 
+          value={loading ? "Loading..." : stats.total_order} 
+          trend={stats.totalOrdersTrend} 
+        />
+        <StatCard 
+          icon={CreditCardIcon} 
+          label="Today Order" 
+          value={loading ? "Loading..." : stats.todayOrders} 
+          trend={stats.todayOrdersTrend} 
+        />
+        <StatCard 
+          icon={TrendingUpIcon} 
+          label="Conform Order" 
+          value={loading ? "Loading..." : stats.confirmedOrders} 
+          trend={stats.confirmedOrdersTrend} 
+        />
+        <StatCard 
+          icon={TrendingDownIcon} 
+          label="Cancel Order" 
+          value={loading ? "Loading..." : stats.cancelledOrders} 
+          trend={stats.cancelledOrdersTrend} 
+        />
+      </div>
+      
+      <div className="bg-gray-200 bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl p-6 shadow-2xl">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold text-gray-800">Recent Sales</h2>
+          <div className="inline-flex rounded-lg bg-gray-100 p-1 cursor-pointer transition-all duration-300 ease-in-out">
+            <div className="relative flex">
+              <div className={`
+                absolute top-0 h-full rounded-md bg-white shadow-sm transition-all duration-300
+                ${showTodayOnly ? 'left-0 w-[60px]' : 'left-[60px] w-[40px]'}
+              `} />
+              <div 
+                className={`
+                  px-3 py-1 text-sm z-10 transition-colors duration-300
+                  ${showTodayOnly ? 'text-blue-600 font-medium' : 'text-gray-500'}
+                `}
+                onClick={() => setShowTodayOnly(true)}
+              >
+                Today
+              </div>
+              <div 
+                className={`
+                  px-3 py-1 text-sm z-10 transition-colors duration-300
+                  ${!showTodayOnly ? 'text-blue-600 font-medium' : 'text-gray-500'}
+                `}
+                onClick={() => setShowTodayOnly(false)}
+              >
+                All
+              </div>
+            </div>
+          </div>
         </div>
         <div className="lg:col-span-2">
+          {salesLoading && <p>Loading sales...</p>}
+          {salesError && <p className="text-red-500">{salesError}</p>}
+          {!salesLoading && !salesError && (
           <SalesTable
-            sales={sampleSales}
+              sales={sales}
             onEdit={handleEdit}
             onDelete={handleDelete}
           />
+          )}
         </div>
       </div>
     </div>
