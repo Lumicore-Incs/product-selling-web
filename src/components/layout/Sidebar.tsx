@@ -1,6 +1,8 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import { HomeIcon, UsersIcon, SettingsIcon, LogOutIcon, StoreIcon, ProportionsIcon, ScaleIcon } from "lucide-react";
+import { getCurrentUser } from '../../service/auth';
+
 const navItems = [
   {
     icon: HomeIcon,
@@ -28,11 +30,32 @@ const navItems = [
     to: "/stock",
   },
 ];
+
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
 }
+
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
+  const [user, setUser] = useState<{ role: string } | null>(null);
+  const [userLoading, setUserLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const userData = await getCurrentUser();
+        setUser(userData);
+      } catch (err) {
+        console.error('Failed to fetch user data:', err);
+        setUser(null);
+      } finally {
+        setUserLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
   return (
     <>
       <aside
@@ -44,7 +67,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         `}
       >
         <div className="p-6 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-800">Admin</h1>
+          <h1 className="text-2xl font-bold text-gray-800">
+            {userLoading ? 'Loading...' : user ? user.role.toUpperCase() : 'USER'}
+          </h1>
           <button
             onClick={onClose}
             className="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"

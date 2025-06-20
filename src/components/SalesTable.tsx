@@ -1,14 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { EditIcon, Trash2Icon } from 'lucide-react';
 
-interface SaleItem {
+export interface SaleItem {
   productId: string;
   productName: string;
   quantity: number;
   price: number;
 }
 
-interface Sale {
+export interface Sale {
   id: string;
   customerName: string;
   address: string;
@@ -30,13 +30,16 @@ export const SalesTable: React.FC<SalesTableProps> = ({
   onEdit,
   onDelete
 }) => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 5;
+
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'completed':
+      case 'deliver':
         return 'bg-green-100 text-green-800';
       case 'pending':
         return 'bg-yellow-100 text-yellow-800';
-      case 'cancelled':
+      case 'failed to deliver':
         return 'bg-red-100 text-red-800';
       case 'processing':
         return 'bg-blue-100 text-blue-800';
@@ -48,6 +51,12 @@ export const SalesTable: React.FC<SalesTableProps> = ({
   const getTotalAmount = (items: SaleItem[]) => {
     return items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
   };
+
+  // Pagination logic
+  const totalPages = Math.ceil(sales.length / rowsPerPage);
+  const paginatedSales = sales.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+  const handlePrev = () => setCurrentPage((p) => Math.max(1, p - 1));
+  const handleNext = () => setCurrentPage((p) => Math.min(totalPages, p + 1));
 
   if (sales.length === 0) {
     return (
@@ -83,10 +92,10 @@ export const SalesTable: React.FC<SalesTableProps> = ({
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Contact 2
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Status
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Qty
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -101,7 +110,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {sales.map((sale) => (
+            {paginatedSales.map((sale) => (
               <tr key={sale.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                   {sale.customerName}
@@ -115,7 +124,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {sale.contact2 || '-'}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-3 py-4 whitespace-nowrap">
                   <span
                     className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
                       sale.status
@@ -124,7 +133,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                     {sale.status || '-'}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                   {sale.quantity}
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-500">
@@ -132,7 +141,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                     {sale.items && sale.items.length > 0 ? (
                       <div className="space-y-1">
                         {sale.items.map((item, index) => (
-                          <div key={item.productId} className="text-xs">
+                          <div key={item.productId + '-' + index} className="text-xs">
                             {item.productName} (x{item.quantity})
                           </div>
                         ))}
@@ -167,8 +176,27 @@ export const SalesTable: React.FC<SalesTableProps> = ({
           </tbody>
         </table>
       </div>
-      <div className="px-6 py-4 border-t">
-        <p className="text-sm text-gray-500">Showing {sales.length} entries</p>
+      <div className="px-6 py-4 border-t flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+        <p className="text-sm text-gray-500">Showing {paginatedSales.length} of {sales.length} entries</p>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handlePrev}
+            disabled={currentPage === 1}
+            className={`px-3 py-1 rounded border ${currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+          >
+            Prev
+          </button>
+          <span className="text-sm text-gray-700">
+            Page {currentPage} of {totalPages}
+          </span>
+          <button
+            onClick={handleNext}
+            disabled={currentPage === totalPages}
+            className={`px-3 py-1 rounded border ${currentPage === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+          >
+            Next
+          </button>
+        </div>
       </div>
     </div>
   );
