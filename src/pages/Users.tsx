@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Edit, Trash2, Plus, X, Save, User, Mail, Calendar, Shield, Phone, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { userApi } from '../services/api';
 
 interface User {
   id: string;
@@ -11,48 +12,8 @@ interface User {
   contact: string;
 }
 
-// Mock data for demonstration
-const mockUsers: User[] = [
-  {
-    id: '1',
-    email: 'john.doe@example.com',
-    name: 'John Doe',
-    registration_date: '2024-01-15',
-    role: 'Admin',
-    status: 'active',
-    contact: '+1 (555) 123-4567'
-  },
-  {
-    id: '2',
-    email: 'jane.smith@example.com',
-    name: 'Jane Smith',
-    registration_date: '2024-02-20',
-    role: 'User',
-    status: 'active',
-    contact: '+1 (555) 234-5678'
-  },
-  {
-    id: '3',
-    email: 'bob.wilson@example.com',
-    name: 'Bob Wilson',
-    registration_date: '2024-03-10',
-    role: 'Manager',
-    status: 'pending',
-    contact: '+1 (555) 345-6789'
-  },
-  {
-    id: '4',
-    email: 'alice.brown@example.com',
-    name: 'Alice Brown',
-    registration_date: '2024-01-05',
-    role: 'User',
-    status: 'inactive',
-    contact: '+1 (555) 456-7890'
-  }
-];
-
 export const Users = () => {
-  const [users, setUsers] = useState<User[]>(mockUsers);
+  const [users, setUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -138,6 +99,13 @@ export const Users = () => {
         return { color: 'bg-gray-100 text-gray-800', icon: <Clock className="w-4 h-4" /> };
     }
   };
+
+  // Fetch users from API on mount
+  useEffect(() => {
+    userApi.getAllUsers()
+      .then(setUsers)
+      .catch((err) => console.error('Failed to fetch users', err));
+  }, []);
 
   return (
     <div className="space-y-6">

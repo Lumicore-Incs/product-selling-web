@@ -18,6 +18,7 @@ api.interceptors.request.use(
         // Use 'token' key to match your existing auth system
         const token = localStorage.getItem('token');
         if (token) {
+            config.headers ??= {};
             config.headers.Authorization = `Bearer ${token}`;
         }
         return config;
@@ -32,9 +33,8 @@ api.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response?.status === 401) {
-            // Token expired or invalid
             localStorage.removeItem('token');
-            window.location.href = '/'; // Redirect to login
+            window.location.href = '/auth'; 
         }
         return Promise.reject(error);
     }
@@ -48,12 +48,24 @@ export interface ProductDto {
     status?: 'active' | 'inactive';
 }
 
+// User type for API response
+export interface UserApiDto {
+    id: number;
+    name: string;
+    email: string;
+    telephone: string;
+    role: string;
+    registration_date: string;
+    status: string;
+    type?: string | null;
+}
+
 // API service functions
 export const productApi = {
     // Get all products
     getAllProducts: async (): Promise<ProductDto[]> => {
         try {
-            const response = await api.get('/products');
+            const response = await api.get<ProductDto[]>('/products');
             return response.data;
         } catch (error) {
             console.error('Error fetching products:', error);
@@ -122,7 +134,7 @@ export const productApi = {
     }
 };
 
-// Auth helper functions (updated to match your system)
+
 export const authUtils = {
     setToken: (token: string) => {
         localStorage.setItem('token', token);
@@ -140,9 +152,40 @@ export const authUtils = {
         return !!localStorage.getItem('token');
     },
 
-    // Add logout function that redirects to home
     logout: () => {
         localStorage.removeItem('token');
-        window.location.href = '/';
+        window.location.href = '/auth';
     }
+};
+
+// User type for frontend mapped from UserApiDto
+export interface User {
+    id: string;
+    name: string;
+    email: string;
+    contact: string;
+    role: string;
+    registration_date: string;
+    status: 'active' | 'inactive' | 'pending';
+}
+
+export const userApi = {
+    getAllUsers: async (): Promise<User[]> => {
+        try {
+            const response = await api.get<UserApiDto[]>('/user/get_all_user');
+            // Map API fields to frontend User type
+            return response.data.map((user) => ({
+                id: user.id.toString(),
+                name: user.name,
+                email: user.email,
+                contact: user.telephone,
+                role: user.role,
+                registration_date: user.registration_date,
+                status: (user.status?.toLowerCase() as 'active' | 'inactive' | 'pending') || 'pending',
+            }));
+        } catch (error) {
+            console.error('Error fetching users:', error);
+            throw error;
+        }
+    },
 };
