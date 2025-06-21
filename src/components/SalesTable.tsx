@@ -155,7 +155,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
-                  ${sale.items ? getTotalAmount(sale.items).toFixed(2) : '0.00'}
+                  Lkr {sale.items ? getTotalAmount(sale.items).toFixed(2) : '0.00'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <button
@@ -182,7 +182,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
           <button
             onClick={handlePrev}
             disabled={currentPage === 1}
-            className={`px-3 py-1 rounded border ${currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+            className={`px-3 py-1 rounded border Lkr {currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
           >
             Prev
           </button>
@@ -192,7 +192,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
           <button
             onClick={handleNext}
             disabled={currentPage === totalPages}
-            className={`px-3 py-1 rounded border ${currentPage === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+            className={`px-3 py-1 rounded border Lkr {currentPage === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
           >
             Next
           </button>

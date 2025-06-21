@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import { HomeIcon, UsersIcon, SettingsIcon, LogOutIcon, StoreIcon, ProportionsIcon, ScaleIcon } from "lucide-react";
 import { getCurrentUser } from '../../service/auth';
+import { authUtils } from '../../services/api';
 
 const navItems = [
   {
@@ -106,7 +107,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               <span>{item.label}</span>
             </NavLink>
           ))}
-          <button className="w-full flex items-center px-6 py-3 text-gray-700 transition-all duration-300 hover:bg-white hover:bg-opacity-50">
+          <button className="w-full flex items-center px-6 py-3 text-gray-700 transition-all duration-300 hover:bg-white hover:bg-opacity-50" onClick={authUtils.logout}>
             <LogOutIcon size={20} className="mr-3" />
             <span>Logout</span>
           </button>
