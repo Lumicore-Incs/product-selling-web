@@ -58,7 +58,29 @@ export const AuthCard = () => {
       }
 
       if (isLogin) {
-        localStorage.setItem('token', (data as { token: string }).token);
+        const token = (data as { token: string }).token;
+        localStorage.setItem('token', token);
+
+        // Fetch user info to get product ID
+        try {
+          const response = await fetch('http://localhost:8081/user/get_user_info_by_token', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (response.ok) {
+            const userInfo = await response.json();
+            if (userInfo.productId) {
+              localStorage.setItem('productId', userInfo.productId);
+            }
+          }
+        } catch (error) {
+          console.error('Failed to fetch user info:', error);
+        }
+
         navigate('/dashboard');
       } else {
         setError('Registered successfully. Please log in.');

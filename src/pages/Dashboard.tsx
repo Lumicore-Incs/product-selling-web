@@ -58,6 +58,18 @@ export const Dashboard = () => {
   const [user, setUser] = useState<{ role: string } | null>(null);
   const [userLoading, setUserLoading] = useState(true);
 
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+
+  const statusOptions = [
+    { value: 'all', label: 'All Statuses' },
+    { value: 'pending', label: 'Pending' },
+    { value: 'confirmed', label: 'Confirmed' },
+    { value: 'processing', label: 'Processing' },
+    { value: 'shipped', label: 'Shipped' },
+    { value: 'delivered', label: 'Delivered' },
+    { value: 'cancelled', label: 'Cancelled' },
+  ];
+
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -101,10 +113,10 @@ export const Dashboard = () => {
         // Process sales
         const mappedSales: Sale[] = salesApiData.map(order => ({
           id: String(order.orderId),
-          customerName: order.customerId.name,
+          name: order.customerId.name,
           address: order.customerId.address,
-          contact1: order.customerId.contact01,
-          contact2: order.customerId.contact02 || '-',
+          contact01: order.customerId.contact01,
+          contact02: order.customerId.contact02 || '-',
           status: order.status,
           quantity: String(order.orderDetails.reduce((sum, item) => sum + item.qty, 0)),
           items: order.orderDetails.map(detail => ({
@@ -129,6 +141,10 @@ export const Dashboard = () => {
 
     fetchData();
   }, [showTodayOnly]);
+
+  const filteredSales = statusFilter === 'all'
+      ? sales
+      : sales.filter(sale => sale.status === statusFilter);
 
   const handleEdit = (sale: any) => {
     console.log('Editing:', sale);
@@ -189,33 +205,53 @@ export const Dashboard = () => {
           trend={stats.cancelledOrdersTrend} 
         />
       </div>
-      
+
       <div className="bg-gray-200 bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl p-6 shadow-2xl">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold text-gray-800">Recent Sales</h2>
-          <div className="inline-flex rounded-lg bg-gray-100 p-1 cursor-pointer transition-all duration-300 ease-in-out">
-            <div className="relative flex">
-              <div className={`
-                absolute top-0 h-full rounded-md bg-white shadow-sm transition-all duration-300
-                ${showTodayOnly ? 'left-0 w-[60px]' : 'left-[60px] w-[40px]'}
-              `} />
-              <div 
-                className={`
-                  px-3 py-1 text-sm z-10 transition-colors duration-300
-                  ${showTodayOnly ? 'text-blue-600 font-medium' : 'text-gray-500'}
-                `}
-                onClick={() => setShowTodayOnly(true)}
+          <div className="flex items-center space-x-4">
+            <div className="relative">
+              <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="appearance-none bg-white border border-gray-300 rounded-md pl-3 pr-8 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                Today
+                {statusOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                  <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                </svg>
               </div>
-              <div 
-                className={`
-                  px-3 py-1 text-sm z-10 transition-colors duration-300
-                  ${!showTodayOnly ? 'text-blue-600 font-medium' : 'text-gray-500'}
-                `}
-                onClick={() => setShowTodayOnly(false)}
-              >
-                All
+            </div>
+            <div className="inline-flex rounded-lg bg-gray-100 p-1 cursor-pointer transition-all duration-300 ease-in-out">
+              <div className="relative flex">
+                <div className={`
+            absolute top-0 h-full rounded-md bg-white shadow-sm transition-all duration-300
+            ${showTodayOnly ? 'left-0 w-[60px]' : 'left-[60px] w-[40px]'}
+          `} />
+                <div
+                    className={`
+              px-3 py-1 text-sm z-10 transition-colors duration-300
+              ${showTodayOnly ? 'text-blue-600 font-medium' : 'text-gray-500'}
+            `}
+                    onClick={() => setShowTodayOnly(true)}
+                >
+                  Today
+                </div>
+                <div
+                    className={`
+              px-3 py-1 text-sm z-10 transition-colors duration-300
+              ${!showTodayOnly ? 'text-blue-600 font-medium' : 'text-gray-500'}
+            `}
+                    onClick={() => setShowTodayOnly(false)}
+                >
+                  All
+                </div>
               </div>
             </div>
           </div>
@@ -224,11 +260,11 @@ export const Dashboard = () => {
           {salesLoading && <p>Loading sales...</p>}
           {salesError && <p className="text-red-500">{salesError}</p>}
           {!salesLoading && !salesError && (
-          <SalesTable
-              sales={sales}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
+              <SalesTable
+                  sales={filteredSales}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+              />
           )}
         </div>
       </div>

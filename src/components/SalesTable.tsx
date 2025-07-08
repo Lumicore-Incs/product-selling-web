@@ -113,16 +113,16 @@ export const SalesTable: React.FC<SalesTableProps> = ({
             {paginatedSales.map((sale) => (
               <tr key={sale.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {sale.customerName}
+                  {sale.name}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {sale.address}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {sale.contact1}
+                  {sale.contact01}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {sale.contact2 || '-'}
+                  {sale.contact02 || '-'}
                 </td>
                 <td className="px-3 py-4 whitespace-nowrap">
                   <span

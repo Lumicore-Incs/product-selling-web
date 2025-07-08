@@ -48,6 +48,61 @@ export interface ProductDto {
     status?: 'active' | 'inactive';
 }
 
+export interface OrderItem {
+    productId: number;
+    productName: string;
+    qty: number;
+    price: number;
+    total: number;
+}
+
+export interface CustomerRequestDTO {
+    name: string;
+    address: string;
+    contact01: string;
+    contact02?: string;
+    qty: string;
+    remark: string;
+    totalPrice: number;
+    items: OrderItem[];
+}
+
+export interface CustomerDtoGet {
+    customerId: number;
+    name: string;
+    address: string;
+    contact01: string;
+    contact02?: string;
+    qty: string;
+    userId: number;
+    createdDate: string;
+    status: string;
+}
+
+export interface OrderDtoGet {
+    orderId: number;
+    customerId: number;
+    name: string;
+    address: string;
+    contact01: string;
+    contact02?: string;
+    qty: string;
+    remark: string;
+    items: OrderItem[];
+    totalPrice: number;
+    orderDate: string;
+    status: string;
+    userId: number;
+}
+
+export interface OrderDetailsDto {
+    orderDetailsId?: number;
+    qty: number;
+    total: number;
+    productId: number;
+    orderId?: number;
+}
+
 // User type for API response
 export interface UserApiDto {
     id: number;
@@ -130,6 +185,91 @@ export const productApi = {
         } catch (error) {
             console.error('Error searching products:', error);
             throw error;
+        }
+    }
+};
+
+export const customerApi = {
+    // Create new customer with order
+    createCustomer: async (customerData: CustomerRequestDTO): Promise<CustomerDtoGet> => {
+        try {
+            const response = await api.post<CustomerDtoGet>('/customer', customerData);
+            return response.data;
+        } catch (error) {
+            console.error('Error creating customer:', error);
+            throw error;
+        }
+    },
+
+    // Get all customers
+    getAllCustomers: async (): Promise<CustomerDtoGet[]> => {
+        try {
+            const response = await api.get<CustomerDtoGet[]>('/customer');
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching customers:', error);
+            throw error;
+        }
+    }
+};
+
+// Updated orderApi section for api.ts
+export const orderApi = {
+    // Get today's orders
+    getTodaysOrders: async (): Promise<OrderDtoGet[]> => {
+        try {
+            console.log('Fetching today\'s orders from:', `${API_BASE_URL}/order`);
+            const response = await api.get<OrderDtoGet[]>('/order');
+            console.log('Today\'s orders response:', response.data);
+            return response.data;
+        } catch (error: any) {
+            console.error('Error fetching today\'s orders:', error);
+            console.error('Request URL:', error.config?.url);
+            console.error('Response status:', error.response?.status);
+            console.error('Response data:', error.response?.data);
+            throw error;
+        }
+    },
+
+    // Get all orders
+    getAllOrders: async (): Promise<OrderDtoGet[]> => {
+        try {
+            console.log('Fetching all orders from:', `${API_BASE_URL}/order/allCustomer`);
+            const response = await api.get<OrderDtoGet[]>('/order/allCustomer');
+            console.log('All orders response:', response.data);
+            return response.data;
+        } catch (error: any) {
+            console.error('Error fetching all orders:', error);
+            console.error('Request URL:', error.config?.url);
+            console.error('Response status:', error.response?.status);
+            console.error('Response data:', error.response?.data);
+
+            // If 404, try alternative endpoint
+            if (error.response?.status === 404) {
+                console.log('Trying alternative endpoint: /order');
+                try {
+                    const fallbackResponse = await api.get<OrderDtoGet[]>('/order');
+                    console.log('Fallback response successful:', fallbackResponse.data);
+                    return fallbackResponse.data;
+                } catch (fallbackError) {
+                    console.error('Fallback also failed:', fallbackError);
+                    throw error; // Throw original error
+                }
+            }
+
+            throw error;
+        }
+    },
+
+    // Test endpoint connectivity
+    testConnection: async (): Promise<boolean> => {
+        try {
+            // Try a simple GET request to see if server is responding
+            const response = await api.get('/order');
+            return response.status === 200;
+        } catch (error: any) {
+            console.error('Connection test failed:', error);
+            return false;
         }
     }
 };
