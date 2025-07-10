@@ -329,3 +329,21 @@ export const userApi = {
         }
     },
 };
+
+/**
+ * Export sales as Excel file by calling /dashboard/conform endpoint.
+ * Returns a Blob (Excel file)
+ */
+export const dashboardApi = {
+  exportSalesExcel: async (): Promise<Blob> => {
+    try {
+      const response = await api.get('/dashboard/excel', {
+        responseType: 'blob', // Important for binary file
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error exporting sales as Excel:', error);
+      throw error;
+    }
+  },
+};
