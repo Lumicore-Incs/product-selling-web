@@ -17,7 +17,7 @@ export const authService = {
     // Login function - adjust endpoint as per your backend
     login: async (credentials: LoginRequest): Promise<LoginResponse> => {
         try {
-            const response = await axios.post(`${API_BASE_URL}/auth/login`, credentials);
+            const response = await axios.post<LoginResponse>(`${API_BASE_URL}/auth/login`, credentials);
             return response.data;
         } catch (error) {
             console.error('Login failed:', error);

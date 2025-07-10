@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { SalesForm } from '../components/SalesForm';
 import { SalesTable } from '../components/SalesTable';
 import { customerApi, orderApi, CustomerDtoGet, OrderDtoGet } from '../services/api';
+import { dashboardApi } from '../services/api';
 
 interface SaleItem {
   productId: string;
@@ -29,6 +30,7 @@ export const SalesManagement: React.FC = () => {
   const [currentSale, setCurrentSale] = useState<Sale | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Load existing orders from backend on component mount
@@ -158,16 +160,23 @@ export const SalesManagement: React.FC = () => {
     setIsEditing(true);
   };
 
-  const exportSales = () => {
-    const dataStr = JSON.stringify(sales, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-
-    const exportFileDefaultName = `sales-data-${new Date().toISOString().slice(0, 10)}.json`;
-
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
-    linkElement.click();
+  const exportSales = async () => {
+    setIsExporting(true);
+    setError(null);
+    try {
+      // Call the API to get the Excel file as a blob
+      const blob = await dashboardApi.exportSalesExcel();
+      // Create a URL for the blob
+      const url = window.URL.createObjectURL(blob);
+      // Open in a new tab
+      window.open(url, '_blank');
+      // Optionally, revoke the object URL after some time
+      setTimeout(() => window.URL.revokeObjectURL(url), 10000);
+    } catch (error: any) {
+      setError('Failed to export sales. ' + (error?.message || ''));
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const refreshData = () => {
@@ -208,14 +217,14 @@ export const SalesManagement: React.FC = () => {
               </button>
               <button
                   onClick={exportSales}
-                  disabled={sales.length === 0}
+                  disabled={isExporting}
                   className={`px-4 py-2 rounded-md text-white ${
-                      sales.length === 0
+                      isExporting
                           ? 'bg-gray-400 cursor-not-allowed'
                           : 'bg-blue-600 hover:bg-blue-700'
                   }`}
               >
-                Export Sales
+                {isExporting ? 'Exporting...' : 'Export Sales'}
               </button>
             </div>
           </div>
