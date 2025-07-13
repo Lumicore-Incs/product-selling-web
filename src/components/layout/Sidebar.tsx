@@ -1,45 +1,67 @@
 import React, { useState, useEffect } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { HomeIcon, UsersIcon, SettingsIcon, LogOutIcon, StoreIcon, ProportionsIcon, ScaleIcon } from "lucide-react";
 import { getCurrentUser } from '../../service/auth';
 import { authUtils } from '../../services/api';
 
-const navItems = [
-  {
-    icon: HomeIcon,
-    label: "Dashboard",
-    to: "/dashboard",
-  },
-   {
-    icon: ScaleIcon,
-    label: "Sale",
-    to: "/sale",
-  },
-   {
-    icon: ProportionsIcon,
-    label: "Product",
-    to: "/product",
-  },
-  {
-    icon: UsersIcon,
-    label: "Users",
-    to: "/users",
-  },
-  {
-    icon: StoreIcon,
-    label: "stock",
-    to: "/stock",
-  },
-];
+const getNavItems = (userRole: string) => {
+  const allNavItems = [
+    {
+      icon: HomeIcon,
+      label: "Dashboard",
+      to: "/dashboard",
+    },
+    {
+      icon: ScaleIcon,
+      label: "Sales Management",
+      to: "/sale",
+    },
+    {
+      icon: ProportionsIcon,
+      label: "Product",
+      to: "/product",
+      adminOnly: true,
+    },
+    {
+      icon: UsersIcon,
+      label: "Users",
+      to: "/users",
+      adminOnly: true,
+    },
+    {
+      icon: StoreIcon,
+      label: "stock",
+      to: "/stock",
+      adminOnly: true,
+    },
+    {
+      icon: SettingsIcon,
+      label: "Settings",
+      to: "/sale/settings",
+      isSettings: true,
+    },
+  ];
+
+  // Filter out admin-only items for regular users
+  return allNavItems.filter(item => !item.adminOnly || userRole === 'ADMIN');
+};
 
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  showSettings?: boolean;
+  setShowSettings?: (show: boolean) => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ 
+  isOpen, 
+  onClose, 
+  showSettings, 
+  setShowSettings 
+}) => {
   const [user, setUser] = useState<{ role: string } | null>(null);
   const [userLoading, setUserLoading] = useState(true);
+  const location = useLocation();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -56,6 +78,47 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
     fetchUser();
   }, []);
+
+  const handleSettingsClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setShowSettings?.(!showSettings);
+  };
+
+  const renderNavItem = (item: any) => {
+    if (item.isSettings) {
+      return (
+        <button
+          key={item.to}
+          onClick={handleSettingsClick}
+          className={`
+            w-full flex items-center px-6 py-3 text-gray-700 transition-all duration-300
+            hover:bg-white hover:bg-opacity-50
+            ${showSettings ? "bg-white bg-opacity-50 text-blue-600" : ""}
+          `}
+        >
+          <item.icon size={20} className="mr-3" />
+          <span>{item.label}</span>
+        </button>
+      );
+    }
+
+    return (
+      <NavLink
+        key={item.to}
+        to={item.to}
+        end={item.to === "/"}
+        onClick={() => onClose()}
+        className={({ isActive }) => `
+          flex items-center px-6 py-3 text-gray-700 transition-all duration-300
+          hover:bg-white hover:bg-opacity-50
+          ${isActive ? "bg-white bg-opacity-50 text-blue-600" : ""}
+        `}
+      >
+        <item.icon size={20} className="mr-3" />
+        <span>{item.label}</span>
+      </NavLink>
+    );
+  };
 
   return (
     <>
@@ -91,22 +154,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           </button>
         </div>
         <nav className="mt-6">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.to === "/"}
-              onClick={() => onClose()}
-              className={({ isActive }) => `
-                flex items-center px-6 py-3 text-gray-700 transition-all duration-300
-                hover:bg-white hover:bg-opacity-50
-                ${isActive ? "bg-white bg-opacity-50 text-blue-600" : ""}
-              `}
-            >
-              <item.icon size={20} className="mr-3" />
-              <span>{item.label}</span>
-            </NavLink>
-          ))}
+          {getNavItems(user?.role || 'USER' ).map(renderNavItem)}
           <button className="w-full flex items-center px-6 py-3 text-gray-700 transition-all duration-300 hover:bg-white hover:bg-opacity-50" onClick={authUtils.logout}>
             <LogOutIcon size={20} className="mr-3" />
             <span>Logout</span>

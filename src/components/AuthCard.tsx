@@ -1,14 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { InputField } from './InputField';
 import { Button } from './Button';
 import { ToggleSwitch } from './ToggleSwitch';
-import { UserIcon, LockIcon, MailIcon, PhoneIcon } from 'lucide-react';
+import { UserIcon, LockIcon, MailIcon, PhoneIcon, ArrowLeftIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { login, register } from '../service/auth';
 import { AlertSnackbar } from './AlertSnackbar';
 
 export const AuthCard = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [error, setError] = useState('');
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertType, setAlertType] = useState<'success' | 'error'>('error');
@@ -22,18 +23,80 @@ export const AuthCard = () => {
     telephone: '',
   });
 
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
+
+  const [products, setProducts] = useState<{ productId: number; name: string }[]>([]);
+  const [selectedProductId, setSelectedProductId] = useState<number | undefined>(undefined);
+
+  useEffect(() => {
+    if (!isLogin && !isForgotPassword) {
+      fetch('http://localhost:8081/products')
+        .then((res) => res.json())
+        .then((data) => {
+          if (Array.isArray(data)) {
+            setProducts(data);
+            if (data.length > 0) setSelectedProductId(data[0].productId);
+          }
+        })
+        .catch((err) => console.error('Failed to load products:', err));
+    }
+  }, [isLogin, isForgotPassword]);
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
 
     // Validation checks
-    if (!isLogin) {
+    if (!isLogin && !isForgotPassword) {
       if (formData.password !== formData.confirmPassword) {
-        setError('Passwords do not match');
+        setError('Passwords do not match!');
+        setAlertType('error');
+        setAlertOpen(true);
         return;
       }
       if (!formData.telephone) {
         setError('All fields are required');
+        setAlertType('error');
+        setAlertOpen(true);
+        return;
+      }
+    }
+
+    if (isForgotPassword) {
+      // Handle forgot password
+      try {
+        if (!forgotPasswordEmail) {
+          setError('Please enter your email address');
+          setAlertType('error');
+          setAlertOpen(true);
+          return;
+        }
+
+        // Call the forgot password API endpoint
+        const response = await fetch(`http://localhost:8081/user/send?email=${encodeURIComponent(forgotPasswordEmail)}`, {
+          method: 'POST',
+        });
+
+        if (response.ok) {
+          setError('Password reset instructions have been sent to your email address.');
+          setAlertType('success');
+          setAlertOpen(true);
+          
+          // Reset and go back to login
+          setForgotPasswordEmail('');
+          setIsForgotPassword(false);
+        } else {
+          const errorData = await response.json().catch(() => ({}));
+          setError(errorData.message || 'Failed to send reset email. Please try again.');
+          setAlertType('error');
+          setAlertOpen(true);
+        }
+        return;
+      } catch (error: any) {
+        console.error('Forgot password error:', error);
+        setError('Failed to send reset email. Please check your connection and try again.');
+        setAlertType('error');
+        setAlertOpen(true);
         return;
       }
     }
@@ -54,6 +117,7 @@ export const AuthCard = () => {
           telephone: formData.telephone,
           userName: formData.email.split('@')[0],
           role: 'USER',
+          productId: selectedProductId,
         });
       }
 
@@ -104,6 +168,59 @@ export const AuthCard = () => {
     }
   };
 
+  const handleBackToLogin = () => {
+    setIsForgotPassword(false);
+    setForgotPasswordEmail('');
+    setError('');
+  };
+
+  const handleForgotPassword = () => {
+    setIsForgotPassword(true);
+    setError('');
+  };
+
+  // Forgot Password Form
+  if (isForgotPassword) {
+    return (
+      <div className="w-full max-w-md transition-all duration-500 ease-in-out">
+        <AlertSnackbar message={error} type={alertType} open={alertOpen} onClose={() => setAlertOpen(false)} />
+        <div className="bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-2xl shadow-lg p-8 transition-all duration-500">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-800">Forgot Password</h1>
+            <p className="text-gray-600 mt-2">
+              Enter your email address to receive password reset instructions
+            </p>
+          </div>
+
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            <InputField
+              id="forgotEmail"
+              type="email"
+              label="Email Address"
+              icon={<MailIcon size={18} className="text-gray-400" />}
+              value={forgotPasswordEmail}
+              onChange={(e) => setForgotPasswordEmail(e.target.value)}
+            />
+
+            <Button type="submit">
+              Send Reset Instructions
+            </Button>
+          </form>
+
+          <div className="mt-6 text-center">
+            <button
+              onClick={handleBackToLogin}
+              className="flex items-center justify-center w-full text-sm text-gray-600 hover:text-gray-800 transition-colors"
+            >
+              <ArrowLeftIcon size={16} className="mr-2" />
+              Back to Sign In
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
       <div className="w-full max-w-md transition-all duration-500 ease-in-out">
         <AlertSnackbar message={error} type={alertType} open={alertOpen} onClose={() => setAlertOpen(false)} />
@@ -139,6 +256,21 @@ export const AuthCard = () => {
                       value={formData.telephone}
                       onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
                   />
+
+                  <div>
+                    <label htmlFor="product" className="block text-sm font-medium text-gray-700 mb-1">Product</label>
+                    <select
+                      id="product"
+                      className="mb-1 block w-full border-gray-300 rounded-md backdrop-filter backdrop-blur-lg rounded-2xl shadow-lg p-1 transition-all duration-500"
+                      value={selectedProductId || ''}
+                      onChange={e => setSelectedProductId(Number(e.target.value))}
+                      required
+                    >
+                      {products.map(product => (
+                        <option key={product.productId} value={product.productId}>{product.name}</option>
+                      ))}
+                    </select>
+                  </div>
                 </>
             )}
 
@@ -175,6 +307,17 @@ export const AuthCard = () => {
               {isLogin ? 'Sign In' : 'Sign Up'}
             </Button>
           </form>
+
+          {isLogin && (
+            <div className="mt-4 text-center">
+              <button
+                onClick={handleForgotPassword}
+                className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
+              >
+                Forgot Password?
+              </button>
+            </div>
+          )}
 
           <div className="mt-8 text-center">
             <div className="text-sm text-gray-600 mb-4">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { SearchIcon, BellIcon, MenuIcon } from 'lucide-react';
+import { SearchIcon, BellIcon, MenuIcon, User2Icon } from 'lucide-react';
 import { getCurrentUser } from '../../service/auth';
 
 interface HeaderProps {
@@ -46,7 +46,9 @@ export const Header: React.FC<HeaderProps> = ({
             <BellIcon size={20} className="text-gray-600" />
           </button>
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500" />
+             <button className="flex justify-center items-center w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500">
+            <User2Icon size={20} className="text-gray-600" />
+          </button>
             <div className="hidden sm:block text-sm font-medium text-gray-700">
               {userLoading ? 'Loading...' : user ? user.name : 'User'}
             </div>

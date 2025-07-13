@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { SalesForm } from '../components/SalesForm';
 import { SalesTable } from '../components/SalesTable';
 import { customerApi, orderApi, CustomerDtoGet, OrderDtoGet } from '../services/api';
 import { dashboardApi } from '../services/api';
+import { getCurrentUser } from '../service/auth';
 
 interface SaleItem {
   productId: string;
@@ -25,17 +27,41 @@ interface Sale {
   totalAmount?: number;
 }
 
+interface OutletContext {
+  salesTitle: string;
+  salesBackgroundColor: string;
+  showSettings: boolean;
+  setShowSettings: (show: boolean) => void;
+}
+
 export const SalesManagement: React.FC = () => {
+  const { salesTitle, salesBackgroundColor, showSettings, setShowSettings } = useOutletContext<OutletContext>();
   const [sales, setSales] = useState<Sale[]>([]);
   const [currentSale, setCurrentSale] = useState<Sale | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [user, setUser] = useState<{ role: string } | null>(null);
 
   // Load existing orders from backend on component mount
   useEffect(() => {
     loadOrders();
+  }, []);
+
+  // Load user data for role-based permissions
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const userData = await getCurrentUser();
+        setUser(userData);
+      } catch (err) {
+        console.error('Failed to fetch user data:', err);
+        setUser(null);
+      }
+    };
+
+    fetchUser();
   }, []);
 
   const loadOrders = async () => {
@@ -194,11 +220,11 @@ export const SalesManagement: React.FC = () => {
   }
 
   return (
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto p-6 rounded-lg">
         <header className="mb-8">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-gray-800">Sales Management</h1>
+              <h1 className="text-3xl font-bold text-gray-800">{salesTitle}</h1>
               <p className="text-gray-600 mt-2">
                 Add, edit, and manage your sales entries
               </p>
@@ -215,17 +241,19 @@ export const SalesManagement: React.FC = () => {
               >
                 {isLoading ? 'Refreshing...' : 'Refresh'}
               </button>
-              <button
-                  onClick={exportSales}
-                  disabled={isExporting}
-                  className={`px-4 py-2 rounded-md text-white ${
-                      isExporting
-                          ? 'bg-gray-400 cursor-not-allowed'
-                          : 'bg-blue-600 hover:bg-blue-700'
-                  }`}
-              >
-                {isExporting ? 'Exporting...' : 'Export Sales'}
-              </button>
+              {user?.role === 'ADMIN' && (
+                <button
+                    onClick={exportSales}
+                    disabled={isExporting}
+                    className={`px-4 py-2 rounded-md text-white ${
+                        isExporting
+                            ? 'bg-gray-400 cursor-not-allowed'
+                            : 'bg-blue-600 hover:bg-blue-700'
+                    }`}
+                >
+                  {isExporting ? 'Exporting...' : 'Export Sales'}
+                </button>
+              )}
             </div>
           </div>
         </header>

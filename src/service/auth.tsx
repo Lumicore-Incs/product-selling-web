@@ -12,6 +12,7 @@ interface RegisterPayload {
   telephone: string;
   userName: string;
   role: string;
+  productId?: number;
 }
 
 interface User {
