@@ -45,6 +45,7 @@ export const SalesManagement: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<{ role: string } | null>(null);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; type: 'success' | 'error' }>({ open: false, message: '', type: 'error' });
+  const [showExportPopup, setShowExportPopup] = useState(false);
 
   // Load existing orders from backend on component mount
   useEffect(() => {
@@ -230,6 +231,48 @@ export const SalesManagement: React.FC = () => {
           open={snackbar.open}
           onClose={() => setSnackbar(s => ({ ...s, open: false }))}
         />
+        {showExportPopup && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white p-6 rounded-lg shadow-lg relative">
+                <button
+                    onClick={() => setShowExportPopup(false)}
+                    className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+                >
+                  ✕
+                </button>
+                <h3 className="text-lg font-semibold mb-4">Export Sales</h3>
+                <div className="flex space-x-3">
+                  <button
+                      onClick={() => {
+                        setShowExportPopup(false);
+                        exportSales(); // Call your existing export function
+                      }}
+                      className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                  >
+                    Sugar End
+                  </button>
+                  <button
+                      onClick={() => {
+                        setShowExportPopup(false);
+                        exportSales(); // Call your existing export function
+                      }}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  >
+                    Vac
+                  </button>
+                  <button
+                      onClick={() => {
+                        setShowExportPopup(false);
+                        exportSales(); // Call your existing export function
+                      }}
+                      className="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700"
+                  >
+                    Others
+                  </button>
+                </div>
+              </div>
+            </div>
+        )}
         <header className="mb-8">
           <div className="flex justify-between items-center">
             <div>
@@ -251,17 +294,17 @@ export const SalesManagement: React.FC = () => {
                 {isLoading ? 'Refreshing...' : 'Refresh'}
               </button>
               {user?.role === 'ADMIN' && (
-                <button
-                    onClick={exportSales}
-                    disabled={isExporting}
-                    className={`px-4 py-2 rounded-md text-white ${
-                        isExporting
-                            ? 'bg-gray-400 cursor-not-allowed'
-                            : 'bg-blue-600 hover:bg-blue-700'
-                    }`}
-                >
-                  {isExporting ? 'Exporting...' : 'Export Sales'}
-                </button>
+                  <button
+                      onClick={() => setShowExportPopup(true)}
+                      disabled={isExporting}
+                      className={`px-4 py-2 rounded-md text-white ${
+                          isExporting
+                              ? 'bg-gray-400 cursor-not-allowed'
+                              : 'bg-blue-600 hover:bg-blue-700'
+                      }`}
+                  >
+                    {isExporting ? 'Exporting...' : 'Export Sales'}
+                  </button>
               )}
             </div>
           </div>
