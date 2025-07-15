@@ -13,7 +13,7 @@ const getNavItems = (userRole: string) => {
     },
     {
       icon: ScaleIcon,
-      label: "Sales Management",
+      label: "Add New Order",
       to: "/sale",
     },
     {

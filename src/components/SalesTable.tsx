@@ -53,8 +53,16 @@ export const SalesTable: React.FC<SalesTableProps> = ({
   };
 
   // Pagination logic
-  const totalPages = Math.ceil(sales.length / rowsPerPage);
-  const paginatedSales = sales.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+  const sortedSales = [...sales].sort((a, b) => {
+    // Try to sort by id as number if possible, otherwise as string
+    const aId = isNaN(Number(a.id)) ? a.id : Number(a.id);
+    const bId = isNaN(Number(b.id)) ? b.id : Number(b.id);
+    if (aId < bId) return 1;
+    if (aId > bId) return -1;
+    return 0;
+  });
+  const totalPages = Math.ceil(sortedSales.length / rowsPerPage);
+  const paginatedSales = sortedSales.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
   const handlePrev = () => setCurrentPage((p) => Math.max(1, p - 1));
   const handleNext = () => setCurrentPage((p) => Math.min(totalPages, p + 1));
 

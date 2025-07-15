@@ -3,6 +3,7 @@ import { Header } from '../components/product/Header';
 import { ProductTable } from '../components/product/ProductTable';
 import { ProductModal } from '../components/product/ProductModal';
 import { productApi, ProductDto, authUtils } from '../services/api';
+import { AlertSnackbar } from '../components/AlertSnackbar';
 
 // Updated Product type to match backend
 export type Product = {
@@ -20,6 +21,7 @@ export const ProductManagement = () => {
   const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; type: 'success' | 'error' }>({ open: false, message: '', type: 'error' });
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 5;
@@ -69,11 +71,13 @@ export const ProductManagement = () => {
     } catch (error: any) {
       console.error('Failed to load products:', error);
       setError('Failed to load products. Please check your connection and authentication.');
+      setSnackbar({ open: true, message: 'Failed to load products. Please check your connection and authentication.', type: 'error' });
 
       // If unauthorized, you might want to redirect to login
       if (error.response?.status === 401) {
         authUtils.removeToken();
         setError('Authentication expired. Please log in again.');
+        setSnackbar({ open: true, message: 'Authentication expired. Please log in again.', type: 'error' });
       }
     } finally {
       setLoading(false);
@@ -106,6 +110,7 @@ export const ProductManagement = () => {
     } catch (error: any) {
       console.error('Failed to add product:', error);
       setError('Failed to add product. Please try again.');
+      setSnackbar({ open: true, message: 'Failed to add product. Please try again.', type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -141,6 +146,7 @@ export const ProductManagement = () => {
     } catch (error: any) {
       console.error('Failed to update product:', error);
       setError('Failed to update product. Please try again.');
+      setSnackbar({ open: true, message: 'Failed to update product. Please try again.', type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -161,6 +167,7 @@ export const ProductManagement = () => {
       } catch (error: any) {
         console.error('Failed to delete product:', error);
         setError('Failed to delete product. Please try again.');
+        setSnackbar({ open: true, message: 'Failed to delete product. Please try again.', type: 'error' });
       } finally {
         setLoading(false);
       }
@@ -186,6 +193,12 @@ export const ProductManagement = () => {
 
   return (
       <div className="min-h-screen bg-gray-50">
+        <AlertSnackbar
+          message={snackbar.message}
+          type={snackbar.type}
+          open={snackbar.open}
+          onClose={() => setSnackbar(s => ({ ...s, open: false }))}
+        />
         <Header
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
@@ -197,15 +210,7 @@ export const ProductManagement = () => {
         <main className="container mx-auto px-4 py-8">
           {/* Error Message */}
           {error && (
-              <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-                {error}
-                <button
-                    onClick={() => setError(null)}
-                    className="ml-2 text-red-900 hover:text-red-700"
-                >
-                  ×
-                </button>
-              </div>
+              <></>
           )}
 
           {/* Loading State */}

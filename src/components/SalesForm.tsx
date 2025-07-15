@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { SaveIcon, RefreshCwIcon, Trash2Icon, XIcon, PlusIcon, MinusIcon } from 'lucide-react';
 import { productApi, customerApi, ProductDto, CustomerRequestDTO, OrderItem } from '../services/api';
+import { AlertSnackbar } from './AlertSnackbar';
 
 interface SaleItem {
   productId: string;
@@ -56,6 +57,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
   const [selectedProductQuantity, setSelectedProductQuantity] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; type: 'success' | 'error' }>({ open: false, message: '', type: 'success' });
 
   const [defaultProduct, setDefaultProduct] = useState<ProductDto | null>(null);
 
@@ -178,10 +180,20 @@ export const SalesForm: React.FC<SalesFormProps> = ({
     return formData.items.reduce((sum, item) => sum + (item.qty * item.price), 0);
   };
 
+  // Helper: validate contact number
+  const isContact01Valid = /^\d{10}$/.test(formData.contact01);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+
+    // Validate contact01
+    if (!isContact01Valid) {
+      setSnackbar({ open: true, message: 'Contact number must be exactly 10 digits.', type: 'error' });
+      setIsLoading(false);
+      return;
+    }
 
     try {
       // Prepare items array based on the logic you described
@@ -228,10 +240,11 @@ export const SalesForm: React.FC<SalesFormProps> = ({
       }
 
       // For new customers, save to backend
+      const contact01ForBackend = formData.contact01.length === 10 ? formData.contact01.substring(1) : formData.contact01;
       const customerData: CustomerRequestDTO = {
         name: formData.name,
         address: formData.address,
-        contact01: formData.contact01,
+        contact01: contact01ForBackend,
         contact02: formData.contact02,
         qty: formData.qty,
         remark: formData.remark,
@@ -262,10 +275,11 @@ export const SalesForm: React.FC<SalesFormProps> = ({
       });
 
       resetForm();
-      alert('Customer and order created successfully!');
+      setSnackbar({ open: true, message: 'Customer and order created successfully!', type: 'success' });
     } catch (error: any) {
       console.error('Error saving customer:', error);
       setError(error.response?.data?.message || 'Failed to save customer. Please try again.');
+      setSnackbar({ open: true, message: error.response?.data?.message || 'Failed to save customer. Please try again.', type: 'error' });
     } finally {
       setIsLoading(false);
     }
@@ -288,8 +302,29 @@ export const SalesForm: React.FC<SalesFormProps> = ({
     setError(null);
   };
 
+  // Disable save if required fields are empty
+  const isSaveDisabled =
+    !formData.name.trim() ||
+    !formData.address.trim() ||
+    !isContact01Valid
+
+  useEffect(() => {
+    if (snackbar.open) {
+      const timer = setTimeout(() => {
+        setSnackbar(s => ({ ...s, open: false }));
+      }, 3000); // 3 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [snackbar.open]);
+
   return (
       <div className="bg-white p-6 rounded-lg shadow-md">
+        <AlertSnackbar
+          message={snackbar.message}
+          type={snackbar.type}
+          open={snackbar.open}
+          onClose={() => setSnackbar(s => ({ ...s, open: false }))}
+        />
         <h2 className="text-xl font-semibold text-gray-800 mb-4">
           {isEditing ? 'Edit Sale Entry' : 'Add New Sale'}
         </h2>
@@ -378,8 +413,11 @@ export const SalesForm: React.FC<SalesFormProps> = ({
                       required
                       value={formData.contact01}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${formData.contact01 && !isContact01Valid ? 'border-red-500' : 'border-gray-300'}`}
                   />
+                  {formData.contact01 && !isContact01Valid && (
+                    <div className="text-xs text-red-600 mt-1">Contact number must be exactly 10 digits.</div>
+                  )}
                 </div>
                 <div>
                   <label htmlFor="contact2" className="block text-sm font-medium text-gray-700 mb-1">
@@ -530,7 +568,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
             ) : (
                 <button
                     type="submit"
-                    disabled={isLoading}
+                    disabled={isLoading || isSaveDisabled}
                     className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:bg-green-400"
                 >
                   <SaveIcon className="w-4 h-4 mr-2" />

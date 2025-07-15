@@ -5,6 +5,7 @@ import { SalesTable } from '../components/SalesTable';
 import { customerApi, orderApi, CustomerDtoGet, OrderDtoGet } from '../services/api';
 import { dashboardApi } from '../services/api';
 import { getCurrentUser } from '../service/auth';
+import { AlertSnackbar } from '../components/AlertSnackbar';
 
 interface SaleItem {
   productId: string;
@@ -43,6 +44,7 @@ export const SalesManagement: React.FC = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<{ role: string } | null>(null);
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; type: 'success' | 'error' }>({ open: false, message: '', type: 'error' });
 
   // Load existing orders from backend on component mount
   useEffect(() => {
@@ -144,6 +146,7 @@ export const SalesManagement: React.FC = () => {
       }
 
       setError(errorMessage);
+      setSnackbar({ open: true, message: errorMessage, type: 'error' });
       setSales([]);
     } finally {
       setIsLoading(false);
@@ -221,6 +224,12 @@ export const SalesManagement: React.FC = () => {
 
   return (
       <div className="max-w-7xl mx-auto p-6 rounded-lg">
+        <AlertSnackbar
+          message={snackbar.message}
+          type={snackbar.type}
+          open={snackbar.open}
+          onClose={() => setSnackbar(s => ({ ...s, open: false }))}
+        />
         <header className="mb-8">
           <div className="flex justify-between items-center">
             <div>
@@ -259,17 +268,7 @@ export const SalesManagement: React.FC = () => {
         </header>
 
         {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
-              <div className="flex justify-between items-center">
-                <span>{error}</span>
-                <button
-                    onClick={() => setError(null)}
-                    className="text-red-700 hover:text-red-900 font-bold"
-                >
-                  ×
-                </button>
-              </div>
-            </div>
+            <></>
         )}
 
         <div className="space-y-8">

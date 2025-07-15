@@ -13,7 +13,7 @@ export const DashboardLayout = () => {
 
   // Load saved settings on component mount
   useEffect(() => {
-    const savedTitle = localStorage.getItem('salesTitle') || 'Sales Management';
+    const savedTitle = localStorage.getItem('salesTitle') || 'Add New Order';
     const savedColor = localStorage.getItem('appBackgroundColor') || '#ffffff';
     setSalesTitle(savedTitle);
     setSalesBackgroundColor(savedColor);

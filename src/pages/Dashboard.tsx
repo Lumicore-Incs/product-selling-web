@@ -6,6 +6,7 @@ import { getOrders, getAllCustomerOrders, Order } from '../service/order';
 import { getCurrentUser } from '../service/auth';
 import { getAllProducts } from '../service/product'; // Add this import
 import { log } from 'console';
+import { AlertSnackbar } from '../components/AlertSnackbar';
 
 type StatCardProps = {
   icon: React.ComponentType<any>;
@@ -50,6 +51,7 @@ export const Dashboard = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; type: 'success' | 'error' }>({ open: false, message: '', type: 'error' });
 
   const [sales, setSales] = useState<Sale[]>([]);
   const [salesLoading, setSalesLoading] = useState(true);
@@ -156,7 +158,9 @@ export const Dashboard = () => {
       } catch (err) {
         console.error('Failed to fetch dashboard data:', err);
         setError('Failed to load dashboard statistics');
+        setSnackbar({ open: true, message: 'Failed to load dashboard statistics', type: 'error' });
         setSalesError('Failed to load recent sales');
+        setSnackbar({ open: true, message: 'Failed to load recent sales', type: 'error' });
       } finally {
         setLoading(false);
         setSalesLoading(false);
@@ -192,6 +196,12 @@ export const Dashboard = () => {
 
   return (
       <div className="space-y-6 overflow-x-hidden">
+        <AlertSnackbar
+          message={snackbar.message}
+          type={snackbar.type}
+          open={snackbar.open}
+          onClose={() => setSnackbar(s => ({ ...s, open: false }))}
+        />
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold text-gray-800">Dashboard Overview</h1>
           {!userLoading && user && user.role.toLowerCase() === 'admin' && (
@@ -243,9 +253,7 @@ export const Dashboard = () => {
         </div>
 
         {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
-              <span className="block sm:inline">{error}</span>
-            </div>
+            <></>
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
