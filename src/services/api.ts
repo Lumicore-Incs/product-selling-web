@@ -45,7 +45,7 @@ export interface ProductDto {
     productId?: number;
     name: string;
     price: number;
-    status?: 'active' | 'inactive';
+    status?: 'active' | 'inactive' | 'remove';
 }
 
 export interface OrderItem {
@@ -335,10 +335,14 @@ export const userApi = {
  * Returns a Blob (Excel file)
  */
 export const dashboardApi = {
-  exportSalesExcel: async (): Promise<Blob> => {
+  exportSalesExcel: async (endpoint: string): Promise<Blob> => {
     try {
-      const response = await api.get('/dashboard/excel', {
-        responseType: 'blob', // Important for binary file
+      const response = await api.get(endpoint, {
+        responseType: 'blob', 
+         headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
       });
       return response.data;
     } catch (error) {
@@ -346,4 +350,4 @@ export const dashboardApi = {
       throw error;
     }
   },
-};
+}

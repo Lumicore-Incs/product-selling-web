@@ -180,17 +180,31 @@ export const SalesForm: React.FC<SalesFormProps> = ({
     return formData.items.reduce((sum, item) => sum + (item.qty * item.price), 0);
   };
 
-  // Helper: validate contact number
-  const isContact01Valid = /^\d{10}$/.test(formData.contact01);
+  // Helper: validate contact numbers
+  const isContact01Valid = formData.contact01 === '' || /^\d{9}$/.test(formData.contact01);
+  const isContact02Valid = formData.contact02 === '' || /^\d{9}$/.test(formData.contact02);
+  const hasAtLeastOneContact = formData.contact01 !== '' || formData.contact02 !== '';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
 
-    // Validate contact01
+    // Validate contact numbers
     if (!isContact01Valid) {
-      setSnackbar({ open: true, message: 'Contact number must be exactly 10 digits.', type: 'error' });
+      setSnackbar({ open: true, message: 'Whatsapp number must be exactly 9 digits if provided.', type: 'error' });
+      setIsLoading(false);
+      return;
+    }
+
+    if (!isContact02Valid) {
+      setSnackbar({ open: true, message: 'Contact number must be exactly 9 digits if provided.', type: 'error' });
+      setIsLoading(false);
+      return;
+    }
+
+    if (!hasAtLeastOneContact) {
+      setSnackbar({ open: true, message: 'At least one contact number (Whatsapp or Contact) is required.', type: 'error' });
       setIsLoading(false);
       return;
     }
@@ -241,11 +255,13 @@ export const SalesForm: React.FC<SalesFormProps> = ({
 
       // For new customers, save to backend
       const contact01ForBackend = formData.contact01.length === 10 ? formData.contact01.substring(1) : formData.contact01;
+      const contact02ForBackend = formData.contact02.length === 10 ? formData.contact02.substring(1) : formData.contact02;
+      
       const customerData: CustomerRequestDTO = {
         name: formData.name,
         address: formData.address,
         contact01: contact01ForBackend,
-        contact02: formData.contact02,
+        contact02: contact02ForBackend,
         qty: formData.qty,
         remark: formData.remark,
         totalPrice: totalAmount,
@@ -306,7 +322,9 @@ export const SalesForm: React.FC<SalesFormProps> = ({
   const isSaveDisabled =
     !formData.name.trim() ||
     !formData.address.trim() ||
-    !isContact01Valid
+    !hasAtLeastOneContact ||
+    !isContact01Valid ||
+    !isContact02Valid;
 
   useEffect(() => {
     if (snackbar.open) {
@@ -410,13 +428,13 @@ export const SalesForm: React.FC<SalesFormProps> = ({
                       id="contact01"
                       name="contact01"
                       type="text"
-                      required
                       value={formData.contact01}
                       onChange={handleChange}
                       className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${formData.contact01 && !isContact01Valid ? 'border-red-500' : 'border-gray-300'}`}
+                      placeholder="Optional (9 digits)"
                   />
                   {formData.contact01 && !isContact01Valid && (
-                    <div className="text-xs text-red-600 mt-1">Contact number must be exactly 10 digits.</div>
+                    <div className="text-xs text-red-600 mt-1">Whatsapp number must be exactly 9 digits.</div>
                   )}
                 </div>
                 <div>
@@ -429,8 +447,15 @@ export const SalesForm: React.FC<SalesFormProps> = ({
                       type="text"
                       value={formData.contact02}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${formData.contact02 && !isContact02Valid ? 'border-red-500' : 'border-gray-300'}`}
+                      placeholder="Optional (9 digits)"
                   />
+                  {formData.contact02 && !isContact02Valid && (
+                    <div className="text-xs text-red-600 mt-1">Contact number must be exactly 9 digits.</div>
+                  )}
+                  {!hasAtLeastOneContact && (
+                    <div className="text-xs text-red-600 mt-1">At least one contact number is required.</div>
+                  )}
                 </div>
                 <div>
                   <label htmlFor="remark" className="block text-sm font-medium text-gray-700 mb-1">

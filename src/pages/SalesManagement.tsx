@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { SalesForm } from '../components/SalesForm';
 import { SalesTable } from '../components/SalesTable';
-import { customerApi, orderApi, CustomerDtoGet, OrderDtoGet } from '../services/api';
-import { dashboardApi } from '../services/api';
+import { dashboardApi, orderApi, CustomerDtoGet } from '../services/api';
 import { getCurrentUser } from '../service/auth';
 import { AlertSnackbar } from '../components/AlertSnackbar';
 
@@ -190,24 +189,41 @@ export const SalesManagement: React.FC = () => {
     setIsEditing(true);
   };
 
-  const exportSales = async () => {
-    setIsExporting(true);
-    setError(null);
-    try {
-      // Call the API to get the Excel file as a blob
-      const blob = await dashboardApi.exportSalesExcel();
-      // Create a URL for the blob
-      const url = window.URL.createObjectURL(blob);
-      // Open in a new tab
-      window.open(url, '_blank');
-      // Optionally, revoke the object URL after some time
-      setTimeout(() => window.URL.revokeObjectURL(url), 10000);
-    } catch (error: any) {
-      setError('Failed to export sales. ' + (error?.message || ''));
-    } finally {
-      setIsExporting(false);
+const exportSales = async (exportType: string) => {
+  setIsExporting(true);
+  setError(null);
+  try {
+    let endpoint = '';
+    switch (exportType) {
+      case 'sugar':
+        endpoint = '/dashboard/excel/sug';
+        break;
+      case 'vac':
+        endpoint = '/dashboard/excel/vac';
+        break;
+      case 'others':
+        endpoint = '/dashboard/excel/others';
+        break;
+      default:
+        endpoint = '/dashboard/excel/sug';
     }
-  };
+
+    // Call the API with the specific endpoint
+    const blob = await dashboardApi.exportSalesExcel(endpoint);
+    const url = window.URL.createObjectURL(blob);
+    window.open(url, '_blank');
+    setTimeout(() => window.URL.revokeObjectURL(url), 10000);
+    
+    setSnackbar({ open: true, message: `Exported ${exportType} data successfully`, type: 'success' });
+  } catch (error: any) {
+    const errorMessage = `Failed to export ${exportType} data. ${error?.message || ''}`;
+    setError(errorMessage);
+    setSnackbar({ open: true, message: errorMessage, type: 'error' });
+  } finally {
+    setIsExporting(false);
+    setShowExportPopup(false);
+  }
+};
 
   const refreshData = () => {
     loadOrders();
@@ -240,30 +256,30 @@ export const SalesManagement: React.FC = () => {
                 >
                   ✕
                 </button>
-                <h3 className="text-lg font-semibold mb-4">Export Sales</h3>
+                <h3 className="text-lg font-semibold mb-4">Export Item</h3>
                 <div className="flex space-x-3">
                   <button
                       onClick={() => {
                         setShowExportPopup(false);
-                        exportSales(); // Call your existing export function
+                        exportSales('sugar'); // Call your existing export function
                       }}
-                      className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                      className="px-4 py-2 bg-pink-500 text-white rounded-md hover:bg-green-700"
                   >
                     Sugar End
                   </button>
                   <button
                       onClick={() => {
                         setShowExportPopup(false);
-                        exportSales(); // Call your existing export function
+                        exportSales('vac'); // Call your existing export function
                       }}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                      className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-blue-700"
                   >
                     Vac
                   </button>
                   <button
                       onClick={() => {
                         setShowExportPopup(false);
-                        exportSales(); // Call your existing export function
+                        exportSales('others'); // Call your existing export function
                       }}
                       className="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700"
                   >
