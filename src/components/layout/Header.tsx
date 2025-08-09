@@ -1,11 +1,33 @@
-import React from 'react';
-import { SearchIcon, BellIcon, MenuIcon } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { SearchIcon, BellIcon, MenuIcon, User2Icon } from 'lucide-react';
+import { getCurrentUser } from '../../service/auth';
+
 interface HeaderProps {
   onMenuClick: () => void;
 }
+
 export const Header: React.FC<HeaderProps> = ({
   onMenuClick
 }) => {
+  const [user, setUser] = useState<{ name: string } | null>(null);
+  const [userLoading, setUserLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const userData = await getCurrentUser();
+        setUser(userData);
+      } catch (err) {
+        console.error('Failed to fetch user data:', err);
+        setUser(null);
+      } finally {
+        setUserLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
   return <header className="bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg border-b border-gray-200">
       <div className="flex items-center justify-between px-6 py-4">
         <div className="flex items-center space-x-4">
@@ -24,9 +46,11 @@ export const Header: React.FC<HeaderProps> = ({
             <BellIcon size={20} className="text-gray-600" />
           </button>
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500" />
+             <button className="flex justify-center items-center w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500">
+            <User2Icon size={20} className="text-gray-600" />
+          </button>
             <div className="hidden sm:block text-sm font-medium text-gray-700">
-              Admin User
+              {userLoading ? 'Loading...' : user ? user.name : 'User'}
             </div>
           </div>
         </div>

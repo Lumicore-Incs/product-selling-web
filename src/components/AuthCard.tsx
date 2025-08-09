@@ -1,13 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { InputField } from './InputField';
 import { Button } from './Button';
 import { ToggleSwitch } from './ToggleSwitch';
-import { UserIcon, LockIcon, MailIcon, PhoneIcon, HomeIcon, CreditCardIcon } from 'lucide-react';
+import { UserIcon, LockIcon, MailIcon, PhoneIcon, ArrowLeftIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { login, register } from '../service/auth';
+import { AlertSnackbar } from './AlertSnackbar';
 
 export const AuthCard = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [error, setError] = useState('');
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertType, setAlertType] = useState<'success' | 'error'>('error');
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -18,74 +23,207 @@ export const AuthCard = () => {
     telephone: '',
   });
 
-  const handleSubmit = async (e) => {
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
+
+  const [products, setProducts] = useState<{ productId: number; name: string }[]>([]);
+  const [selectedProductId, setSelectedProductId] = useState<number | undefined>(undefined);
+
+  useEffect(() => {
+    if (!isLogin && !isForgotPassword) {
+      fetch('http://localhost:8081/products')
+        .then((res) => res.json())
+        .then((data) => {
+          if (Array.isArray(data)) {
+            setProducts(data);
+            if (data.length > 0) setSelectedProductId(data[0].productId);
+          }
+        })
+        .catch((err) => console.error('Failed to load products:', err));
+    }
+  }, [isLogin, isForgotPassword]);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
 
     // Validation checks
-    if (!isLogin) {
+    if (!isLogin && !isForgotPassword) {
       if (formData.password !== formData.confirmPassword) {
-        setError('Passwords do not match');
+        setError('Passwords do not match!');
+        setAlertType('error');
+        setAlertOpen(true);
         return;
       }
       if (!formData.telephone) {
         setError('All fields are required');
+        setAlertType('error');
+        setAlertOpen(true);
         return;
       }
     }
 
-    const BASE_URL = 'http://ec2-13-203-77-193.ap-south-1.compute.amazonaws.com:8080';
+    if (isForgotPassword) {
+      // Handle forgot password
+      try {
+        if (!forgotPasswordEmail) {
+          setError('Please enter your email address');
+          setAlertType('error');
+          setAlertOpen(true);
+          return;
+        }
+
+        // Call the forgot password API endpoint
+        const response = await fetch(`http://localhost:8081/user/send?email=${encodeURIComponent(forgotPasswordEmail)}`, {
+          method: 'POST',
+        });
+
+        if (response.ok) {
+          setError('Password reset instructions have been sent to your email address.');
+          setAlertType('success');
+          setAlertOpen(true);
+          
+          // Reset and go back to login
+          setForgotPasswordEmail('');
+          setIsForgotPassword(false);
+        } else {
+          const errorData = await response.json().catch(() => ({}));
+          setError(errorData.message || 'Failed to send reset email. Please try again.');
+          setAlertType('error');
+          setAlertOpen(true);
+        }
+        return;
+      } catch (error: any) {
+        console.error('Forgot password error:', error);
+        setError('Failed to send reset email. Please check your connection and try again.');
+        setAlertType('error');
+        setAlertOpen(true);
+        return;
+      }
+    }
+
     const url = isLogin
-        ? `${BASE_URL}/user/login`
-        : `${BASE_URL}/user/register`;
+        ? '/user/login'
+        : '/user/register';
 
     try {
-      const payload = isLogin
-          ? { email: formData.email, password: formData.password }
-          : {
-            name: formData.name,
-            email: formData.email,
-            password: formData.password,
-            telephone: formData.telephone,
-            userName: formData.email.split('@')[0], // Generate username from email
-            role: 'USER' // Correct role value from Postman
-          };
-
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        if (isLogin) {
-          localStorage.setItem('token', data.token);
-          navigate('/dashboard');
-        } else {
-          alert('Registered successfully. Please log in.');
-          setIsLogin(true);
-          // Reset form
-          setFormData({
-            name: '',
-            email: '',
-            password: '',
-            confirmPassword: '',
-            telephone: '',
-          });
-        }
+      let data;
+      if (isLogin) {
+        data = await login({ email: formData.email, password: formData.password });
       } else {
-        setError(data.message || 'Something went wrong');
+        data = await register({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          telephone: formData.telephone,
+          userName: formData.email.split('@')[0],
+          role: 'USER',
+          productId: selectedProductId,
+        });
       }
-    } catch (error) {
+
+      if (isLogin) {
+        const token = (data as { token: string }).token;
+        localStorage.setItem('token', token);
+
+        // Fetch user info to get product ID
+        try {
+          const response = await fetch('http://localhost:8081/user/get_user_info_by_token', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (response.ok) {
+            const userInfo = await response.json();
+            if (userInfo.productId) {
+              localStorage.setItem('productId', userInfo.productId);
+            }
+          }
+        } catch (error) {
+          console.error('Failed to fetch user info:', error);
+        }
+
+        navigate('/dashboard');
+      } else {
+        setError('Registered successfully. Please log in.');
+        setAlertType('success');
+        setAlertOpen(true);
+        setIsLogin(true);
+        // Reset form
+        setFormData({
+          name: '',
+          email: '',
+          password: '',
+          confirmPassword: '',
+          telephone: '',
+        });
+      }
+    } catch (error: any) {
       console.error('API Error:', error);
-      setError('Server is unavailable. Please try again later.');
+      setError('Wrong UserName Or Password..!');
+      setAlertType('error');
+      setAlertOpen(true);
     }
   };
 
+  const handleBackToLogin = () => {
+    setIsForgotPassword(false);
+    setForgotPasswordEmail('');
+    setError('');
+  };
+
+  const handleForgotPassword = () => {
+    setIsForgotPassword(true);
+    setError('');
+  };
+
+  // Forgot Password Form
+  if (isForgotPassword) {
+    return (
+      <div className="w-full max-w-md transition-all duration-500 ease-in-out">
+        <AlertSnackbar message={error} type={alertType} open={alertOpen} onClose={() => setAlertOpen(false)} />
+        <div className="bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-2xl shadow-lg p-8 transition-all duration-500">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-800">Forgot Password</h1>
+            <p className="text-gray-600 mt-2">
+              Enter your email address to receive password reset instructions
+            </p>
+          </div>
+
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            <InputField
+              id="forgotEmail"
+              type="email"
+              label="Email Address"
+              icon={<MailIcon size={18} className="text-gray-400" />}
+              value={forgotPasswordEmail}
+              onChange={(e) => setForgotPasswordEmail(e.target.value)}
+            />
+
+            <Button type="submit">
+              Send Reset Instructions
+            </Button>
+          </form>
+
+          <div className="mt-6 text-center">
+            <button
+              onClick={handleBackToLogin}
+              className="flex items-center justify-center w-full text-sm text-gray-600 hover:text-gray-800 transition-colors"
+            >
+              <ArrowLeftIcon size={16} className="mr-2" />
+              Back to Sign In
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
       <div className="w-full max-w-md transition-all duration-500 ease-in-out">
+        <AlertSnackbar message={error} type={alertType} open={alertOpen} onClose={() => setAlertOpen(false)} />
         <div className="bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-2xl shadow-lg p-8 transition-all duration-500">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-800">
@@ -98,12 +236,6 @@ export const AuthCard = () => {
             </p>
           </div>
 
-          {error && (
-              <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">
-                {error}
-              </div>
-          )}
-
           <form className="space-y-4" onSubmit={handleSubmit}>
             {!isLogin && (
                 <>
@@ -114,7 +246,6 @@ export const AuthCard = () => {
                       icon={<UserIcon size={18} className="text-gray-400" />}
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      required
                   />
 
                   <InputField
@@ -124,10 +255,22 @@ export const AuthCard = () => {
                       icon={<PhoneIcon size={18} className="text-gray-400" />}
                       value={formData.telephone}
                       onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
-                      pattern="[0-9]{10}"
-                      title="10-digit phone number"
-                      required
                   />
+
+                  <div>
+                    <label htmlFor="product" className="block text-sm font-medium text-gray-700 mb-1">Product</label>
+                    <select
+                      id="product"
+                      className="mb-1 block w-full border-gray-300 rounded-md backdrop-filter backdrop-blur-lg rounded-2xl shadow-lg p-1 transition-all duration-500"
+                      value={selectedProductId || ''}
+                      onChange={e => setSelectedProductId(Number(e.target.value))}
+                      required
+                    >
+                      {products.map(product => (
+                        <option key={product.productId} value={product.productId}>{product.name}</option>
+                      ))}
+                    </select>
+                  </div>
                 </>
             )}
 
@@ -138,7 +281,6 @@ export const AuthCard = () => {
                 icon={<MailIcon size={18} className="text-gray-400" />}
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                required
             />
 
             <InputField
@@ -148,8 +290,6 @@ export const AuthCard = () => {
                 icon={<LockIcon size={18} className="text-gray-400" />}
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                required
-                minLength={6}
             />
 
             {!isLogin && (
@@ -160,14 +300,24 @@ export const AuthCard = () => {
                     icon={<LockIcon size={18} className="text-gray-400" />}
                     value={formData.confirmPassword}
                     onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                    required
                 />
             )}
 
-            <Button type="submit" className="w-full">
-              {isLogin ? 'Sign In' : 'Create Account'}
+            <Button type="submit">
+              {isLogin ? 'Sign In' : 'Sign Up'}
             </Button>
           </form>
+
+          {isLogin && (
+            <div className="mt-4 text-center">
+              <button
+                onClick={handleForgotPassword}
+                className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
+              >
+                Forgot Password?
+              </button>
+            </div>
+          )}
 
           <div className="mt-8 text-center">
             <div className="text-sm text-gray-600 mb-4">
