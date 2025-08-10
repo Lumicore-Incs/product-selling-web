@@ -1,6 +1,5 @@
-import React from 'react';
-import { Edit2Icon, TrashIcon } from 'lucide-react';
-import { Product } from '../../App';
+import { Edit2Icon, TrashIcon } from "lucide-react";
+import { Product } from "../../App";
 interface ProductTableProps {
   products: Product[];
   onEdit: (product: Product) => void;
@@ -9,12 +8,16 @@ interface ProductTableProps {
 export function ProductTable({
   products,
   onEdit,
-  onDelete
+  onDelete,
 }: ProductTableProps) {
-  return <div className="bg-white rounded-lg shadow overflow-hidden">
-      {products.length === 0 ? <div className="p-8 text-center text-gray-500">
+  return (
+    <div className="bg-white rounded-lg shadow overflow-hidden">
+      {products.length === 0 ? (
+        <div className="p-8 text-center text-gray-500">
           No products found. Add a new product to get started.
-        </div> : <div className="overflow-x-auto">
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
@@ -36,7 +39,8 @@ export function ProductTable({
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {products.map(product => <tr key={product.productId} className="hover:bg-gray-50">
+              {products.map((product) => (
+                <tr key={product.productId} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {product.productId}
                   </td>
@@ -47,23 +51,42 @@ export function ProductTable({
                     Lkr {product.price.toFixed(2)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${product.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                    <span
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        product.status === "active"
+                          ? "bg-green-100 text-green-800"
+                          : product.status === "inactive"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
                       {product.status}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end gap-2">
-                      <button onClick={() => onEdit(product)} className="text-blue-600 hover:text-blue-900 p-1" aria-label="Edit product">
+                      <button
+                        onClick={() => onEdit(product)}
+                        className="text-blue-600 hover:text-blue-900 p-1"
+                        aria-label="Edit product"
+                      >
                         <Edit2Icon className="h-5 w-5" />
                       </button>
-                      <button onClick={() => onDelete(product.productId)} className="text-red-600 hover:text-red-900 p-1" aria-label="Delete product">
+                      <button
+                        onClick={() => onDelete(product.productId)}
+                        className="text-red-600 hover:text-red-900 p-1"
+                        aria-label="Delete product"
+                      >
                         <TrashIcon className="h-5 w-5" />
                       </button>
                     </div>
                   </td>
-                </tr>)}
+                </tr>
+              ))}
             </tbody>
           </table>
-        </div>}
-    </div>;
+        </div>
+      )}
+    </div>
+  );
 }
