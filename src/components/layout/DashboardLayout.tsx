@@ -47,7 +47,7 @@ export const DashboardLayout = () => {
         />
         <div className="flex-1 flex flex-col">
           <Header onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} />
-          <main className="flex-1 px-10 py-6 overflow-auto">
+          <main className="flex-1 py-6 overflow-auto">
             <div className="max-w-full">
               <Outlet context={{
                 salesTitle,

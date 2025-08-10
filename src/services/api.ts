@@ -194,6 +194,9 @@ export const customerApi = {
     createCustomer: async (customerData: CustomerRequestDTO): Promise<CustomerDtoGet> => {
         try {
             const response = await api.post<CustomerDtoGet>('/customer', customerData);
+            if (response.status === 207) {
+                throw new Error('DUPLICATE_CUSTOMER');
+            }
             return response.data;
         } catch (error) {
             console.error('Error creating customer:', error);
