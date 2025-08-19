@@ -46,16 +46,21 @@ export const AuthCard = () => {
 
   useEffect(() => {
     if (!isLogin && !isForgotPassword) {
-      setIsProductsLoading(true);
-      axios.get('/products')
-        .then((res) => {
+      const fetchProducts = async () => {
+        setIsProductsLoading(true);
+        try {
+          const res = await axios.get('/products');
           if (Array.isArray(res.data)) {
             setProducts(res.data);
             if (res.data.length > 0) setSelectedProductId(res.data[0].productId);
           }
-        })
-        .catch((err) => console.error('Failed to load products:', err))
-        .finally(() => setIsProductsLoading(false));
+        } catch (err) {
+          console.error('Failed to load products:', err);
+        } finally {
+          setIsProductsLoading(false);
+        }
+      };
+      fetchProducts();
     }
   }, [isLogin, isForgotPassword]);
 
@@ -135,10 +140,10 @@ export const AuthCard = () => {
           if (userInfo.productId) {
             localStorage.setItem('productId', userInfo.productId.toString());
           }
-          navigate('/dashboard');
+          navigate('/');
         } catch (error) {
           console.error('Failed to fetch user info:', error);
-          navigate('/dashboard');
+          navigate('/');
         }
       } else {
         setError('Registered successfully. Please log in.');
@@ -267,7 +272,7 @@ export const AuthCard = () => {
                   <label htmlFor="product" className="block text-sm font-medium text-gray-700 mb-1">Product</label>
                   <select
                     id="product"
-                    className="mb-1 block w-full border-gray-300 rounded-md backdrop-filter backdrop-blur-lg rounded-2xl shadow-lg p-1 transition-all duration-500"
+                    className="mb-1 block w-full border-gray-300 backdrop-filter backdrop-blur-lg rounded-2xl shadow-lg p-1 transition-all duration-500"
                     value={selectedProductId || ''}
                     onChange={e => setSelectedProductId(Number(e.target.value))}
                     required

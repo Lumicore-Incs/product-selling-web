@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import {
   HomeIcon,
   UsersIcon,
@@ -14,7 +14,7 @@ import { authUtils } from "../../services/api";
 
 const getNavItems = (userRole: string) => {
   const allNavItems = [
-    { icon: HomeIcon, label: "Dashboard", to: "/dashboard" },
+    { icon: HomeIcon, label: "Dashboard", to: "/" },
     { icon: ScaleIcon, label: "Add New Order", to: "/sale" },
     { icon: ProportionsIcon, label: "Product", to: "/product", adminOnly: true },
     { icon: UsersIcon, label: "Users", to: "/users", adminOnly: true },
@@ -40,7 +40,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const [user, setUser] = useState<{ role: string } | null>(null);
   const [userLoading, setUserLoading] = useState(true);
-  const location = useLocation();
+  
 
   useEffect(() => {
     const fetchUser = async () => {

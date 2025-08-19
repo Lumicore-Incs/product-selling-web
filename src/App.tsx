@@ -38,6 +38,14 @@ export function App() {
 
   if (loading) return <Loader />;
 
+  function ProtectedRoute({ children }: { children: JSX.Element }) {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      return <Navigate to="/auth" replace />;
+    }
+    return children;
+  }
+
   return (
     <BrowserRouter>
       <div className="w-full min-h-screen">
@@ -50,7 +58,7 @@ export function App() {
               </div>
             }
           />
-          <Route path="/" element={<DashboardLayout />}>
+          <Route path="/" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
             <Route index element={<Dashboard />} />
             <Route path="sale" element={<SalesManagement />} />
             <Route path="sale/settings" element={<SalesManagement />} />
@@ -59,6 +67,8 @@ export function App() {
             <Route path="stock" element={<StockManagement />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
+          {/* Backward compatibility: redirect old /dashboard path to root */}
+          <Route path="/dashboard" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
     </BrowserRouter>

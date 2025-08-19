@@ -240,7 +240,7 @@ const exportSales = async (exportType: string) => {
   }
 
   return (
-      <div className="max-w-7xl h-screen w-full md:ml-44 mx-auto p-6 rounded-lg">
+      <div className="max-w-7xl w-full mx-auto p-6 rounded-lg">
         <AlertSnackbar
           message={snackbar.message}
           type={snackbar.type}

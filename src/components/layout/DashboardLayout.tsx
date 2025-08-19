@@ -24,11 +24,11 @@ export const DashboardLayout = () => {
     }
   }, [location.pathname]);
 
-  const handleTitleChange = (title) => {
+  const handleTitleChange = (title: string) => {
     setSalesTitle(title);
   };
 
-  const handleBackgroundColorChange = (color) => {
+  const handleBackgroundColorChange = (color: string) => {
     setSalesBackgroundColor(color);
   };
 
@@ -52,8 +52,7 @@ export const DashboardLayout = () => {
 
       {/* Main Content Area */}
       <div
-        className={`flex-1 flex flex-col transition-all duration-300
-        ${isSidebarOpen ? 'md:ml-64' : 'md:ml-20'}`} // Adjust based on your sidebar width
+        className={`flex-1 flex flex-col transition-all duration-300 md:ml-64`}
       >
         <Header onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} />
         <main className="flex-1 py-6 overflow-auto">

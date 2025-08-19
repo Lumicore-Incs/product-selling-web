@@ -202,11 +202,11 @@ export const SalesForm: React.FC<SalesFormProps> = ({
     return formData.items.reduce((sum, item) => sum + item.qty * item.price, 0);
   };
 
-  // Helper: validate contact numbers
+  // Helper: validate contact numbers (now accepts 10 digits with leading 0)
   const isContact01Valid =
-    formData.contact01 === "" || /^\d{9}$/.test(formData.contact01);
+    formData.contact01 === "" || /^0\d{9}$/.test(formData.contact01);
   const isContact02Valid =
-    formData.contact02 === "" || /^\d{9}$/.test(formData.contact02);
+    formData.contact02 === "" || /^0\d{9}$/.test(formData.contact02);
   const hasAtLeastOneContact =
     formData.contact01 !== "" || formData.contact02 !== "";
 
@@ -219,7 +219,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
     if (!isContact01Valid) {
       setSnackbar({
         open: true,
-        message: "Whatsapp number must be exactly 9 digits if provided.",
+        message: "Whatsapp number must be exactly 10 digits starting with 0 if provided.",
         type: "error",
       });
       setIsLoading(false);
@@ -229,7 +229,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
     if (!isContact02Valid) {
       setSnackbar({
         open: true,
-        message: "Contact number must be exactly 9 digits if provided.",
+        message: "Contact number must be exactly 10 digits starting with 0 if provided.",
         type: "error",
       });
       setIsLoading(false);
@@ -296,14 +296,13 @@ export const SalesForm: React.FC<SalesFormProps> = ({
       }
 
       // For new customers, save to backend
-      const contact01ForBackend =
-        formData.contact01.length === 10
-          ? formData.contact01.substring(1)
-          : formData.contact01;
-      const contact02ForBackend =
-        formData.contact02.length === 10
-          ? formData.contact02.substring(1)
-          : formData.contact02;
+      // Remove leading 0 before sending to API (convert 10 digits to 9 digits)
+      const contact01ForBackend = formData.contact01.startsWith('0') 
+        ? formData.contact01.substring(1) 
+        : formData.contact01;
+      const contact02ForBackend = formData.contact02.startsWith('0')
+        ? formData.contact02.substring(1)
+        : formData.contact02;
 
       const customerData: CustomerRequestDTO = {
         name: formData.name,
@@ -495,11 +494,12 @@ export const SalesForm: React.FC<SalesFormProps> = ({
                       ? "border-red-500 bg-red-50"
                       : "border-gray-300"
                   }`}
-                  placeholder="9 digits (e.g., 771234567)"
+                  placeholder="10 digits with 0 (e.g., 0771234567)"
+                  maxLength={10}
                 />
                 {formData.contact01 && !isContact01Valid && (
                   <div className="text-xs text-red-600 mt-1">
-                    WhatsApp number must be exactly 9 digits.
+                    WhatsApp number must be exactly 10 digits starting with 0.
                   </div>
                 )}
               </div>
@@ -522,11 +522,12 @@ export const SalesForm: React.FC<SalesFormProps> = ({
                       ? "border-red-500 bg-red-50"
                       : "border-gray-300"
                   }`}
-                  placeholder="9 digits (e.g., 112345678)"
+                  placeholder="10 digits with 0 (e.g., 0112345678)"
+                  maxLength={10}
                 />
                 {formData.contact02 && !isContact02Valid && (
                   <div className="text-xs text-red-600 mt-1">
-                    Contact number must be exactly 9 digits.
+                    Contact number must be exactly 10 digits starting with 0.
                   </div>
                 )}
                 {!hasAtLeastOneContact && (
