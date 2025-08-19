@@ -20,7 +20,7 @@ const StatCard = ({
                     value,
                     trend
                   }: StatCardProps) => (
-    <div className="bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl p-6 shadow-sm">
+    <div className="bg-red-500 bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl p-6 mr-8 shadow-sm">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm text-gray-600">{label}</p>
@@ -282,15 +282,15 @@ export const Dashboard = () => {
           />
         </div>
 
-        <div className="bg-gray-200 bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl p-6 shadow-2xl">
+        <div  className="bg-gray-200 w-[85%] md:w-[100%] bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl p-6 shadow-2xl">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold text-gray-800">Recent Sales</h2>
+            <h2 className="text-xl font-semibold text-gray-800">Sales</h2>
             <div className="flex items-center space-x-4">
               <div className="relative">
                 <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="appearance-none bg-white border border-gray-300 rounded-md pl-3 pr-8 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="appearance-none bg-white border border-gray-300 rounded-md pl-3 pr-6 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   {statusOptions.map((option) => (
                       <option key={option.value} value={option.value}>
