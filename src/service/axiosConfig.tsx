@@ -2,7 +2,7 @@ import axios from "axios";
 
 const instance = axios.create({
   // baseURL: 'https://back.pearlyskyplc.com/api/',
-  baseURL: 'http://localhost:8081',
+  baseURL: 'http://168.231.102.248:8080/demo-0.0.1-SNAPSHOT',
   headers: {
     'Content-Type': 'application/json',
   },
