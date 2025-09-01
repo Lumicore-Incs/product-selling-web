@@ -2,7 +2,7 @@ import axios from "axios";
 
 const instance = axios.create({
   // baseURL: 'https://back.pearlyskyplc.com/api/',
-  baseURL: "https://server.weadits.com/api",
+  baseURL: "https://server.weadits.com",
   headers: {
     "Content-Type": "application/json",
   },

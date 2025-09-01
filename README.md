@@ -67,7 +67,7 @@ Below is a list of API endpoints called throughout the project, grouped by featu
 
 ## Notes
 
-- API base URL: `https://server.weadits.com/api`
+- API base URL: `https://server.weadits.com/`
 - Ensure backend server is running and accessible.
 
 ---
