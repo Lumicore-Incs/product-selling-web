@@ -1,32 +1,32 @@
 // src/services/authService.ts
-import axios from 'axios';
+import axios from "axios";
 
-const API_BASE_URL = 'http://168.231.102.248:8080/demo-0.0.1-SNAPSHOT';
+const API_BASE_URL = "http://localhost:8080/";
 
 export interface LoginRequest {
-    username: string;
-    password: string;
+  username: string;
+  password: string;
 }
 
 export interface LoginResponse {
-    token: string;
-    // Add other fields as per your backend response
+  token: string;
+  // Add other fields as per your backend response
 }
 
 export const authService = {
-    // Login function - adjust endpoint as per your backend
-    login: async (credentials: LoginRequest): Promise<LoginResponse> => {
-        try {
-            const response = await axios.post<LoginResponse>(`${API_BASE_URL}/auth/login`, credentials);
-            return response.data;
-        } catch (error) {
-            console.error('Login failed:', error);
-            throw error;
-        }
-    },
-
-    // Logout function
-    logout: () => {
-        localStorage.removeItem('authToken');
+  // Login function - adjust endpoint as per your backend
+  login: async (credentials: LoginRequest): Promise<LoginResponse> => {
+    try {
+      const response = await axios.post<LoginResponse>(`${API_BASE_URL}/auth/login`, credentials);
+      return response.data;
+    } catch (error) {
+      console.error("Login failed:", error);
+      throw error;
     }
+  },
+
+  // Logout function
+  logout: () => {
+    localStorage.removeItem("authToken");
+  },
 };

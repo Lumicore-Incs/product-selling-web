@@ -1,14 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { SearchIcon, BellIcon, MenuIcon, User2Icon } from 'lucide-react';
-import { getCurrentUser } from '../../service/auth';
+import { BellIcon, MenuIcon, SearchIcon, User2Icon } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { getCurrentUser } from '../../services/auth';
 
 interface HeaderProps {
   onMenuClick: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({
-  onMenuClick
-}) => {
+export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   const [user, setUser] = useState<{ name: string } | null>(null);
   const [userLoading, setUserLoading] = useState(true);
 
@@ -28,16 +26,27 @@ export const Header: React.FC<HeaderProps> = ({
     fetchUser();
   }, []);
 
-  return <header className="bg-white w-full bg-opacity-70 backdrop-filter backdrop-blur-lg border-b border-gray-200">
+  return (
+    <header className="bg-white w-full bg-opacity-70 backdrop-filter backdrop-blur-lg border-b border-gray-200">
       <div className="flex items-center justify-between px-6 py-4">
         <div className="flex items-center space-x-4">
-          <button onClick={onMenuClick} className="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors">
+          <button
+            onClick={onMenuClick}
+            className="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
             <MenuIcon size={24} className="text-gray-600" />
           </button>
           <div className="flex-1 max-w-md">
             <div className="relative">
-              <SearchIcon size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <input type="text" placeholder="Search..." className="w-full pl-10 pr-4 py-2 bg-white bg-opacity-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent" />
+              <SearchIcon
+                size={20}
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              />
+              <input
+                type="text"
+                placeholder="Search..."
+                className="w-full pl-10 pr-4 py-2 bg-white bg-opacity-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent"
+              />
             </div>
           </div>
         </div>
@@ -46,14 +55,15 @@ export const Header: React.FC<HeaderProps> = ({
             <BellIcon size={20} className="text-gray-600" />
           </button>
           <div className="flex items-center space-x-3">
-             <button className="flex justify-center items-center w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500">
-            <User2Icon size={20} className="text-gray-600" />
-          </button>
+            <button className="flex justify-center items-center w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500">
+              <User2Icon size={20} className="text-gray-600" />
+            </button>
             <div className="hidden sm:block text-sm font-medium text-gray-700">
               {userLoading ? 'Loading...' : user ? user.name : 'User'}
             </div>
           </div>
         </div>
       </div>
-    </header>;
+    </header>
+  );
 };

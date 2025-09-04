@@ -1,11 +1,11 @@
-import axios from './axiosConfig';
+import { api } from './api';
 
-interface LoginPayload {
+export interface LoginPayload {
   email: string;
   password: string;
 }
 
-interface RegisterPayload {
+export interface RegisterPayload {
   name: string;
   email: string;
   password: string;
@@ -15,7 +15,7 @@ interface RegisterPayload {
   productId?: number;
 }
 
-interface User {
+export interface User {
   id: number;
   name: string;
   email: string;
@@ -25,16 +25,16 @@ interface User {
 }
 
 export async function login(payload: LoginPayload) {
-  const response = await axios.post('/user/login', payload);
+  const response = await api.post('/user/login', payload);
   return response.data;
 }
 
 export async function register(payload: RegisterPayload) {
-  const response = await axios.post('/user/register', payload);
+  const response = await api.post('/user/register', payload);
   return response.data;
 }
 
 export async function getCurrentUser(): Promise<User> {
-  const response = await axios.post<User>('/user/get_user_info_by_token');
+  const response = await api.post<User>('/user/get_user_info_by_token');
   return response.data;
-} 
+}
