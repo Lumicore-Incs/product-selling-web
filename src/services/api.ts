@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 // Updated API base URL to match your existing system
-const API_BASE_URL = 'http://168.231.102.248:8080/demo-0.0.1-SNAPSHOT';
+const API_BASE_URL = 'https://api.weadits.com/demo-0.0.1-SNAPSHOT';
 
 // Create axios instance
 const api = axios.create({
