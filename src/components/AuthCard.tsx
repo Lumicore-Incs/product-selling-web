@@ -6,13 +6,29 @@ import { UserIcon, LockIcon, MailIcon, PhoneIcon, ArrowLeftIcon } from 'lucide-r
 import { useNavigate } from 'react-router-dom';
 import { login, register } from '../service/auth';
 import { AlertSnackbar } from './AlertSnackbar';
+import axios from '../service/axiosConfig';
+import { OtpVerification } from './OtpVerification';
+
+interface UserInfo {
+  productId?: number;
+  [key: string]: any;
+}
+
+interface Product {
+  productId: number;
+  name: string;
+}
 
 export const AuthCard = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [showOtpVerification, setShowOtpVerification] = useState(false);
   const [error, setError] = useState('');
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertType, setAlertType] = useState<'success' | 'error'>('error');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isProductsLoading, setIsProductsLoading] = useState(false);
+  const [isForgotPasswordLoading, setIsForgotPasswordLoading] = useState(false);
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -25,20 +41,26 @@ export const AuthCard = () => {
 
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
 
-  const [products, setProducts] = useState<{ productId: number; name: string }[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [selectedProductId, setSelectedProductId] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     if (!isLogin && !isForgotPassword) {
-      fetch('http://localhost:8081/products')
-        .then((res) => res.json())
-        .then((data) => {
-          if (Array.isArray(data)) {
-            setProducts(data);
-            if (data.length > 0) setSelectedProductId(data[0].productId);
+      const fetchProducts = async () => {
+        setIsProductsLoading(true);
+        try {
+          const res = await axios.get('/products');
+          if (Array.isArray(res.data)) {
+            setProducts(res.data);
+            if (res.data.length > 0) setSelectedProductId(res.data[0].productId);
           }
-        })
-        .catch((err) => console.error('Failed to load products:', err));
+        } catch (err) {
+          console.error('Failed to load products:', err);
+        } finally {
+          setIsProductsLoading(false);
+        }
+      };
+      fetchProducts();
     }
   }, [isLogin, isForgotPassword]);
 
@@ -63,7 +85,7 @@ export const AuthCard = () => {
     }
 
     if (isForgotPassword) {
-      // Handle forgot password
+      setIsForgotPasswordLoading(true);
       try {
         if (!forgotPasswordEmail) {
           setError('Please enter your email address');
@@ -72,39 +94,26 @@ export const AuthCard = () => {
           return;
         }
 
-        // Call the forgot password API endpoint
-        const response = await fetch(`http://localhost:8081/user/send?email=${encodeURIComponent(forgotPasswordEmail)}`, {
-          method: 'POST',
-        });
+        const response = await axios.post(`/user/send?email=${encodeURIComponent(forgotPasswordEmail)}`);
 
-        if (response.ok) {
+        if (response.status === 200) {
           setError('Password reset instructions have been sent to your email address.');
           setAlertType('success');
           setAlertOpen(true);
-          
-          // Reset and go back to login
-          setForgotPasswordEmail('');
-          setIsForgotPassword(false);
-        } else {
-          const errorData = await response.json().catch(() => ({}));
-          setError(errorData.message || 'Failed to send reset email. Please try again.');
-          setAlertType('error');
-          setAlertOpen(true);
+          setShowOtpVerification(true);
         }
-        return;
       } catch (error: any) {
         console.error('Forgot password error:', error);
-        setError('Failed to send reset email. Please check your connection and try again.');
+        setError(error.response?.data?.message || 'Failed to send reset email. Please try again.');
         setAlertType('error');
         setAlertOpen(true);
-        return;
+      } finally {
+        setIsForgotPasswordLoading(false);
       }
+      return;
     }
 
-    const url = isLogin
-        ? '/user/login'
-        : '/user/register';
-
+    setIsLoading(true);
     try {
       let data;
       if (isLogin) {
@@ -125,33 +134,22 @@ export const AuthCard = () => {
         const token = (data as { token: string }).token;
         localStorage.setItem('token', token);
 
-        // Fetch user info to get product ID
         try {
-          const response = await fetch('http://localhost:8081/user/get_user_info_by_token', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          });
-
-          if (response.ok) {
-            const userInfo = await response.json();
-            if (userInfo.productId) {
-              localStorage.setItem('productId', userInfo.productId);
-            }
+          const response = await axios.post('/user/get_user_info_by_token');
+          const userInfo = response.data as UserInfo;
+          if (userInfo.productId) {
+            localStorage.setItem('productId', userInfo.productId.toString());
           }
+          navigate('/');
         } catch (error) {
           console.error('Failed to fetch user info:', error);
+          navigate('/');
         }
-
-        navigate('/dashboard');
       } else {
         setError('Registered successfully. Please log in.');
         setAlertType('success');
         setAlertOpen(true);
         setIsLogin(true);
-        // Reset form
         setFormData({
           name: '',
           email: '',
@@ -162,14 +160,17 @@ export const AuthCard = () => {
       }
     } catch (error: any) {
       console.error('API Error:', error);
-      setError('Wrong UserName Or Password..!');
+      setError(error.response?.data?.message || 'Wrong UserName Or Password..!');
       setAlertType('error');
       setAlertOpen(true);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleBackToLogin = () => {
     setIsForgotPassword(false);
+    setShowOtpVerification(false);
     setForgotPasswordEmail('');
     setError('');
   };
@@ -179,9 +180,19 @@ export const AuthCard = () => {
     setError('');
   };
 
-  // Forgot Password Form
   if (isForgotPassword) {
-    return (
+    return showOtpVerification ? (
+      <OtpVerification 
+        email={forgotPasswordEmail}
+        onBack={handleBackToLogin}
+        onSuccess={() => {
+          setError('OTP verified successfully! You can now reset your password.');
+          setAlertType('success');
+          setAlertOpen(true);
+          handleBackToLogin();
+        }}
+      />
+    ) : (
       <div className="w-full max-w-md transition-all duration-500 ease-in-out">
         <AlertSnackbar message={error} type={alertType} open={alertOpen} onClose={() => setAlertOpen(false)} />
         <div className="bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-2xl shadow-lg p-8 transition-all duration-500">
@@ -203,7 +214,7 @@ export const AuthCard = () => {
             />
 
             <Button type="submit">
-              Send Reset Instructions
+              {isForgotPasswordLoading ? 'Sending...' : 'Send Reset Instructions'}
             </Button>
           </form>
 
@@ -222,116 +233,121 @@ export const AuthCard = () => {
   }
 
   return (
-      <div className="w-full max-w-md transition-all duration-500 ease-in-out">
-        <AlertSnackbar message={error} type={alertType} open={alertOpen} onClose={() => setAlertOpen(false)} />
-        <div className="bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-2xl shadow-lg p-8 transition-all duration-500">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-800">
-              {isLogin ? 'Welcome Back' : 'Create Account'}
-            </h1>
-            <p className="text-gray-600 mt-2">
-              {isLogin
-                  ? 'Sign in to access your account'
-                  : 'Sign up to get started with our service'}
-            </p>
-          </div>
+    <div className="w-full max-w-md transition-all duration-500 ease-in-out">
+      <AlertSnackbar message={error} type={alertType} open={alertOpen} onClose={() => setAlertOpen(false)} />
+      <div className="bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-2xl shadow-lg p-8 transition-all duration-500">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-800">
+            {isLogin ? 'Welcome Back' : 'Create Account'}
+          </h1>
+          <p className="text-gray-600 mt-2">
+            {isLogin
+                ? 'Sign in to access your account'
+                : 'Sign up to get started with our service'}
+          </p>
+        </div>
 
-          <form className="space-y-4" onSubmit={handleSubmit}>
-            {!isLogin && (
-                <>
-                  <InputField
-                      id="name"
-                      type="text"
-                      label="Full Name"
-                      icon={<UserIcon size={18} className="text-gray-400" />}
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  />
-
-                  <InputField
-                      id="telephone"
-                      type="tel"
-                      label="Telephone"
-                      icon={<PhoneIcon size={18} className="text-gray-400" />}
-                      value={formData.telephone}
-                      onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
-                  />
-
-                  <div>
-                    <label htmlFor="product" className="block text-sm font-medium text-gray-700 mb-1">Product</label>
-                    <select
-                      id="product"
-                      className="mb-1 block w-full border-gray-300 rounded-md backdrop-filter backdrop-blur-lg rounded-2xl shadow-lg p-1 transition-all duration-500"
-                      value={selectedProductId || ''}
-                      onChange={e => setSelectedProductId(Number(e.target.value))}
-                      required
-                    >
-                      {products.map(product => (
-                        <option key={product.productId} value={product.productId}>{product.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                </>
-            )}
-
-            <InputField
-                id="email"
-                type="email"
-                label="Email Address"
-                icon={<MailIcon size={18} className="text-gray-400" />}
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            />
-
-            <InputField
-                id="password"
-                type="password"
-                label="Password"
-                icon={<LockIcon size={18} className="text-gray-400" />}
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            />
-
-            {!isLogin && (
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          {!isLogin && (
+              <>
                 <InputField
-                    id="confirmPassword"
-                    type="password"
-                    label="Confirm Password"
-                    icon={<LockIcon size={18} className="text-gray-400" />}
-                    value={formData.confirmPassword}
-                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                    id="name"
+                    type="text"
+                    label="Full Name"
+                    icon={<UserIcon size={18} className="text-gray-400" />}
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 />
-            )}
 
-            <Button type="submit">
-              {isLogin ? 'Sign In' : 'Sign Up'}
-            </Button>
-          </form>
+                <InputField
+                    id="telephone"
+                    type="tel"
+                    label="Telephone"
+                    icon={<PhoneIcon size={18} className="text-gray-400" />}
+                    value={formData.telephone}
+                    onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
+                />
 
-          {isLogin && (
-            <div className="mt-4 text-center">
-              <button
-                onClick={handleForgotPassword}
-                className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
-              >
-                Forgot Password?
-              </button>
-            </div>
+                <div>
+                  <label htmlFor="product" className="block text-sm font-medium text-gray-700 mb-1">Product</label>
+                  <select
+                    id="product"
+                    className="mb-1 block w-full border-gray-300 backdrop-filter backdrop-blur-lg rounded-2xl shadow-lg p-1 transition-all duration-500"
+                    value={selectedProductId || ''}
+                    onChange={e => setSelectedProductId(Number(e.target.value))}
+                    required
+                    disabled={isProductsLoading}
+                  >
+                    {isProductsLoading ? (
+                      <option>Loading products...</option>
+                    ) : (
+                      products.map(product => (
+                        <option key={product.productId} value={product.productId}>{product.name}</option>
+                      ))
+                    )}
+                  </select>
+                </div>
+              </>
           )}
 
-          <div className="mt-8 text-center">
-            <div className="text-sm text-gray-600 mb-4">
-              {isLogin ? "Don't have an account?" : 'Already have an account?'}
-            </div>
-            <ToggleSwitch
-                isLogin={isLogin}
-                onToggle={() => {
-                  setIsLogin(!isLogin);
-                  setError('');
-                }}
-            />
+          <InputField
+              id="email"
+              type="email"
+              label="Email Address"
+              icon={<MailIcon size={18} className="text-gray-400" />}
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+          />
+
+          <InputField
+              id="password"
+              type="password"
+              label="Password"
+              icon={<LockIcon size={18} className="text-gray-400" />}
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+          />
+
+          {!isLogin && (
+              <InputField
+                  id="confirmPassword"
+                  type="password"
+                  label="Confirm Password"
+                  icon={<LockIcon size={18} className="text-gray-400" />}
+                  value={formData.confirmPassword}
+                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+              />
+          )}
+
+          <Button type="submit" >
+            {isLoading ? 'Processing...' : isLogin ? 'Sign In' : 'Sign Up'}
+          </Button>
+        </form>
+
+        {isLogin && (
+          <div className="mt-4 text-center">
+            <button
+              onClick={handleForgotPassword}
+              className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
+            >
+              Forgot Password?
+            </button>
           </div>
+        )}
+
+        <div className="mt-8 text-center">
+          <div className="text-sm text-gray-600 mb-4">
+            {isLogin ? "Don't have an account?" : 'Already have an account?'}
+          </div>
+          <ToggleSwitch
+              isLogin={isLogin}
+              onToggle={() => {
+                setIsLogin(!isLogin);
+                setError('');
+              }}
+          />
         </div>
       </div>
+    </div>
   );
 };

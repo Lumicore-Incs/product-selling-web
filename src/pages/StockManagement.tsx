@@ -44,7 +44,7 @@ export const StockManagement = () => {
     setFilterDate(date);
   };
 
-  return <div className="space-y-6">
+  return <div className="space-y-6 mx-6">
       <h1 className="text-2xl font-bold mb-6">Stock Management</h1>
       <StockForm onSubmit={handleSave} initialValues={editItem} />
       <Filters onFilterChange={handleFilterChange} />

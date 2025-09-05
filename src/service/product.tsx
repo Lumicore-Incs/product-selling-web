@@ -2,7 +2,7 @@ export const getAllProducts = async () => {
     try {
         const token = localStorage.getItem('token');
 
-        const response = await fetch(`http://localhost:8081/products`, {
+        const response = await fetch(`http://168.231.102.248:8080/demo-0.0.1-SNAPSHOT/products`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`,

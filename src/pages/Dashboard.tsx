@@ -5,7 +5,6 @@ import { getDashboardStats } from '../service/dashboard';
 import { getOrders, getAllCustomerOrders, Order } from '../service/order';
 import { getCurrentUser } from '../service/auth';
 import { getAllProducts } from '../service/product'; // Add this import
-import { log } from 'console';
 import { AlertSnackbar } from '../components/AlertSnackbar';
 
 type StatCardProps = {
@@ -21,7 +20,7 @@ const StatCard = ({
                     value,
                     trend
                   }: StatCardProps) => (
-    <div className="bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl p-6 shadow-sm">
+    <div className="bg-red-500 bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl p-6 mr-8 shadow-sm">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm text-gray-600">{label}</p>
@@ -195,14 +194,14 @@ export const Dashboard = () => {
   };
 
   return (
-      <div className="space-y-6 overflow-x-hidden">
+      <div className="space-y-6 overflow-x-hidden mx-6">
         <AlertSnackbar
           message={snackbar.message}
           type={snackbar.type}
           open={snackbar.open}
           onClose={() => setSnackbar(s => ({ ...s, open: false }))}
         />
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center mb-6 ">
           <h1 className="text-2xl font-bold text-gray-800">Dashboard Overview</h1>
           {!userLoading && user && user.role.toLowerCase() === 'admin' && (
               <div className="flex flex-wrap gap-2">
@@ -256,7 +255,7 @@ export const Dashboard = () => {
             <></>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 px-4 mr-6">
           <StatCard
               icon={ScaleIcon}
               label="Total Order"
@@ -283,15 +282,15 @@ export const Dashboard = () => {
           />
         </div>
 
-        <div className="bg-gray-200 bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl p-6 shadow-2xl">
+        <div  className="bg-gray-200 w-[85%] md:w-[100%] bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl p-6 shadow-2xl">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold text-gray-800">Recent Sales</h2>
+            <h2 className="text-xl font-semibold text-gray-800">Sales</h2>
             <div className="flex items-center space-x-4">
               <div className="relative">
                 <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="appearance-none bg-white border border-gray-300 rounded-md pl-3 pr-8 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="appearance-none bg-white border border-gray-300 rounded-md pl-3 pr-6 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   {statusOptions.map((option) => (
                       <option key={option.value} value={option.value}>

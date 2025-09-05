@@ -3,14 +3,15 @@ import { Header } from '../components/product/Header';
 import { ProductTable } from '../components/product/ProductTable';
 import { ProductModal } from '../components/product/ProductModal';
 import { productApi, ProductDto, authUtils } from '../services/api';
-import { AlertSnackbar } from '../components/AlertSnackbar';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // Updated Product type to match backend
 export type Product = {
   productId: number;
   name: string;
   price: number;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | 'remove';
 };
 
 export const ProductManagement = () => {
@@ -20,8 +21,6 @@ export const ProductManagement = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; type: 'success' | 'error' }>({ open: false, message: '', type: 'error' });
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 5;
@@ -43,23 +42,33 @@ export const ProductManagement = () => {
     if (searchTerm.trim() === '') {
       setFilteredProducts(products);
     } else {
-      // For local filtering
       const results = products.filter(product =>
-          product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          product.productId.toString().includes(searchTerm.toLowerCase())
+        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.productId.toString().includes(searchTerm.toLowerCase())
       );
       setFilteredProducts(results);
     }
   }, [searchTerm, products]);
 
+  // Show toast notification
+  const showToast = (message: string, type: 'success' | 'error' | 'info' | 'warning') => {
+    toast[type](message, {
+      position: "top-right",
+      autoClose: 5000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+    });
+  };
+
   // Load all products from backend
   const loadProducts = async () => {
     setLoading(true);
-    setError(null);
     try {
       const backendProducts = await productApi.getAllProducts();
 
-      // Transform backend data to match frontend Product type
       const transformedProducts: Product[] = backendProducts.map(product => ({
         productId: product.productId || 0,
         name: product.name,
@@ -70,14 +79,11 @@ export const ProductManagement = () => {
       setProducts(transformedProducts);
     } catch (error: any) {
       console.error('Failed to load products:', error);
-      setError('Failed to load products. Please check your connection and authentication.');
-      setSnackbar({ open: true, message: 'Failed to load products. Please check your connection and authentication.', type: 'error' });
+      showToast('Failed to load products. Please check your connection and authentication.', 'error');
 
-      // If unauthorized, you might want to redirect to login
       if (error.response?.status === 401) {
         authUtils.removeToken();
-        setError('Authentication expired. Please log in again.');
-        setSnackbar({ open: true, message: 'Authentication expired. Please log in again.', type: 'error' });
+        showToast('Authentication expired. Please log in again.', 'error');
       }
     } finally {
       setLoading(false);
@@ -87,7 +93,6 @@ export const ProductManagement = () => {
   // Handler for adding a new product
   const handleAddProduct = async (name: string, price: number) => {
     setLoading(true);
-    setError(null);
     try {
       const newProductData: Omit<ProductDto, 'productId'> = {
         name,
@@ -97,7 +102,6 @@ export const ProductManagement = () => {
 
       const savedProduct = await productApi.createProduct(newProductData);
 
-      // Add new product to local state
       const newProduct: Product = {
         productId: savedProduct.productId || 0,
         name: savedProduct.name,
@@ -107,10 +111,10 @@ export const ProductManagement = () => {
 
       setProducts([...products, newProduct]);
       setIsModalOpen(false);
+      showToast('Product added successfully!', 'success');
     } catch (error: any) {
       console.error('Failed to add product:', error);
-      setError('Failed to add product. Please try again.');
-      setSnackbar({ open: true, message: 'Failed to add product. Please try again.', type: 'error' });
+      showToast('Failed to add product. Please try again.', 'error');
     } finally {
       setLoading(false);
     }
@@ -119,34 +123,33 @@ export const ProductManagement = () => {
   // Handler for updating a product
   const handleUpdateProduct = async (updatedProduct: Product) => {
     setLoading(true);
-    setError(null);
     try {
+       const validStatus = updatedProduct.status === 'inactive' ? 'inactive' : 'active';
       const updateData: Omit<ProductDto, 'productId'> = {
         name: updatedProduct.name,
         price: updatedProduct.price,
-        status: updatedProduct.status
+        status: validStatus 
       };
 
       const savedProduct = await productApi.updateProduct(updatedProduct.productId, updateData);
 
-      // Update product in local state
       setProducts(products.map(product =>
-          product.productId === updatedProduct.productId
-              ? {
-                productId: savedProduct.productId || updatedProduct.productId,
-                name: savedProduct.name,
-                price: savedProduct.price,
-                status: savedProduct.status || 'active'
-              }
-              : product
+        product.productId === updatedProduct.productId
+          ? {
+            productId: savedProduct.productId || updatedProduct.productId,
+            name: savedProduct.name,
+            price: savedProduct.price,
+            status: savedProduct.status || 'active'
+          }
+          : product
       ));
 
       setIsModalOpen(false);
       setCurrentProduct(null);
+      showToast('Product updated successfully!', 'success');
     } catch (error: any) {
       console.error('Failed to update product:', error);
-      setError('Failed to update product. Please try again.');
-      setSnackbar({ open: true, message: 'Failed to update product. Please try again.', type: 'error' });
+      showToast('Failed to update product. Please try again.', 'error');
     } finally {
       setLoading(false);
     }
@@ -156,22 +159,18 @@ export const ProductManagement = () => {
   const handleDeleteProduct = async (productId: string | number) => {
     const id = typeof productId === 'string' ? parseInt(productId) : productId;
 
-    if (window.confirm('Are you sure you want to delete this product?')) {
       setLoading(true);
-      setError(null);
       try {
         await productApi.deleteProduct(id);
-
-        // Remove product from local state
         setProducts(products.filter(product => product.productId !== id));
+        showToast('Product deleted successfully!', 'success');
+        loadProducts(); // Refresh the table after delete
       } catch (error: any) {
         console.error('Failed to delete product:', error);
-        setError('Failed to delete product. Please try again.');
-        setSnackbar({ open: true, message: 'Failed to delete product. Please try again.', type: 'error' });
+        showToast('Failed to delete product. Please try again.', 'error');
       } finally {
         setLoading(false);
       }
-    }
   };
 
   // Handler for opening edit modal
@@ -192,85 +191,85 @@ export const ProductManagement = () => {
   };
 
   return (
-      <div className="min-h-screen bg-gray-50">
-        <AlertSnackbar
-          message={snackbar.message}
-          type={snackbar.type}
-          open={snackbar.open}
-          onClose={() => setSnackbar(s => ({ ...s, open: false }))}
-        />
-        <Header
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            onAddClick={handleAddClick}
-            onRefresh={handleRefresh}
-            loading={loading}
-        />
+    <div className="min-h-screen mx-6">
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
+      
+      <Header
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        onAddClick={handleAddClick}
+        onRefresh={handleRefresh}
+        loading={loading}
+      />
 
-        <main className="container mx-auto px-4 py-8">
-          {/* Error Message */}
-          {error && (
-              <></>
-          )}
-
-          {/* Loading State */}
-          {loading && (
-              <div className="mb-4 p-4 bg-blue-100 border border-blue-400 text-blue-700 rounded">
-                Loading products...
-              </div>
-          )}
-
-          {/* Authentication Check */}
-          {!authUtils.isAuthenticated() && (
-              <div className="mb-4 p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded">
-                Please log in to manage products. Some features may not work without authentication.
-              </div>
-          )}
-
-          <ProductTable
-              products={paginatedProducts}
-              onEdit={handleEditClick}
-              onDelete={handleDeleteProduct}
-              loading={loading}
-          />
-
-          {/* Pagination Controls */}
-          <div className="flex items-center justify-between mt-4">
-            <p className="text-sm text-gray-500">Showing {paginatedProducts.length} of {filteredProducts.length} entries</p>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className={`px-3 py-1 rounded border ${currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-              >
-                Prev
-              </button>
-              <span className="text-sm text-gray-700">
-                Page {currentPage} of {totalPages}
-              </span>
-              <button
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className={`px-3 py-1 rounded border ${currentPage === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-              >
-                Next
-              </button>
-            </div>
+      <main className="container mx-auto px-4 py-8">
+        {/* Loading State */}
+        {loading && (
+          <div className="mb-4 p-4 bg-blue-100 border border-blue-400 text-blue-700 rounded">
+            Loading products...
           </div>
+        )}
 
-          <ProductModal
-              isOpen={isModalOpen}
-              onClose={() => {
-                setIsModalOpen(false);
-                setCurrentProduct(null);
-                setError(null);
-              }}
-              product={currentProduct}
-              onAdd={handleAddProduct}
-              onUpdate={handleUpdateProduct}
-              loading={loading}
-          />
-        </main>
-      </div>
+        {/* Authentication Check */}
+        {!authUtils.isAuthenticated() && (
+          <div className="mb-4 p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded">
+            Please log in to manage products. Some features may not work without authentication.
+          </div>
+        )}
+
+        <ProductTable
+          products={paginatedProducts}
+          onEdit={handleEditClick}
+          onDelete={handleDeleteProduct}
+          loading={loading}
+        />
+
+        {/* Pagination Controls */}
+        <div className="flex items-center justify-between mt-4">
+          <p className="text-sm text-gray-500">Showing {paginatedProducts.length} of {filteredProducts.length} entries</p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className={`px-3 py-1 rounded border ${currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+            >
+              Prev
+            </button>
+            <span className="text-sm text-gray-700">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className={`px-3 py-1 rounded border ${currentPage === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+
+        <ProductModal
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setCurrentProduct(null);
+          }}
+          product={currentProduct}
+          onAdd={handleAddProduct}
+          onUpdate={handleUpdateProduct}
+          loading={loading}
+        />
+      </main>
+    </div>
   );
 };

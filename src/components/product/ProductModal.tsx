@@ -1,4 +1,3 @@
-import React from 'react';
 import { XIcon } from 'lucide-react';
 import { Product } from '../../App';
 import { ProductForm } from './ProductForm';

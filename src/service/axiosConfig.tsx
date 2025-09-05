@@ -2,7 +2,7 @@ import axios from "axios";
 
 const instance = axios.create({
   // baseURL: 'https://back.pearlyskyplc.com/api/',
-  baseURL: 'http://localhost:8081',
+  baseURL: 'http://168.231.102.248:8080/demo-0.0.1-SNAPSHOT',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -33,7 +33,7 @@ instance.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       // Token expired or invalid
       localStorage.removeItem('token');
-      window.location.href = '/login';
+      window.location.href = '/auth';
     }
     return Promise.reject(error);
   }
