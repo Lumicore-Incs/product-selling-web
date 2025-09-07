@@ -34,7 +34,7 @@ interface OutletContext {
   setShowSettings: (show: boolean) => void;
 }
 
-export const SalesManagement: React.FC = () => {
+export const DuplicateSalesManagement: React.FC = () => {
   const { salesTitle, salesBackgroundColor, showSettings, setShowSettings } =
     useOutletContext<OutletContext>();
   const [sales, setSales] = useState<Sale[]>([]);
@@ -84,8 +84,8 @@ export const SalesManagement: React.FC = () => {
       }
 
       // Load all orders from backend
-      console.log('Calling orderApi.getAllOrders()...');
-      const responseOrder = await orderApi.getAllOrders();
+      console.log('Calling orderApi.getAllDuplicateOrders()...');
+      const responseOrder = await orderApi.getAllDuplicateOrders();
 
       // Check if response exists and is an array
       if (!responseOrder || !Array.isArray(responseOrder)) {
@@ -306,7 +306,7 @@ export const SalesManagement: React.FC = () => {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-gray-800">{salesTitle}</h1>
-            <p className="text-gray-600 mt-2">Add, edit, and manage your sales entries</p>
+            <p className="text-gray-600 mt-2">edit, and manage your duplicate sales entries</p>
           </div>
           <div className="flex space-x-3">
             <button
@@ -337,6 +337,9 @@ export const SalesManagement: React.FC = () => {
 
       <div className="space-y-8">
         <div>
+          <SalesTable sales={sales} onEdit={editSale} onDelete={deleteSale} isLoading={isLoading} />
+        </div>
+        <div>
           <SalesForm
             onSave={addSale}
             onUpdate={updateSale}
@@ -348,9 +351,6 @@ export const SalesManagement: React.FC = () => {
             }}
             onCustomerCreated={handleCustomerCreated}
           />
-        </div>
-        <div>
-          <SalesTable sales={sales} onEdit={editSale} onDelete={deleteSale} isLoading={isLoading} />
         </div>
       </div>
     </div>

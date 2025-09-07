@@ -1,12 +1,13 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthCard } from './components/AuthCard';
 import { DashboardLayout } from './components/layout/DashboardLayout';
 import { Dashboard } from './pages/Dashboard';
-import { Users } from './pages/Users';
+import { DuplicateSalesManagement } from './pages/DuplicateSalesManagement';
+import { ProductManagement } from './pages/ProductManagement';
 import { SalesManagement } from './pages/SalesManagement';
 import { StockManagement } from './pages/StockManagement';
-import { ProductManagement } from './pages/ProductManagement';
+import { Users } from './pages/Users';
 
 // Simple loader component
 function Loader() {
@@ -26,9 +27,9 @@ export function App() {
     const fetchData = async () => {
       try {
         // Example API call
-        await new Promise(resolve => setTimeout(resolve, 1500)); // replace with fetch() or axios
+        await new Promise((resolve) => setTimeout(resolve, 1500)); // replace with fetch() or axios
       } catch (error) {
-        console.error("API call failed:", error);
+        console.error('API call failed:', error);
       } finally {
         setLoading(false);
       }
@@ -58,9 +59,17 @@ export function App() {
               </div>
             }
           />
-          <Route path="/" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
             <Route index element={<Dashboard />} />
             <Route path="sale" element={<SalesManagement />} />
+            <Route path="sale/duplicate" element={<DuplicateSalesManagement />} />
             <Route path="sale/settings" element={<SalesManagement />} />
             <Route path="product" element={<ProductManagement />} />
             <Route path="users" element={<Users />} />
