@@ -1,7 +1,7 @@
 // src/services/authService.ts
 import axios from 'axios';
 
-const API_BASE_URL = 'http://168.231.102.248:8080/demo-0.0.1-SNAPSHOT';
+const API_BASE_URL = 'https://api.weadits.com/demo-0.0.1-SNAPSHOT';
 
 export interface LoginRequest {
     username: string;
