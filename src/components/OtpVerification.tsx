@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
-import { Button } from './Button';
 import { ArrowLeftIcon, LockIcon } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import axios from '../services/axiosConfig';
 import { AlertSnackbar } from './AlertSnackbar';
-import axios from '../service/axiosConfig';
+import { Button } from './Button';
 
 interface OtpVerificationProps {
   email: string;
@@ -55,7 +55,7 @@ export const OtpVerification = ({ email, onBack, onSuccess }: OtpVerificationPro
         const response = await axios.post('/user/reset', {
           email,
           otp: otpValue,
-          password
+          password,
         });
 
         if (response.status === 200) {
@@ -98,7 +98,10 @@ export const OtpVerification = ({ email, onBack, onSuccess }: OtpVerificationPro
         }
       } catch (error: any) {
         console.error('OTP verification error:', error);
-        setError(error.response?.data?.message || 'Failed to verify OTP. Please check your connection and try again.');
+        setError(
+          error.response?.data?.message ||
+            'Failed to verify OTP. Please check your connection and try again.'
+        );
         setAlertType('error');
         setAlertOpen(true);
       } finally {
@@ -108,9 +111,10 @@ export const OtpVerification = ({ email, onBack, onSuccess }: OtpVerificationPro
   };
 
   // ... (keep the existing handleOtpChange and handlePaste functions)
-  
+
   const handleOtpChange = (index: number, value: string) => {
-    if (/^\d*$/.test(value)) { // Only allow numbers
+    if (/^\d*$/.test(value)) {
+      // Only allow numbers
       const newOtp = [...otp];
       newOtp[index] = value;
       setOtp(newOtp);
@@ -129,7 +133,7 @@ export const OtpVerification = ({ email, onBack, onSuccess }: OtpVerificationPro
     if (/^\d{4}$/.test(pasteData)) {
       const otpArray = pasteData.split('');
       const newOtp = [...otp];
-      
+
       otpArray.slice(0, 4).forEach((digit, index) => {
         if (index < 4) {
           newOtp[index] = digit;
@@ -137,7 +141,7 @@ export const OtpVerification = ({ email, onBack, onSuccess }: OtpVerificationPro
       });
 
       setOtp(newOtp);
-      
+
       // Focus the last input after paste
       const lastInput = inputRefs.current[Math.min(3, otpArray.length - 1)];
       if (lastInput) lastInput.focus();
@@ -145,16 +149,22 @@ export const OtpVerification = ({ email, onBack, onSuccess }: OtpVerificationPro
   };
 
   return (
-    <div className="w-full max-w-md transition-all duration-500 ease-in-out" onPaste={!showPasswordReset ? handlePaste : undefined}>
-      <AlertSnackbar message={error} type={alertType} open={alertOpen} onClose={() => setAlertOpen(false)} />
+    <div
+      className="w-full max-w-md transition-all duration-500 ease-in-out"
+      onPaste={!showPasswordReset ? handlePaste : undefined}
+    >
+      <AlertSnackbar
+        message={error}
+        type={alertType}
+        open={alertOpen}
+        onClose={() => setAlertOpen(false)}
+      />
       <div className="bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-2xl shadow-lg p-8 transition-all duration-500">
         {showPasswordReset ? (
           <>
             <div className="text-center mb-8">
               <h1 className="text-3xl font-bold text-gray-800">Reset Password</h1>
-              <p className="text-gray-600 mt-2">
-                Please enter your new password
-              </p>
+              <p className="text-gray-600 mt-2">Please enter your new password</p>
             </div>
 
             <form className="space-y-4" onSubmit={handleSubmit}>
@@ -184,9 +194,7 @@ export const OtpVerification = ({ email, onBack, onSuccess }: OtpVerificationPro
                 <LockIcon size={18} className="absolute left-4 top-3.5 text-gray-400" />
               </div>
 
-              <Button type="submit">
-                {isLoading ? 'Resetting...' : 'Reset Password'}
-              </Button>
+              <Button type="submit">{isLoading ? 'Resetting...' : 'Reset Password'}</Button>
             </form>
           </>
         ) : (
@@ -222,9 +230,7 @@ export const OtpVerification = ({ email, onBack, onSuccess }: OtpVerificationPro
                 ))}
               </div>
 
-              <Button type="submit">
-                {isLoading ? 'Verifying...' : 'Verify OTP'}
-              </Button>
+              <Button type="submit">{isLoading ? 'Verifying...' : 'Verify OTP'}</Button>
             </form>
           </>
         )}
