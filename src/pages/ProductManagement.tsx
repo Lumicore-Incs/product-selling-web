@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Header } from '../components/product/Header';
+import { BackgroundIcons } from '../components/BackgroundIcons';
 import { ProductTable } from '../components/product/ProductTable';
 import { ProductModal } from '../components/product/ProductModal';
 import { productApi, ProductDto, authUtils } from '../services/api';
@@ -191,7 +192,8 @@ export const ProductManagement = () => {
   };
 
   return (
-    <div className="min-h-screen mx-6">
+    <div className="min-h-screen mx-6 relative">
+      <BackgroundIcons type="product" />
       <ToastContainer
         position="top-right"
         autoClose={5000}

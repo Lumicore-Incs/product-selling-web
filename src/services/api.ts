@@ -331,6 +331,74 @@ export const userApi = {
             throw error;
         }
     },
+    
+    updateUser: async (id: string, userData: Partial<User>): Promise<User> => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await api.put<UserApiDto>(`/user/update/${id}`, {
+                name: userData.name,
+                email: userData.email,
+                telephone: userData.contact,
+                role: userData.role,
+                type: 'USER'
+            }, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            const updatedUser = response.data;
+            return {
+                id: updatedUser.id.toString(),
+                name: updatedUser.name,
+                email: updatedUser.email,
+                contact: updatedUser.telephone,
+                role: updatedUser.role,
+                registration_date: updatedUser.registration_date,
+                status: (updatedUser.status?.toLowerCase() as 'active' | 'inactive' | 'pending') || 'pending',
+            };
+        } catch (error) {
+            console.error('Error updating user:', error);
+            throw error;
+        }
+    },
+
+    deleteUser: async (id: string): Promise<boolean> => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await api.delete(`/user/${id}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            return response.status === 200;
+        } catch (error) {
+            console.error('Error deleting user:', error);
+            throw error;
+        }
+    },
+
+    getAllUsers: async (): Promise<User[]> => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await api.get<UserApiDto[]>('/user/get_all_user', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            return response.data.map((user) => ({
+                id: user.id.toString(),
+                name: user.name,
+                email: user.email,
+                contact: user.telephone,
+                role: user.role,
+                registration_date: user.registration_date,
+                status: (user.status?.toLowerCase() as 'active' | 'inactive' | 'pending') || 'pending',
+            }));
+        } catch (error) {
+            console.error('Error fetching users:', error);
+            throw error;
+        }
+    },
 };
 
 /**

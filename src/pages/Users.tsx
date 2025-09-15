@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Search, Edit, Trash2, Plus, X, Save, User, Mail, Calendar, Shield, Phone, CheckCircle, XCircle, Clock } from 'lucide-react';
-import { userApi } from '../services/api';
+import { Search, Edit, Trash2, Plus, X, Save, User, Mail, Calendar, Shield, Phone, CheckCircle, XCircle, Clock, Package } from 'lucide-react';
+import { BackgroundIcons } from '../components/BackgroundIcons';
+import { userApi, productApi } from '../services/api';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 interface User {
   id: string;
@@ -10,6 +13,8 @@ interface User {
   role: string;
   status: 'active' | 'inactive' | 'pending';
   contact: string;
+  productId?: number;
+  productName?: string;
 }
 
 export const Users = () => {
@@ -17,34 +22,48 @@ export const Users = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [products, setProducts] = useState<{ productId: number; name: string }[]>([]);
   const [newUser, setNewUser] = useState<Omit<User, 'id'>>({
     email: '',
     name: '',
     registration_date: new Date().toISOString().split('T')[0],
     role: 'User',
     status: 'pending',
-    contact: ''
+    contact: '',
+    productId: undefined,
+    productName: undefined
+  });
+
+  // Filter users based on search term
+  const filteredUsers = users.filter(user => {
+    const searchTermLower = searchTerm.toLowerCase();
+    return (
+      user.name.toLowerCase().includes(searchTermLower) ||
+      user.email.toLowerCase().includes(searchTermLower) ||
+      user.role.toLowerCase().includes(searchTermLower) ||
+      user.contact.toLowerCase().includes(searchTermLower)
+    );
   });
 
   // Pagination logic
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 5;
-  const totalPages = Math.ceil(users.length / rowsPerPage);
-  const paginatedUsers = users.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+  const totalPages = Math.ceil(filteredUsers.length / rowsPerPage);
+  const paginatedUsers = filteredUsers.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
   const handlePrev = () => setCurrentPage((p) => Math.max(1, p - 1));
   const handleNext = () => setCurrentPage((p) => Math.min(totalPages, p + 1));
 
-  // Filter users based on search term
-  const filteredUsers = users.filter(user =>
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.role.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   // Handle user deletion
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this user?')) {
-      setUsers(users.filter(user => user.id !== id));
+      try {
+        await userApi.deleteUser(id);
+        setUsers(users.filter(user => user.id !== id));
+        showToast('User deleted successfully!', 'success');
+      } catch (error) {
+        console.error('Failed to delete user:', error);
+        showToast('Failed to delete user. Please try again.', 'error');
+      }
     }
   };
 
@@ -54,12 +73,39 @@ export const Users = () => {
   };
 
   // Handle save edit
-  const handleSaveEdit = () => {
+  // Show toast notification
+  const showToast = (message: string, type: 'success' | 'error' | 'info' | 'warning') => {
+    toast[type](message, {
+      position: "top-right",
+      autoClose: 5000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+    });
+  };
+
+  const handleSaveEdit = async () => {
     if (editingUser) {
-      setUsers(users.map(user => 
-        user.id === editingUser.id ? editingUser : user
-      ));
-      setEditingUser(null);
+      try {
+        const updatedUser = await userApi.updateUser(editingUser.id, {
+          name: editingUser.name,
+          email: editingUser.email,
+          contact: editingUser.contact,
+          role: editingUser.role
+        });
+        
+        // Update the local state with the updated user data
+        setUsers(users.map(user => 
+          user.id === updatedUser.id ? { ...updatedUser, productId: editingUser.productId, productName: editingUser.productName } : user
+        ));
+        setEditingUser(null);
+        showToast('User updated successfully!', 'success');
+      } catch (error) {
+        console.error('Failed to update user:', error);
+        showToast('Failed to update user. Please try again.', 'error');
+      }
     }
   };
 
@@ -84,6 +130,7 @@ export const Users = () => {
       contact: ''
     });
     setShowAddForm(false);
+    showToast('User added successfully!', 'success');
   };
 
   // Get status color and icon
@@ -100,15 +147,33 @@ export const Users = () => {
     }
   };
 
-  // Fetch users from API on mount
+  // Fetch users and products from API on mount
   useEffect(() => {
-    userApi.getAllUsers()
-      .then(setUsers)
-      .catch((err) => console.error('Failed to fetch users', err));
+    Promise.all([
+      userApi.getAllUsers(),
+      productApi.getAllProducts()
+    ])
+    .then(([usersData, productsData]) => {
+      setUsers(usersData);
+      setProducts(productsData.map(p => ({ productId: p.productId || 0, name: p.name })));
+    })
+    .catch((err) => console.error('Failed to fetch data', err));
   }, []);
 
   return (
-    <div className="space-y-6 mx-6">
+    <div className="space-y-6 mx-6 relative">
+      <BackgroundIcons type="users" />
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">Users Management</h1>
         <button
@@ -126,7 +191,7 @@ export const Users = () => {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
           <input
             type="text"
-            placeholder="Search users by name, email, or role..."
+            placeholder="Search users by name, email, role, or contact..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent bg-white bg-opacity-50 backdrop-filter backdrop-blur-sm"
@@ -177,15 +242,37 @@ export const Users = () => {
               <option value="Manager">Manager</option>
               <option value="Admin">Admin</option>
             </select>
-            <select
+           <select
               value={newUser.status}
               onChange={(e) => setNewUser({ ...newUser, status: e.target.value as User['status'] })}
-              className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
+              className="px-3 h-12 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
             >
               <option value="pending">Pending</option>
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
             </select>
+            <div>
+              <select
+                id="product"
+                value={newUser.productId || ''}
+                onChange={(e) => {
+                  const selectedProduct = products.find(p => p.productId === Number(e.target.value));
+                  setNewUser({
+                    ...newUser,
+                    productId: Number(e.target.value),
+                    productName: selectedProduct?.name
+                  });
+                }}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
+              >
+                <option value="">Select a product</option>
+                {products.map(product => (
+                  <option key={product.productId} value={product.productId}>
+                    {product.name}
+                  </option>
+                ))}
+              </select>
+            </div>
             <input
               type="date"
               value={newUser.registration_date}
@@ -211,44 +298,51 @@ export const Users = () => {
       )}
 
       {/* Users Table */}
-      <div className="bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl p-6 shadow-sm overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
+      <div className="bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full table-fixed divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="w-[15%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 <div className="flex items-center gap-2">
                   <User className="w-4 h-4" />
                   Name
                 </div>
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="w-[15%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 <div className="flex items-center gap-2">
                   <Mail className="w-4 h-4" />
                   Email
                 </div>
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="w-[12%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 <div className="flex items-center gap-2">
                   <Phone className="w-4 h-4" />
                   Contact
                 </div>
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="w-[10%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 <div className="flex items-center gap-2">
                   <Shield className="w-4 h-4" />
                   Role
                 </div>
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="w-[10%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Status
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="w-[12%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
-                  Registration Date
+                  Date
                 </div>
               </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="w-[15%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <div className="flex items-center gap-2">
+                  <Package className="w-4 h-4" />
+                  Product
+                </div>
+              </th>
+              <th className="w-[11%] px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
@@ -257,92 +351,98 @@ export const Users = () => {
             {paginatedUsers.length > 0 ? (
               paginatedUsers.map((user) => (
                 <tr key={user.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-4 py-3 whitespace-nowrap">
                     {editingUser?.id === user.id ? (
                       <input
                         type="text"
                         value={editingUser.name}
                         onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
-                        className="px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
+                        className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
                       />
                     ) : (
-                      <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                      <div className="text-sm font-medium text-gray-900 truncate">{user.name}</div>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-4 py-3 whitespace-nowrap">
                     {editingUser?.id === user.id ? (
                       <input
                         type="email"
                         value={editingUser.email}
                         onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })}
-                        className="px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
+                        className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
                       />
                     ) : (
-                      <div className="text-sm text-gray-500">{user.email}</div>
+                      <div className="text-sm text-gray-500 truncate">{user.email}</div>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-4 py-3 whitespace-nowrap">
                     {editingUser?.id === user.id ? (
                       <input
                         type="tel"
                         value={editingUser.contact}
                         onChange={(e) => setEditingUser({ ...editingUser, contact: e.target.value })}
-                        className="px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
+                        className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
                       />
                     ) : (
-                      <div className="text-sm text-gray-500">{user.contact}</div>
+                      <div className="text-sm text-gray-500 truncate">{user.contact}</div>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-4 py-3 whitespace-nowrap">
                     {editingUser?.id === user.id ? (
                       <select
                         value={editingUser.role}
                         onChange={(e) => setEditingUser({ ...editingUser, role: e.target.value })}
-                        className="px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
+                        className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
                       >
                         <option value="User">User</option>
                         <option value="Manager">Manager</option>
                         <option value="Admin">Admin</option>
                       </select>
                     ) : (
-                      <div className="text-sm text-gray-500">{user.role}</div>
+                      <div className="text-sm text-gray-500 truncate">{user.role}</div>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <div className="flex items-center gap-1">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusDisplay(user.status).color}`}>
+                        {user.status}
+                      </span>
+                      {getStatusDisplay(user.status).icon}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <div className="text-sm text-gray-500">
+                      {new Date(user.registration_date).toLocaleDateString()}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
                     {editingUser?.id === user.id ? (
                       <select
-                        value={editingUser.status}
-                        onChange={(e) => setEditingUser({ ...editingUser, status: e.target.value as User['status'] })}
-                        className="px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
+                        value={editingUser.productId || ''}
+                        onChange={(e) => {
+                          const selectedProduct = products.find(p => p.productId === Number(e.target.value));
+                          setEditingUser({
+                            ...editingUser,
+                            productId: Number(e.target.value),
+                            productName: selectedProduct?.name
+                          });
+                        }}
+                        className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
                       >
-                        <option value="pending">Pending</option>
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
+                        <option value="">Select a product</option>
+                        {products.map(product => (
+                          <option key={product.productId} value={product.productId}>
+                            {product.name}
+                          </option>
+                        ))}
                       </select>
                     ) : (
-                      <div className="flex items-center gap-2">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusDisplay(user.status).color}`}>
-                          {user.status}
-                        </span>
-                        {getStatusDisplay(user.status).icon}
+                      <div className="text-sm text-gray-500 truncate">
+                        {user.productName || 'No product assigned'}
                       </div>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {editingUser?.id === user.id ? (
-                      <input
-                        type="date"
-                        value={editingUser.registration_date}
-                        onChange={(e) => setEditingUser({ ...editingUser, registration_date: e.target.value })}
-                        className="px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
-                      />
-                    ) : (
-                      <div className="text-sm text-gray-500">
-                        {new Date(user.registration_date).toLocaleDateString()}
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                     {editingUser?.id === user.id ? (
                       <div className="flex gap-2 justify-end">
                         <button
@@ -390,7 +490,7 @@ export const Users = () => {
             )}
           </tbody>
         </table>
-        <div className="px-6 py-4 border-t flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+        <div className="px-4 py-3 border-t flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <p className="text-sm text-gray-500">Showing {paginatedUsers.length} of {filteredUsers.length} entries</p>
           <div className="flex items-center gap-2">
             <button
@@ -411,6 +511,7 @@ export const Users = () => {
               Next
             </button>
           </div>
+        </div>
         </div>
       </div>
     </div>

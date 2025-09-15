@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { TrendingDownIcon, ScaleIcon, CreditCardIcon, TrendingUpIcon } from 'lucide-react';
 import { SalesTable, Sale } from '../components/SalesTable';
+import { BackgroundIcons } from '../components/BackgroundIcons';
 import { getDashboardStats } from '../service/dashboard';
 import { getOrders, getAllCustomerOrders, Order } from '../service/order';
 import { getCurrentUser } from '../service/auth';
@@ -194,7 +195,8 @@ export const Dashboard = () => {
   };
 
   return (
-      <div className="space-y-6 overflow-x-hidden mx-6">
+      <div className="space-y-6 overflow-x-hidden mx-6 relative">
+        <BackgroundIcons type="dashboard" />
         <AlertSnackbar
           message={snackbar.message}
           type={snackbar.type}

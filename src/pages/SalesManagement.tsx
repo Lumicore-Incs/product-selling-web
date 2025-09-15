@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
+import { BackgroundIcons } from '../components/BackgroundIcons';
 import { SalesForm } from '../components/SalesForm';
 import { SalesTable } from '../components/SalesTable';
 import { dashboardApi, orderApi, CustomerDtoGet } from '../services/api';
@@ -240,7 +241,8 @@ const exportSales = async (exportType: string) => {
   }
 
   return (
-      <div className="max-w-7xl w-full mx-auto p-6 rounded-lg">
+      <div className="max-w-7xl w-full mx-auto p-6 rounded-lg relative">
+        <BackgroundIcons type="sales" />
         <AlertSnackbar
           message={snackbar.message}
           type={snackbar.type}
