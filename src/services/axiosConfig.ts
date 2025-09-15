@@ -1,5 +1,6 @@
 // src/services/axiosConfig.ts
 import axios from 'axios';
+import { getToken, removeToken } from './authUtils';
 
 // Prefer Vite env, fall back to the current hardcoded backend URL.
 export const API_BASE_URL: string =
@@ -26,14 +27,7 @@ export const setUnauthorizedHandler = (fn: () => void) => {
 // Attach token automatically from localStorage
 http.interceptors.request.use(
   (config) => {
-    const token = (() => {
-      try {
-        return localStorage.getItem('token') ?? undefined;
-      } catch (err) {
-        console.warn('Failed to read token from localStorage', err);
-        return undefined;
-      }
-    })();
+    const token = getToken() ?? undefined;
 
     if (token) {
       config.headers = config.headers ?? {};
@@ -50,7 +44,7 @@ http.interceptors.response.use(
   (error) => {
     if (error?.response?.status === 401) {
       try {
-        localStorage.removeItem('token');
+        removeToken();
       } catch (err) {
         console.warn('Failed to remove token during 401 handling', err);
       }

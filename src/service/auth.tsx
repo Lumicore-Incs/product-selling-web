@@ -1,4 +1,4 @@
-import axios from './axiosConfig';
+import axios from '../services/axiosConfig';
 
 interface LoginPayload {
   email: string;
@@ -37,4 +37,4 @@ export async function register(payload: RegisterPayload) {
 export async function getCurrentUser(): Promise<User> {
   const response = await axios.post<User>('/user/get_user_info_by_token');
   return response.data;
-} 
+}

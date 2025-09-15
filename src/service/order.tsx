@@ -1,4 +1,4 @@
-import axios from './axiosConfig';
+import axios from '../services/axiosConfig';
 
 // Interfaces for the API response
 interface Product {
@@ -45,4 +45,4 @@ export async function getOrders(): Promise<Order[]> {
 export async function getAllCustomerOrders(): Promise<Order[]> {
   const response = await axios.get('/order/allCustomer');
   return response.data;
-} 
+}

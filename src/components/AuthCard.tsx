@@ -2,6 +2,7 @@ import { ArrowLeftIcon, LockIcon, MailIcon, PhoneIcon, UserIcon } from 'lucide-r
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login, register } from '../service/auth';
+import { setToken } from '../services/authUtils';
 import axios from '../services/axiosConfig';
 import { AlertSnackbar } from './AlertSnackbar';
 import { Button } from './Button';
@@ -134,7 +135,7 @@ export const AuthCard = () => {
 
       if (isLogin) {
         const token = (data as { token: string }).token;
-        localStorage.setItem('token', token);
+        setToken(token);
 
         try {
           const response = await axios.post('/user/get_user_info_by_token');

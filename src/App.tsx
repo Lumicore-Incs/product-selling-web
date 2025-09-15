@@ -1,12 +1,13 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthCard } from './components/AuthCard';
 import { DashboardLayout } from './components/layout/DashboardLayout';
 import { Dashboard } from './pages/Dashboard';
-import { Users } from './pages/Users';
+import { ProductManagement } from './pages/ProductManagement';
 import { SalesManagement } from './pages/SalesManagement';
 import { StockManagement } from './pages/StockManagement';
-import { ProductManagement } from './pages/ProductManagement';
+import { Users } from './pages/Users';
+import { getToken } from './services/authUtils';
 
 // Simple loader component
 function Loader() {
@@ -22,17 +23,21 @@ function BackgroundShapes() {
   return (
     <div
       style={{
-        position: "fixed",
+        position: 'fixed',
         top: 0,
         left: 0,
-        width: "100vw",
-        height: "100vh",
+        width: '100vw',
+        height: '100vh',
         zIndex: 0,
-        pointerEvents: "none",
-        overflow: "hidden",
+        pointerEvents: 'none',
+        overflow: 'hidden',
       }}
     >
-      <svg width="100vw" height="100vh" style={{ position: "absolute", width: "100vw", height: "100vh" }}>
+      <svg
+        width="100vw"
+        height="100vh"
+        style={{ position: 'absolute', width: '100vw', height: '100vh' }}
+      >
         {/* Circles */}
         <circle cx="10%" cy="20%" r="60" fill="#60a5fa" opacity="0.15" />
         <circle cx="80%" cy="80%" r="40" fill="#60a5fa" opacity="0.12" />
@@ -55,9 +60,9 @@ export function App() {
     const fetchData = async () => {
       try {
         // Example API call
-        await new Promise(resolve => setTimeout(resolve, 1500)); // replace with fetch() or axios
+        await new Promise((resolve) => setTimeout(resolve, 1500)); // replace with fetch() or axios
       } catch (error) {
-        console.error("API call failed:", error);
+        console.error('API call failed:', error);
       } finally {
         setLoading(false);
       }
@@ -67,19 +72,18 @@ export function App() {
 
   if (loading) return <Loader />;
 
-
-function ProtectedRoute({ children }: Readonly<{ children: JSX.Element }>) {
-  const token = localStorage.getItem('token');
-  if (!token) {
-    return <Navigate to="/auth" replace />;
+  function ProtectedRoute({ children }: Readonly<{ children: JSX.Element }>) {
+    const token = getToken();
+    if (!token) {
+      return <Navigate to="/auth" replace />;
+    }
+    return children;
   }
-  return children;
-}
 
   return (
     <BrowserRouter>
       <BackgroundShapes />
-      <div className="w-full min-h-screen" style={{ position: "relative", zIndex: 1 }}>
+      <div className="w-full min-h-screen" style={{ position: 'relative', zIndex: 1 }}>
         <Routes>
           <Route
             path="/auth"
@@ -89,7 +93,14 @@ function ProtectedRoute({ children }: Readonly<{ children: JSX.Element }>) {
               </div>
             }
           />
-          <Route path="/" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
             <Route index element={<Dashboard />} />
             <Route path="sale" element={<SalesManagement />} />
             <Route path="sale/settings" element={<SalesManagement />} />

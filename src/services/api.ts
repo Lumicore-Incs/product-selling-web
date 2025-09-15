@@ -247,29 +247,6 @@ export const orderApi = {
   },
 };
 
-export const authUtils = {
-  setToken: (token: string) => {
-    localStorage.setItem('token', token);
-  },
-
-  getToken: () => {
-    return localStorage.getItem('token');
-  },
-
-  removeToken: () => {
-    localStorage.removeItem('token');
-  },
-
-  isAuthenticated: () => {
-    return !!localStorage.getItem('token');
-  },
-
-  logout: () => {
-    localStorage.removeItem('token');
-    window.location.href = '/auth';
-  },
-};
-
 // User type for frontend mapped from UserApiDto
 export interface User {
   id: string;
