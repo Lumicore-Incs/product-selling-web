@@ -20,7 +20,7 @@ const StatCard = ({
                     value,
                     trend
                   }: StatCardProps) => (
-    <div className="bg-red-500 bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl p-6 mr-8 shadow-sm">
+    <div className="bg-blue-200 bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl p-6 shadow-sm">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm text-gray-600">{label}</p>

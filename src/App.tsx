@@ -18,6 +18,35 @@ function Loader() {
   );
 }
 
+function BackgroundShapes() {
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100vw",
+        height: "100vh",
+        zIndex: 0,
+        pointerEvents: "none",
+        overflow: "hidden",
+      }}
+    >
+      <svg width="100vw" height="100vh" style={{ position: "absolute", width: "100vw", height: "100vh" }}>
+        {/* Circles */}
+        <circle cx="10%" cy="20%" r="60" fill="#60a5fa" opacity="0.15" />
+        <circle cx="80%" cy="80%" r="40" fill="#60a5fa" opacity="0.12" />
+        {/* Squares */}
+        <rect x="70%" y="10%" width="70" height="70" fill="#60a5fa" opacity="0.13" rx="16" />
+        <rect x="20%" y="70%" width="50" height="50" fill="#60a5fa" opacity="0.10" rx="10" />
+        {/* Triangles */}
+        <polygon points="90,300 140,350 40,350" fill="#60a5fa" opacity="0.11" />
+        <polygon points="900,100 950,180 850,180" fill="#60a5fa" opacity="0.09" />
+      </svg>
+    </div>
+  );
+}
+
 export function App() {
   const [loading, setLoading] = useState(true);
 
@@ -38,17 +67,19 @@ export function App() {
 
   if (loading) return <Loader />;
 
-  function ProtectedRoute({ children }: { children: JSX.Element }) {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      return <Navigate to="/auth" replace />;
-    }
-    return children;
+
+function ProtectedRoute({ children }: Readonly<{ children: JSX.Element }>) {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    return <Navigate to="/auth" replace />;
   }
+  return children;
+}
 
   return (
     <BrowserRouter>
-      <div className="w-full min-h-screen">
+      <BackgroundShapes />
+      <div className="w-full min-h-screen" style={{ position: "relative", zIndex: 1 }}>
         <Routes>
           <Route
             path="/auth"
