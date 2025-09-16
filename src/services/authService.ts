@@ -1,32 +1,32 @@
 // src/services/authService.ts
-import axios from 'axios';
-
-const API_BASE_URL = 'https://api.weadits.com/demo-0.0.1-SNAPSHOT';
+import { removeToken, setToken } from './authUtils';
+import http from './axiosConfig';
 
 export interface LoginRequest {
-    username: string;
-    password: string;
+  username: string;
+  password: string;
 }
 
 export interface LoginResponse {
-    token: string;
-    // Add other fields as per your backend response
+  token: string;
 }
 
 export const authService = {
-    // Login function - adjust endpoint as per your backend
-    login: async (credentials: LoginRequest): Promise<LoginResponse> => {
-        try {
-            const response = await axios.post<LoginResponse>(`${API_BASE_URL}/auth/login`, credentials);
-            return response.data;
-        } catch (error) {
-            console.error('Login failed:', error);
-            throw error;
-        }
-    },
-
-    // Logout function
-    logout: () => {
-        localStorage.removeItem('authToken');
+  login: async (credentials: LoginRequest): Promise<LoginResponse> => {
+    try {
+      const response = await http.post<LoginResponse>(`/auth/login`, credentials);
+      const data = response.data;
+      if (data?.token) {
+        setToken(data.token);
+      }
+      return data;
+    } catch (error) {
+      console.error('Login failed:', error);
+      throw error;
     }
+  },
+
+  logout: () => {
+    removeToken();
+  },
 };

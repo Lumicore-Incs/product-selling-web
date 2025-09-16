@@ -1,4 +1,4 @@
-import axios from './axiosConfig';
+import axios from '../services/axiosConfig';
 
 interface DashboardStats {
   total_order: number;
@@ -14,4 +14,4 @@ interface DashboardStats {
 export async function getDashboardStats(): Promise<DashboardStats> {
   const response = await axios.get<DashboardStats>('/dashboard');
   return response.data;
-} 
+}

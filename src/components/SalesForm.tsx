@@ -1,20 +1,7 @@
-import React, { useEffect, useState } from "react";
-import {
-  SaveIcon,
-  RefreshCwIcon,
-  Trash2Icon,
-  XIcon,
-  PlusIcon,
-  MinusIcon,
-} from "lucide-react";
-import {
-  productApi,
-  customerApi,
-  ProductDto,
-  CustomerRequestDTO,
-  OrderItem,
-} from "../services/api";
-import { AlertSnackbar } from "./AlertSnackbar";
+import { MinusIcon, PlusIcon, RefreshCwIcon, SaveIcon, Trash2Icon, XIcon } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { customerApi, CustomerRequestDTO, productApi, ProductDto } from '../services/api';
+import { AlertSnackbar } from './AlertSnackbar';
 
 interface SaleItem {
   productId: string;
@@ -37,7 +24,7 @@ interface Sale {
 }
 
 interface SalesFormProps {
-  onSave: (sale: Omit<Sale, "id">) => void;
+  onSave: (sale: Omit<Sale, 'id'>) => void;
   onUpdate: (sale: Sale) => void;
   currentSale: Sale | null;
   isEditing: boolean;
@@ -54,37 +41,35 @@ export const SalesForm: React.FC<SalesFormProps> = ({
   onCustomerCreated,
 }) => {
   const [formData, setFormData] = useState({
-    name: "",
-    address: "",
-    contact01: "",
-    contact02: "",
-    status: "pending",
-    qty: "",
-    remark: "",
+    name: '',
+    address: '',
+    contact01: '',
+    contact02: '',
+    status: 'pending',
+    qty: '',
+    remark: '',
     items: [] as SaleItem[],
   });
 
   const [products, setProducts] = useState<ProductDto[]>([]);
   const [showProductSelector, setShowProductSelector] = useState(false);
-  const [selectedProductId, setSelectedProductId] = useState("");
+  const [selectedProductId, setSelectedProductId] = useState('');
   const [selectedProductQuantity, setSelectedProductQuantity] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
-    type: "success" | "error";
-  }>({ open: false, message: "", type: "success" });
+    type: 'success' | 'error';
+  }>({ open: false, message: '', type: 'success' });
   const [defaultProduct, setDefaultProduct] = useState<ProductDto | null>(null);
 
   // Add this useEffect after the existing loadProducts useEffect
   useEffect(() => {
     const loadDefaultProduct = async () => {
-      const productId = localStorage.getItem("productId");
+      const productId = localStorage.getItem('productId');
       if (productId && products.length > 0) {
-        const product = products.find(
-          (p) => p.productId?.toString() === productId
-        );
+        const product = products.find((p) => p.productId?.toString() === productId);
         if (product) {
           setDefaultProduct(product);
         }
@@ -99,10 +84,13 @@ export const SalesForm: React.FC<SalesFormProps> = ({
     const loadProducts = async () => {
       try {
         const fetchedProducts = await productApi.getAllProducts();
-        setProducts(fetchedProducts);
+        const activeProducts = fetchedProducts.filter(
+          (p) => (p.status ?? '').toString().toLowerCase() === 'active'
+        );
+        setProducts(activeProducts);
       } catch (error) {
-        console.error("Failed to load products:", error);
-        setError("Failed to load products. Please try again.");
+        console.error('Failed to load products:', error);
+        setError('Failed to load products. Please try again.');
       }
     };
 
@@ -134,9 +122,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
 
   const handleAddProduct = () => {
     if (selectedProductId && selectedProductQuantity > 0) {
-      const product = products.find(
-        (p) => p.productId?.toString() === selectedProductId
-      );
+      const product = products.find((p) => p.productId?.toString() === selectedProductId);
       if (product) {
         const newItem: SaleItem = {
           productId: product.productId!.toString(),
@@ -164,7 +150,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
         }
 
         // Reset selection
-        setSelectedProductId("");
+        setSelectedProductId('');
         setSelectedProductQuantity(1);
         setShowProductSelector(false);
       }
@@ -172,9 +158,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
   };
 
   const handleRemoveProduct = (productId: string) => {
-    const updatedItems = formData.items.filter(
-      (item) => item.productId !== productId
-    );
+    const updatedItems = formData.items.filter((item) => item.productId !== productId);
 
     setFormData({
       ...formData,
@@ -203,12 +187,9 @@ export const SalesForm: React.FC<SalesFormProps> = ({
   };
 
   // Helper: validate contact numbers (now accepts 10 digits with leading 0)
-  const isContact01Valid =
-    formData.contact01 === "" || /^0\d{9}$/.test(formData.contact01);
-  const isContact02Valid =
-    formData.contact02 === "" || /^0\d{9}$/.test(formData.contact02);
-  const hasAtLeastOneContact =
-    formData.contact01 !== "" || formData.contact02 !== "";
+  const isContact01Valid = formData.contact01 === '' || /^0\d{9}$/.test(formData.contact01);
+  const isContact02Valid = formData.contact02 === '' || /^0\d{9}$/.test(formData.contact02);
+  const hasAtLeastOneContact = formData.contact01 !== '' || formData.contact02 !== '';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -219,8 +200,8 @@ export const SalesForm: React.FC<SalesFormProps> = ({
     if (!isContact01Valid) {
       setSnackbar({
         open: true,
-        message: "Whatsapp number must be exactly 10 digits starting with 0 if provided.",
-        type: "error",
+        message: 'Whatsapp number must be exactly 10 digits starting with 0 if provided.',
+        type: 'error',
       });
       setIsLoading(false);
       return;
@@ -229,8 +210,8 @@ export const SalesForm: React.FC<SalesFormProps> = ({
     if (!isContact02Valid) {
       setSnackbar({
         open: true,
-        message: "Contact number must be exactly 10 digits starting with 0 if provided.",
-        type: "error",
+        message: 'Contact number must be exactly 10 digits starting with 0 if provided.',
+        type: 'error',
       });
       setIsLoading(false);
       return;
@@ -239,21 +220,20 @@ export const SalesForm: React.FC<SalesFormProps> = ({
     if (!hasAtLeastOneContact) {
       setSnackbar({
         open: true,
-        message:
-          "At least one contact number (Whatsapp or Contact) is required.",
-        type: "error",
+        message: 'At least one contact number (Whatsapp or Contact) is required.',
+        type: 'error',
       });
       setIsLoading(false);
       return;
     }
-    let tempCustomer=null;
+    let tempCustomer = null;
 
     try {
       // Prepare items array based on the logic you described
-      let finalItems: SaleItem[] = [...formData.items]; // Items added via plus icon
+      const finalItems: SaleItem[] = [...formData.items]; // Items added via plus icon
 
       // Check if user entered quantity in form and has default product
-      if (formData.qty && formData.qty.trim() !== "" && defaultProduct) {
+      if (formData.qty && formData.qty.trim() !== '' && defaultProduct) {
         const qtyNumber = parseInt(formData.qty);
         if (qtyNumber > 0) {
           // Check if default product is already in the items (added via plus icon)
@@ -278,10 +258,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
       }
 
       // Calculate total amount
-      const totalAmount = finalItems.reduce(
-        (sum, item) => sum + item.qty * item.price,
-        0
-      );
+      const totalAmount = finalItems.reduce((sum, item) => sum + item.qty * item.price, 0);
 
       // If editing, use the existing logic
       if (isEditing && currentSale) {
@@ -297,8 +274,8 @@ export const SalesForm: React.FC<SalesFormProps> = ({
 
       // For new customers, save to backend
       // Remove leading 0 before sending to API (convert 10 digits to 9 digits)
-      const contact01ForBackend = formData.contact01.startsWith('0') 
-        ? formData.contact01.substring(1) 
+      const contact01ForBackend = formData.contact01.startsWith('0')
+        ? formData.contact01.substring(1)
         : formData.contact01;
       const contact02ForBackend = formData.contact02.startsWith('0')
         ? formData.contact02.substring(1)
@@ -321,7 +298,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
         })),
       };
 
-      tempCustomer=customerData;
+      tempCustomer = customerData;
 
       const savedCustomer = await customerApi.createCustomer(customerData);
 
@@ -340,29 +317,27 @@ export const SalesForm: React.FC<SalesFormProps> = ({
       resetForm();
       setSnackbar({
         open: true,
-        message: "Customer and order created successfully!",
-        type: "success",
+        message: 'Customer and order created successfully!',
+        type: 'success',
       });
-      
     } catch (error: any) {
-      console.error("Error saving customer:", error);
-      setError(
-        error.response?.data?.message ||
-          "Failed to save customer. Please try again."
-      );
-      if (error.message === "DUPLICATE_CUSTOMER") {
+      console.error('Error saving customer:', error);
+      setError(error.response?.data?.message || 'Failed to save customer. Please try again.');
+      if (error.message === 'DUPLICATE_CUSTOMER') {
         const duplicateCustomer = tempCustomer;
-        console.log("Duplicate customer data:", tempCustomer);
+        console.log('Duplicate customer data:', tempCustomer);
         setSnackbar({
           open: true,
-          message: `Customer already exists! Name: ${duplicateCustomer.name}, Contact: ${duplicateCustomer.contact01 || duplicateCustomer.contact02}`,
-          type: "error",
+          message: `Customer already exists! Name: ${duplicateCustomer.name}, Contact: ${
+            duplicateCustomer.contact01 || duplicateCustomer.contact02
+          }`,
+          type: 'error',
         });
       } else {
         setSnackbar({
           open: true,
-          message: "Error creating customer!",
-          type: "error",
+          message: 'Error creating customer!',
+          type: 'error',
         });
       }
     } finally {
@@ -372,17 +347,17 @@ export const SalesForm: React.FC<SalesFormProps> = ({
 
   const resetForm = () => {
     setFormData({
-      name: "",
-      address: "",
-      contact01: "",
-      contact02: "",
-      status: "pending",
-      qty: "",
-      remark: "",
+      name: '',
+      address: '',
+      contact01: '',
+      contact02: '',
+      status: 'pending',
+      qty: '',
+      remark: '',
       items: [],
     });
     setShowProductSelector(false);
-    setSelectedProductId("");
+    setSelectedProductId('');
     setSelectedProductQuantity(1);
     setError(null);
   };
@@ -416,7 +391,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 sm:p-6">
         <h2 className="text-xl sm:text-2xl font-bold text-white">
-          {isEditing ? "Edit Sale Entry" : "Add New Sale"}
+          {isEditing ? 'Edit Sale Entry' : 'Add New Sale'}
         </h2>
       </div>
 
@@ -437,10 +412,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               {/* Customer Name */}
               <div className="md:col-span-2">
-                <label
-                  htmlFor="name"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
                   Customer Name *
                 </label>
                 <input
@@ -457,10 +429,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
 
               {/* Address */}
               <div className="md:col-span-2">
-                <label
-                  htmlFor="address"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
+                <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
                   Address *
                 </label>
                 <input
@@ -477,10 +446,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
 
               {/* Contact Numbers */}
               <div>
-                <label
-                  htmlFor="contact01"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
+                <label htmlFor="contact01" className="block text-sm font-medium text-gray-700 mb-2">
                   WhatsApp Number
                 </label>
                 <input
@@ -491,8 +457,8 @@ export const SalesForm: React.FC<SalesFormProps> = ({
                   onChange={handleChange}
                   className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-base ${
                     formData.contact01 && !isContact01Valid
-                      ? "border-red-500 bg-red-50"
-                      : "border-gray-300"
+                      ? 'border-red-500 bg-red-50'
+                      : 'border-gray-300'
                   }`}
                   placeholder="10 digits with 0 (e.g., 0771234567)"
                   maxLength={10}
@@ -505,10 +471,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
               </div>
 
               <div>
-                <label
-                  htmlFor="contact02"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
+                <label htmlFor="contact02" className="block text-sm font-medium text-gray-700 mb-2">
                   Contact Number
                 </label>
                 <input
@@ -519,8 +482,8 @@ export const SalesForm: React.FC<SalesFormProps> = ({
                   onChange={handleChange}
                   className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-base ${
                     formData.contact02 && !isContact02Valid
-                      ? "border-red-500 bg-red-50"
-                      : "border-gray-300"
+                      ? 'border-red-500 bg-red-50'
+                      : 'border-gray-300'
                   }`}
                   placeholder="10 digits with 0 (e.g., 0112345678)"
                   maxLength={10}
@@ -539,10 +502,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
 
               {/* Remark */}
               <div className="md:col-span-2">
-                <label
-                  htmlFor="remark"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
+                <label htmlFor="remark" className="block text-sm font-medium text-gray-700 mb-2">
                   Remark
                 </label>
                 <input
@@ -560,16 +520,11 @@ export const SalesForm: React.FC<SalesFormProps> = ({
 
           {/* Product Information Section */}
           <div className="bg-gray-50 rounded-lg p-4 sm:p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">
-              Product Information
-            </h3>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Product Information</h3>
 
             {/* Default Product Quantity */}
             <div className="mb-4">
-              <label
-                htmlFor="qty"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
+              <label htmlFor="qty" className="block text-sm font-medium text-gray-700 mb-2">
                 Quantity
               </label>
               <div className="flex flex-col sm:flex-row gap-3">
@@ -595,11 +550,8 @@ export const SalesForm: React.FC<SalesFormProps> = ({
               {defaultProduct && (
                 <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
                   <div className="text-sm text-blue-700">
-                    Default Product:{" "}
-                    <span className="font-medium">{defaultProduct.name}</span>
-                    <span className="ml-2 text-blue-600">
-                      (${defaultProduct.price})
-                    </span>
+                    Default Product: <span className="font-medium">{defaultProduct.name}</span>
+                    <span className="ml-2 text-blue-600">(${defaultProduct.price})</span>
                   </div>
                 </div>
               )}
@@ -609,9 +561,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
             {showProductSelector && (
               <div className="border border-gray-300 rounded-lg p-4 bg-white mb-4">
                 <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-base font-medium text-gray-800">
-                    Add Product
-                  </h4>
+                  <h4 className="text-base font-medium text-gray-800">Add Product</h4>
                   <button
                     type="button"
                     onClick={() => setShowProductSelector(false)}
@@ -633,10 +583,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
                     >
                       <option value="">Choose a product...</option>
                       {products.map((product) => (
-                        <option
-                          key={product.productId}
-                          value={product.productId}
-                        >
+                        <option key={product.productId} value={product.productId}>
                           {product.name} - ${product.price}
                         </option>
                       ))}
@@ -644,18 +591,12 @@ export const SalesForm: React.FC<SalesFormProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Quantity
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
                     <input
                       type="number"
                       min="1"
                       value={selectedProductQuantity}
-                      onChange={(e) =>
-                        setSelectedProductQuantity(
-                          parseInt(e.target.value) || 1
-                        )
-                      }
+                      onChange={(e) => setSelectedProductQuantity(parseInt(e.target.value) || 1)}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
                     />
                   </div>
@@ -667,8 +608,8 @@ export const SalesForm: React.FC<SalesFormProps> = ({
                       disabled={!selectedProductId}
                       className={`flex-1 px-4 py-3 rounded-lg text-white font-medium transition-all duration-200 ${
                         selectedProductId
-                          ? "bg-green-600 hover:bg-green-700 focus:ring-2 focus:ring-green-500"
-                          : "bg-gray-400 cursor-not-allowed"
+                          ? 'bg-green-600 hover:bg-green-700 focus:ring-2 focus:ring-green-500'
+                          : 'bg-gray-400 cursor-not-allowed'
                       }`}
                     >
                       Add Product
@@ -688,9 +629,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
             {/* Selected Products List */}
             {formData.items.length > 0 && (
               <div className="border border-gray-300 rounded-lg p-4 bg-white">
-                <h4 className="text-base font-medium text-gray-800 mb-4">
-                  Selected Products
-                </h4>
+                <h4 className="text-base font-medium text-gray-800 mb-4">Selected Products</h4>
                 <div className="space-y-3">
                   {formData.items.map((item) => (
                     <div
@@ -702,14 +641,12 @@ export const SalesForm: React.FC<SalesFormProps> = ({
                           <div className="font-medium text-gray-800 text-base">
                             {item.productName}
                           </div>
-                          <div className="text-sm text-gray-600">
-                            ${item.price} each
-                          </div>
+                          <div className="text-sm text-gray-600">${item.price} each</div>
                         </div>
 
                         <div className="flex items-center gap-3">
                           <div className="text-sm text-gray-600 whitespace-nowrap">
-                            Subtotal:{" "}
+                            Subtotal:{' '}
                             <span className="font-medium">
                               ${(item.qty * item.price).toFixed(2)}
                             </span>
@@ -730,9 +667,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
                             />
                             <button
                               type="button"
-                              onClick={() =>
-                                handleRemoveProduct(item.productId)
-                              }
+                              onClick={() => handleRemoveProduct(item.productId)}
                               className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-all duration-200"
                             >
                               <MinusIcon className="w-4 h-4" />
@@ -746,9 +681,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
                   {/* Total Amount */}
                   <div className="pt-4 border-t border-gray-300">
                     <div className="flex justify-between items-center text-lg">
-                      <span className="font-semibold text-gray-800">
-                        Total Amount:
-                      </span>
+                      <span className="font-semibold text-gray-800">Total Amount:</span>
                       <span className="font-bold text-green-600 text-xl">
                         ${getTotalAmount().toFixed(2)}
                       </span>
@@ -769,7 +702,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
                   className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 font-medium disabled:bg-blue-400 disabled:cursor-not-allowed"
                 >
                   <RefreshCwIcon className="w-5 h-5" />
-                  {isLoading ? "Updating..." : "Update Sale"}
+                  {isLoading ? 'Updating...' : 'Update Sale'}
                 </button>
                 <button
                   type="button"
@@ -787,7 +720,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
                 className="flex items-center justify-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 font-medium disabled:bg-green-400 disabled:cursor-not-allowed"
               >
                 <SaveIcon className="w-5 h-5" />
-                {isLoading ? "Saving..." : "Save Sale"}
+                {isLoading ? 'Saving...' : 'Save Sale'}
               </button>
             )}
 

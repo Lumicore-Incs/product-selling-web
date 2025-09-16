@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import StockForm from '../components/stock/StockForm';
+import { BackgroundIcons } from '../components/BackgroundIcons';
 import Filters from '../components/stock/Filters';
 import StockTable from '../components/stock/StockTable';
 
@@ -44,7 +45,8 @@ export const StockManagement = () => {
     setFilterDate(date);
   };
 
-  return <div className="space-y-6 mx-6">
+  return <div className="space-y-6 mx-6 relative">
+      <BackgroundIcons type="stock" />
       <h1 className="text-2xl font-bold mb-6">Stock Management</h1>
       <StockForm onSubmit={handleSave} initialValues={editItem} />
       <Filters onFilterChange={handleFilterChange} />
