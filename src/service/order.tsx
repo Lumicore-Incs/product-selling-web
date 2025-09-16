@@ -33,7 +33,7 @@ export interface Order {
   date: string;
   trackingId: string;
   status: string;
-  customerId: Customer;
+  customer: Customer;
   orderDetails: OrderDetail[];
 }
 

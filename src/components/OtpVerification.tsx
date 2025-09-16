@@ -1,8 +1,9 @@
 import { ArrowLeftIcon, LockIcon } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import axios from '../services/axiosConfig';
 import { AlertSnackbar } from './AlertSnackbar';
 import { Button } from './Button';
+import { InputField } from './InputField';
 
 interface OtpVerificationProps {
   email: string;
@@ -168,30 +169,28 @@ export const OtpVerification = ({ email, onBack, onSuccess }: OtpVerificationPro
             </div>
 
             <form className="space-y-4" onSubmit={handleSubmit}>
-              <div className="relative">
-                <input
+              <div>
+                <InputField
+                  id="new-password"
                   type="password"
-                  placeholder="New Password"
-                  className="w-full px-4 py-3 pl-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  label="New Password"
+                  icon={<LockIcon size={18} className="text-gray-400" />}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={8}
+                  inputProps={{ required: true, minLength: 8 }}
                 />
-                <LockIcon size={18} className="absolute left-4 top-3.5 text-gray-400" />
               </div>
 
-              <div className="relative">
-                <input
+              <div>
+                <InputField
+                  id="confirm-password"
                   type="password"
-                  placeholder="Confirm Password"
-                  className="w-full px-4 py-3 pl-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  label="Confirm Password"
+                  icon={<LockIcon size={18} className="text-gray-400" />}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  minLength={8}
+                  inputProps={{ required: true, minLength: 8 }}
                 />
-                <LockIcon size={18} className="absolute left-4 top-3.5 text-gray-400" />
               </div>
 
               <Button type="submit">{isLoading ? 'Resetting...' : 'Reset Password'}</Button>

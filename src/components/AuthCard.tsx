@@ -17,6 +17,7 @@ interface UserInfo {
 
 interface Product {
   productId: number;
+  status: string;
   name: string;
 }
 
@@ -52,8 +53,12 @@ export const AuthCard = () => {
         try {
           const res = await axios.get('/products');
           if (Array.isArray(res.data)) {
-            setProducts(res.data);
-            if (res.data.length > 0) setSelectedProductId(res.data[0].productId);
+            const productsData = res.data as Product[];
+            const activeProducts = productsData.filter(
+              (p) => (p.status ?? '').toString().toLowerCase() === 'active'
+            );
+            setProducts(activeProducts);
+            if (activeProducts.length > 0) setSelectedProductId(activeProducts[0].productId);
           }
         } catch (err) {
           console.error('Failed to load products:', err);
@@ -285,7 +290,7 @@ export const AuthCard = () => {
                 </label>
                 <select
                   id="product"
-                  className="mb-1 block w-full border-gray-300 backdrop-filter backdrop-blur-lg rounded-2xl shadow-lg p-1 transition-all duration-500"
+                  className="mb-1 block w-full border-gray-300 backdrop-filter backdrop-blur-lg rounded-lg shadow-lg p-1 transition-all duration-500"
                   value={selectedProductId || ''}
                   onChange={(e) => setSelectedProductId(Number(e.target.value))}
                   required
