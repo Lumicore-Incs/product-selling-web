@@ -85,8 +85,8 @@ export const DuplicateSales: React.FC = () => {
       }
 
       // Load all orders from backend
-      console.log('Calling orderApi.getAllOrders()...');
-      const responseOrder = await orderApi.getAllOrders();
+      console.log('Calling orderApi.getAllDuplicateOrders()...');
+      const responseOrder = await orderApi.getAllDuplicateOrders();
 
       // Check if response exists and is an array
       if (!responseOrder || !Array.isArray(responseOrder)) {

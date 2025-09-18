@@ -233,6 +233,35 @@ export const orderApi = {
       throw error;
     }
   },
+  // Get all duplicate orders
+  getAllDuplicateOrders: async (): Promise<OrderDtoGet[]> => {
+    try {
+      console.log('Fetching all duplicate orders from:', `${API_BASE_URL}/order/duplicate`);
+      const response = await api.get<OrderDtoGet[]>('/order/duplicate');
+      console.log('All duplicate orders response:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error fetching all duplicate orders:', error);
+      console.error('Request URL:', error.config?.url);
+      console.error('Response status:', error.response?.status);
+      console.error('Response data:', error.response?.data);
+
+      // If 404, try alternative endpoint
+      if (error.response?.status === 404) {
+        console.log('Trying alternative endpoint: /order');
+        try {
+          const fallbackResponse = await api.get<OrderDtoGet[]>('/order/duplicate');
+          console.log('Fallback response successful:', fallbackResponse.data);
+          return fallbackResponse.data;
+        } catch (fallbackError) {
+          console.error('Fallback also failed:', fallbackError);
+          throw error; // Throw original error
+        }
+      }
+
+      throw error;
+    }
+  },
 
   // Test endpoint connectivity
   testConnection: async (): Promise<boolean> => {
