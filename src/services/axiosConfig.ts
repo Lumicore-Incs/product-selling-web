@@ -2,10 +2,27 @@
 import axios from 'axios';
 import { getToken, removeToken } from './authUtils';
 
-// Prefer Vite env, fall back to the current hardcoded backend URL.
-export const API_BASE_URL: string =
-  ((import.meta as any)?.env?.VITE_API_BASE_URL as string) ||
-  'https://api.weadits.com/demo-0.0.1-SNAPSHOT';
+type ViteEnv = Partial<Record<string, string>> & {
+  VITE_API_BASE_URL?: string;
+  MODE?: string;
+};
+
+const viteEnv = (import.meta as unknown as { env?: ViteEnv }).env ?? ({} as ViteEnv);
+const explicit = viteEnv.VITE_API_BASE_URL ?? '';
+
+const mode = viteEnv.MODE ?? 'development';
+
+const modeDefaults: Record<string, string> = {
+  production: 'https://api.weadits.com/demo-0.0.1-SNAPSHOT',
+  development: 'http://localhost:8080',
+};
+
+export const API_BASE_URL: string = (
+  explicit ||
+  modeDefaults[mode] ||
+  modeDefaults.development
+).toString();
+
 const baseURL = API_BASE_URL.replace(/\/+$/g, '');
 
 const http = axios.create({

@@ -35,7 +35,7 @@ interface OutletContext {
   setShowSettings: (show: boolean) => void;
 }
 
-export const SalesManagement: React.FC = () => {
+export const DuplicateSales: React.FC = () => {
   const { salesTitle, salesBackgroundColor, showSettings, setShowSettings } =
     useOutletContext<OutletContext>();
   const [sales, setSales] = useState<Sale[]>([]);
@@ -104,35 +104,34 @@ export const SalesManagement: React.FC = () => {
 
       // Convert backend OrderDtoGet to frontend Sale format
       // Use the same mapping as Dashboard component
-      const convertedSales: Sale[] = responseOrder.map((order: any, index: number) => {
+      const convertedSales: Sale[] = responseOrder.map((order: unknown, index: number) => {
         console.log(`Converting order ${index}:`, order);
-        console.log(`Available fields:`, Object.keys(order));
+        const ord = order as any;
+        console.log(`Available fields:`, Object.keys(ord || {}));
 
-        // Source of customer data may be top-level or under customerId
-        const customer = order.customerId || order.customer || {};
+        const customer = ord.customerId || ord.customer || {};
 
-        // Items may be under orderDetails or items
-        const rawItems = Array.isArray(order.orderDetails)
-          ? order.orderDetails
-          : Array.isArray(order.items)
-          ? order.items
+        const rawItems = Array.isArray(ord.orderDetails)
+          ? ord.orderDetails
+          : Array.isArray(ord.items)
+          ? ord.items
           : [];
 
         const converted = {
-          id: String(order.orderId || order.id || ''),
-          name: customer?.name || order.name || '',
-          address: customer?.address || order.address || '',
-          contact01: customer?.contact01 || order.contact01 || order.contact || '',
-          contact02: customer?.contact02 || order.contact02 || '',
-          status: order.status || '',
+          id: String(ord.orderId || ord.id || ''),
+          name: customer?.name || ord.name || '',
+          address: customer?.address || ord.address || '',
+          contact01: customer?.contact01 || ord.contact01 || ord.contact || '',
+          contact02: customer?.contact02 || ord.contact02 || '',
+          status: ord.status || '',
           quantity: String(
             rawItems?.reduce(
               (sum: number, item: any) => sum + (item.qty || item.quantity || 0),
               0
             ) || 0
           ),
-          remark: customer?.remark || order.remark || '',
-          totalAmount: order.totalPrice || order.totalAmount || '',
+          remark: customer?.remark || ord.remark || '',
+          totalAmount: ord.totalPrice || ord.totalAmount || '',
           items: Array.isArray(rawItems)
             ? rawItems.map((detail: any) => ({
                 productId: String(detail.productId?.productId || detail.productId || ''),
@@ -352,6 +351,9 @@ export const SalesManagement: React.FC = () => {
 
       <div className="space-y-8">
         <div>
+          <SalesTable sales={sales} onEdit={editSale} onDelete={deleteSale} isLoading={isLoading} />
+        </div>
+        <div>
           <SalesForm
             onSave={addSale}
             onUpdate={updateSale}
@@ -363,9 +365,6 @@ export const SalesManagement: React.FC = () => {
             }}
             onCustomerCreated={handleCustomerCreated}
           />
-        </div>
-        <div>
-          <SalesTable sales={sales} onEdit={editSale} onDelete={deleteSale} isLoading={isLoading} />
         </div>
       </div>
     </div>
