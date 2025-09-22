@@ -99,7 +99,7 @@ export const Dashboard = () => {
       try {
         setProductsLoading(true);
         const productsData = await getAllProducts();
-        setProducts(productsData);
+        setProducts(productsData as any[]);
       } catch (err) {
         console.error('Failed to fetch products:', err);
         setProducts([]);
@@ -138,6 +138,7 @@ export const Dashboard = () => {
         // Process sales
         const mappedSales: Sale[] = salesApiData.map((order) => ({
           id: String(order.orderId),
+          customerId: String(order.customer.customerId),
           name: order.customer.name,
           address: order.customer.address,
           contact01: order.customer.contact01,
@@ -147,7 +148,7 @@ export const Dashboard = () => {
           items: order.orderDetails.map((detail) => ({
             productId: String(detail.productId.productId),
             productName: detail.productId.name,
-            quantity: detail.qty,
+            qty: detail.qty,
             price: detail.productId.price,
           })),
         }));

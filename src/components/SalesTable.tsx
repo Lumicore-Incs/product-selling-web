@@ -65,7 +65,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({ sales, onEdit, onDelete 
   };
 
   const getTotalAmount = (items: SaleItem[]) => {
-    return items.reduce((sum, item) => sum + item.quantity * item.price, 0);
+    return items.reduce((sum, item) => sum + item.qty * item.price, 0);
   };
 
   // Pagination logic
@@ -178,7 +178,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({ sales, onEdit, onDelete 
                               key={item.productId + '-' + index}
                               className="text-xs text-gray-600"
                             >
-                              {item.productName} (x{item.quantity})
+                              {item.productName} (x{item.qty})
                             </div>
                           ))}
                           {sale.items.length > 2 && (
@@ -187,7 +187,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({ sales, onEdit, onDelete 
                             </div>
                           )}
                           <div className="text-xs font-medium text-blue-600 mt-1">
-                            Total: {sale.items.reduce((sum, item) => sum + item.quantity, 0)} items
+                            Total: {sale.items.reduce((sum, item) => sum + item.qty, 0)} items
                           </div>
                         </div>
                       ) : (
@@ -344,11 +344,9 @@ export const SalesTable: React.FC<SalesTableProps> = ({ sales, onEdit, onDelete 
                                 <div className="text-xs text-gray-600">LKR {item.price} each</div>
                               </div>
                               <div className="text-right">
-                                <div className="text-sm font-medium text-gray-900">
-                                  x{item.quantity}
-                                </div>
+                                <div className="text-sm font-medium text-gray-900">x{item.qty}</div>
                                 <div className="text-xs text-green-600">
-                                  LKR {(item.quantity * item.price).toFixed(2)}
+                                  LKR {(item.qty * item.price).toFixed(2)}
                                 </div>
                               </div>
                             </div>
@@ -359,7 +357,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({ sales, onEdit, onDelete 
                                 Total Items:
                               </span>
                               <span className="text-sm font-semibold text-blue-600">
-                                {sale.items.reduce((sum, item) => sum + item.quantity, 0)} items
+                                {sale.items.reduce((sum, item) => sum + item.qty, 0)} items
                               </span>
                             </div>
                           </div>

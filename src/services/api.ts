@@ -17,6 +17,8 @@ export interface OrderItem {
   qty: number;
   price: number;
   total: number;
+  orderDetailsId: number;
+  orderId: number;
 }
 
 export interface CustomerRequestDTO {
