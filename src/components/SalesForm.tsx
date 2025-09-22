@@ -102,8 +102,8 @@ export const SalesForm: React.FC<SalesFormProps> = ({
       setFormData({
         name: currentSale.name,
         address: currentSale.address,
-        contact01: currentSale.contact01,
-        contact02: currentSale.contact02,
+        contact01: 0 + currentSale.contact01,
+        contact02: 0 + currentSale.contact02,
         status: currentSale.status,
         qty: currentSale.qty,
         remark: currentSale.remark,

@@ -3,30 +3,13 @@ import { useOutletContext } from 'react-router-dom';
 import { AlertSnackbar } from '../components/AlertSnackbar';
 import { BackgroundIcons } from '../components/BackgroundIcons';
 import { SalesForm } from '../components/SalesForm';
-import { SalesTable } from '../components/SalesTable';
+import { SalesTable, Sale as TableSale, SaleItem as TableSaleItem } from '../components/SalesTable';
 import { getCurrentUser } from '../service/auth';
 import { CustomerDtoGet, dashboardApi, orderApi } from '../services/api';
+import { salesService } from '../services/salesService';
 
-interface SaleItem {
-  productId: string;
-  productName: string;
-  qty: number;
-  price: number;
-}
-
-interface Sale {
-  id: string;
-  name: string;
-  address: string;
-  contact01: string;
-  contact02: string;
-  status: string;
-  qty: string;
-  remark: string;
-  totalPrice: string;
-  items: SaleItem[];
-  totalAmount?: number;
-}
+type Sale = TableSale;
+type SaleItem = TableSaleItem;
 
 interface OutletContext {
   salesTitle: string;
@@ -76,14 +59,6 @@ export const SalesManagement: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      // Test connection first
-      const isConnected = await orderApi.testConnection();
-      if (!isConnected) {
-        throw new Error(
-          'Cannot connect to server. Please check if the backend is running on port 8081.'
-        );
-      }
-
       // Load all orders from backend
       console.log('Calling orderApi.getAllOrders()...');
       const responseOrder = await orderApi.getAllOrders();
@@ -132,16 +107,19 @@ export const SalesManagement: React.FC = () => {
             ) || 0
           ),
           remark: customer?.remark || order.remark || '',
-          totalAmount: order.totalPrice || order.totalAmount || '',
+          totalPrice: order.totalPrice || order.totalAmount || 0,
           items: Array.isArray(rawItems)
-            ? rawItems.map((detail: any) => ({
-                productId: String(detail.productId?.productId || detail.productId || ''),
-                productName: detail.productId?.name || detail.productName || detail.name || '',
-                quantity: detail.qty || detail.quantity || 0,
-                price: detail.productId?.price || detail.price || 0,
-              }))
-            : [],
-        };
+            ? rawItems.map(
+                (detail: any) =>
+                  ({
+                    productId: String(detail.productId?.productId || detail.productId || ''),
+                    productName: detail.productId?.name || detail.productName || detail.name || '',
+                    qty: detail.qty || 0,
+                    price: detail.productId?.price || detail.price || 0,
+                  } as SaleItem)
+              )
+            : ([] as SaleItem[]),
+        } as Sale;
 
         console.log(`Converted order ${index}:`, converted);
         return converted;
@@ -185,14 +163,21 @@ export const SalesManagement: React.FC = () => {
     loadOrders();
   };
 
-  const updateSale = (updatedSale: Sale) => {
-    // For now, just update local state since you don't have update API endpoint
-    setSales(sales.map((sale) => (sale.id === updatedSale.id ? updatedSale : sale)));
+  const updateSale = async (updatedSale: Sale) => {
+    const prev = sales;
+    setSales((s) => s.map((sale) => (sale.id === updatedSale.id ? updatedSale : sale)));
     setCurrentSale(null);
     setIsEditing(false);
 
-    // TODO: Add API call to update order when backend supports it
-    // await orderApi.updateOrder(updatedSale.id, updatedSale);
+    try {
+      await salesService.updateOrder(updatedSale.id, updatedSale as unknown);
+      setSnackbar({ open: true, message: 'Order updated successfully', type: 'success' });
+    } catch (err: unknown) {
+      setSales(prev);
+      const message = (err as Error)?.message || 'Failed to update order';
+      setSnackbar({ open: true, message, type: 'error' });
+      console.error('Update order failed:', err);
+    }
   };
 
   const deleteSale = async (id: string) => {

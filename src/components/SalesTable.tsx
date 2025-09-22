@@ -12,12 +12,13 @@ import React, { useState } from 'react';
 export interface SaleItem {
   productId: string;
   productName: string;
-  quantity: number;
+  qty: number;
   price: number;
 }
 
 export interface Sale {
   id: string;
+  customerId?: string;
   name: string;
   address: string;
   contact01: string;

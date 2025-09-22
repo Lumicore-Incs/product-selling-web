@@ -3,30 +3,14 @@ import { useOutletContext } from 'react-router-dom';
 import { AlertSnackbar } from '../components/AlertSnackbar';
 import { BackgroundIcons } from '../components/BackgroundIcons';
 import { SalesForm } from '../components/SalesForm';
-import { SalesTable } from '../components/SalesTable';
+import { SalesTable, Sale as TableSale, SaleItem as TableSaleItem } from '../components/SalesTable';
 import { getCurrentUser } from '../service/auth';
 import { CustomerDtoGet, dashboardApi, orderApi } from '../services/api';
+import { salesService } from '../services/salesService';
 
-interface SaleItem {
-  productId: string;
-  productName: string;
-  qty: number;
-  price: number;
-}
-
-interface Sale {
-  id: string;
-  name: string;
-  address: string;
-  contact01: string;
-  contact02: string;
-  status: string;
-  qty: string;
-  remark: string;
-  totalPrice: string;
-  items: SaleItem[];
-  totalAmount?: number;
-}
+// Use the table types so shapes match the SalesTable component
+type Sale = TableSale;
+type SaleItem = TableSaleItem;
 
 interface OutletContext {
   salesTitle: string;
@@ -76,14 +60,6 @@ export const DuplicateSales: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      // Test connection first
-      const isConnected = await orderApi.testConnection();
-      if (!isConnected) {
-        throw new Error(
-          'Cannot connect to server. Please check if the backend is running on port 8081.'
-        );
-      }
-
       // Load all orders from backend
       console.log('Calling orderApi.getAllDuplicateOrders()...');
       const responseOrder = await orderApi.getAllDuplicateOrders();
@@ -106,7 +82,7 @@ export const DuplicateSales: React.FC = () => {
       // Use the same mapping as Dashboard component
       const convertedSales: Sale[] = responseOrder.map((order: unknown, index: number) => {
         console.log(`Converting order ${index}:`, order);
-        const ord = order as any;
+        const ord = order as Record<string, any>;
         console.log(`Available fields:`, Object.keys(ord || {}));
 
         const customer = ord.customerId || ord.customer || {};
@@ -119,6 +95,7 @@ export const DuplicateSales: React.FC = () => {
 
         const converted = {
           id: String(ord.orderId || ord.id || ''),
+          customerId: String(customer?.customerId || ''),
           name: customer?.name || ord.name || '',
           address: customer?.address || ord.address || '',
           contact01: customer?.contact01 || ord.contact01 || ord.contact || '',
@@ -131,16 +108,19 @@ export const DuplicateSales: React.FC = () => {
             ) || 0
           ),
           remark: customer?.remark || ord.remark || '',
-          totalAmount: ord.totalPrice || ord.totalAmount || '',
+          totalPrice: ord.totalPrice || ord.totalAmount || 0,
           items: Array.isArray(rawItems)
-            ? rawItems.map((detail: any) => ({
-                productId: String(detail.productId?.productId || detail.productId || ''),
-                productName: detail.productId?.name || detail.productName || detail.name || '',
-                quantity: detail.qty || detail.quantity || 0,
-                price: detail.productId?.price || detail.price || 0,
-              }))
-            : [],
-        };
+            ? rawItems.map(
+                (detail: any) =>
+                  ({
+                    productId: String(detail.productId?.productId || detail.productId || ''),
+                    productName: detail.productId?.name || detail.productName || detail.name || '',
+                    qty: detail.qty || 0,
+                    price: detail.productId?.price || detail.price || 0,
+                  } as SaleItem)
+              )
+            : ([] as SaleItem[]),
+        } as Sale;
 
         console.log(`Converted order ${index}:`, converted);
         return converted;
@@ -184,14 +164,24 @@ export const DuplicateSales: React.FC = () => {
     loadOrders();
   };
 
-  const updateSale = (updatedSale: Sale) => {
-    // For now, just update local state since you don't have update API endpoint
-    setSales(sales.map((sale) => (sale.id === updatedSale.id ? updatedSale : sale)));
+  const updateSale = async (updatedSale: Sale) => {
+    // Optimistic UI update: update local state immediately
+    const prev = sales;
+    setSales((s) => s.map((sale) => (sale.id === updatedSale.id ? updatedSale : sale)));
     setCurrentSale(null);
     setIsEditing(false);
 
-    // TODO: Add API call to update order when backend supports it
-    // await orderApi.updateOrder(updatedSale.id, updatedSale);
+    try {
+      // Call backend update. salesService will try common endpoints and fall back when needed
+      await salesService.updateOrder(updatedSale.customerId ?? '', updatedSale as unknown);
+      setSnackbar({ open: true, message: 'Order updated successfully', type: 'success' });
+    } catch (err: unknown) {
+      // Rollback on failure and show error
+      setSales(prev);
+      const message = (err as Error)?.message || 'Failed to update order';
+      setSnackbar({ open: true, message, type: 'error' });
+      console.error('Update order failed:', err);
+    }
   };
 
   const deleteSale = async (id: string) => {
