@@ -3,14 +3,15 @@ import { useOutletContext } from 'react-router-dom';
 import { AlertSnackbar } from '../components/AlertSnackbar';
 import { BackgroundIcons } from '../components/BackgroundIcons';
 import { SalesForm } from '../components/SalesForm';
-import { SalesTable, Sale as TableSale, SaleItem as TableSaleItem } from '../components/SalesTable';
+import { SalesTable } from '../components/SalesTable';
+import { Sale as TableSale } from '../models/sales';
 import { getCurrentUser } from '../service/auth';
-import { CustomerDtoGet, dashboardApi, orderApi } from '../services/api';
+import { dashboardApi } from '../services/api';
+import { orderService } from '../services/orders/orderService';
 import { salesService } from '../services/salesService';
 
 // Use the table types so shapes match the SalesTable component
 type Sale = TableSale;
-type SaleItem = TableSaleItem;
 
 interface OutletContext {
   salesTitle: string;
@@ -60,9 +61,9 @@ export const DuplicateSales: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      // Load all orders from backend
-      console.log('Calling orderApi.getAllDuplicateOrders()...');
-      const responseOrder = await orderApi.getAllDuplicateOrders();
+      // Load all orders from backend via service
+      console.log('Calling orderService.getAllDuplicateOrders()...');
+      const responseOrder = await orderService.getAllDuplicateOrders();
 
       // Check if response exists and is an array
       if (!responseOrder || !Array.isArray(responseOrder)) {
@@ -78,71 +79,24 @@ export const DuplicateSales: React.FC = () => {
         console.log('First order keys:', Object.keys(responseOrder[0]));
       }
 
-      // Convert backend OrderDtoGet to frontend Sale format
-      // Use the same mapping as Dashboard component
-      const convertedSales: Sale[] = responseOrder.map((order: unknown, index: number) => {
-        console.log(`Converting order ${index}:`, order);
-        const ord = order as Record<string, any>;
-        console.log(`Available fields:`, Object.keys(ord || {}));
-
-        const customer = ord.customerId || ord.customer || {};
-
-        const rawItems = Array.isArray(ord.orderDetails)
-          ? ord.orderDetails
-          : Array.isArray(ord.items)
-          ? ord.items
-          : [];
-
-        const converted = {
-          id: String(ord.orderId || ord.id || ''),
-          customerId: String(customer?.customerId || ''),
-          name: customer?.name || ord.name || '',
-          address: customer?.address || ord.address || '',
-          contact01: customer?.contact01 || ord.contact01 || ord.contact || '',
-          contact02: customer?.contact02 || ord.contact02 || '',
-          status: ord.status || '',
-          quantity: String(
-            rawItems?.reduce(
-              (sum: number, item: any) => sum + (item.qty || item.quantity || 0),
-              0
-            ) || 0
-          ),
-          remark: customer?.remark || ord.remark || '',
-          totalPrice: ord.totalPrice || ord.totalAmount || 0,
-          items: Array.isArray(rawItems)
-            ? rawItems.map(
-                (detail: any) =>
-                  ({
-                    productId: String(detail.productId?.productId || detail.productId || ''),
-                    productName: detail.productId?.name || detail.productName || detail.name || '',
-                    qty: detail.qty || 0,
-                    price: detail.productId?.price || detail.price || 0,
-                  } as SaleItem)
-              )
-            : ([] as SaleItem[]),
-        } as Sale;
-
-        console.log(`Converted order ${index}:`, converted);
-        return converted;
-      });
-
-      console.log('Final convertedSales:', convertedSales);
-      console.log('Setting sales state with', convertedSales.length, 'items');
-
-      setSales(convertedSales);
-    } catch (error: any) {
+      // orderService returns canonical `Sale[]` (mapping done in the service)
+      const canonicalSales = responseOrder as unknown as Sale[];
+      console.log('Setting sales state with', canonicalSales.length, 'items');
+      setSales(canonicalSales);
+    } catch (error: unknown) {
       console.error('Error loading orders:', error);
-      console.error('Error stack:', error.stack);
+
+      const err = error as { message?: string; response?: { status?: number } };
 
       let errorMessage = 'Failed to load orders. ';
 
-      if (error.response?.status === 404) {
+      if (err.response?.status === 404) {
         errorMessage +=
           'Endpoint not found. Please check if your backend server is running and the endpoint exists.';
-      } else if (error.response?.status === 401) {
+      } else if (err.response?.status === 401) {
         errorMessage += 'Authentication failed. Please login again.';
-      } else if (error.message) {
-        errorMessage += error.message;
+      } else if (err.message) {
+        errorMessage += err.message;
       } else {
         errorMessage += 'Please try again.';
       }
@@ -155,11 +109,11 @@ export const DuplicateSales: React.FC = () => {
     }
   };
 
-  const addSale = (sale: Omit<Sale, 'id'>) => {
+  const addSale = () => {
     loadOrders();
   };
 
-  const handleCustomerCreated = (customer: CustomerDtoGet) => {
+  const handleCustomerCreated = () => {
     // Refresh orders after a new customer/order is created
     loadOrders();
   };
@@ -193,7 +147,13 @@ export const DuplicateSales: React.FC = () => {
     }
 
     // TODO: Add API call to delete order when backend supports it
-    // await orderApi.deleteOrder(id);
+    try {
+      // Try service wrapper which will call orderApi.deleteOrder if available
+      await orderService.deleteOrder(id);
+    } catch (err) {
+      // If delete isn't implemented server-side it's fine to silently continue for now
+      console.warn('Delete order not performed via API:', err);
+    }
   };
 
   const editSale = (sale: Sale) => {
@@ -231,8 +191,9 @@ export const DuplicateSales: React.FC = () => {
         message: `Exported ${exportType} data successfully`,
         type: 'success',
       });
-    } catch (error: any) {
-      const errorMessage = `Failed to export ${exportType} data. ${error?.message || ''}`;
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      const errorMessage = `Failed to export ${exportType} data. ${err?.message || ''}`;
       setError(errorMessage);
       setSnackbar({ open: true, message: errorMessage, type: 'error' });
     } finally {
@@ -257,7 +218,7 @@ export const DuplicateSales: React.FC = () => {
 
   return (
     <div className="max-w-7xl w-full mx-auto p-6 rounded-lg relative">
-      <BackgroundIcons type="sales" />
+      <BackgroundIcons />
       <AlertSnackbar
         message={snackbar.message}
         type={snackbar.type}
@@ -343,6 +304,7 @@ export const DuplicateSales: React.FC = () => {
         <div>
           <SalesTable sales={sales} onEdit={editSale} onDelete={deleteSale} isLoading={isLoading} />
         </div>
+
         <div>
           <SalesForm
             onSave={addSale}

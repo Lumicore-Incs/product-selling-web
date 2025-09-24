@@ -1,27 +1,8 @@
 import { MinusIcon, PlusIcon, RefreshCwIcon, SaveIcon, Trash2Icon, XIcon } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
+import { Sale, SaleItem } from '../models/sales';
 import { customerApi, CustomerRequestDTO, productApi, ProductDto } from '../services/api';
 import { AlertSnackbar } from './AlertSnackbar';
-
-interface SaleItem {
-  productId: string;
-  productName: string;
-  qty: number;
-  price: number;
-}
-
-interface Sale {
-  id: string;
-  name: string;
-  address: string;
-  contact01: string;
-  contact02: string;
-  status: string;
-  qty: string;
-  remark: string;
-  items: SaleItem[];
-  totalAmount?: number;
-}
 
 interface SalesFormProps {
   onSave: (sale: Omit<Sale, 'id'>) => void;
@@ -42,6 +23,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
 }) => {
   const [formData, setFormData] = useState({
     name: '',
+    customerId: '',
     address: '',
     contact01: '',
     contact02: '',
@@ -101,12 +83,13 @@ export const SalesForm: React.FC<SalesFormProps> = ({
     if (currentSale && isEditing) {
       setFormData({
         name: currentSale.name,
+        customerId: currentSale.customerId ?? '',
         address: currentSale.address,
-        contact01: 0 + currentSale.contact01,
-        contact02: 0 + currentSale.contact02,
-        status: currentSale.status,
-        qty: currentSale.qty,
-        remark: currentSale.remark,
+        contact01: currentSale.contact01 ? 0 + currentSale.contact01 : '',
+        contact02: currentSale.contact02 ? 0 + currentSale.contact02 : '',
+        status: currentSale.status ?? 'pending',
+        qty: String(currentSale.qty ?? ''),
+        remark: currentSale.remark ?? '',
         items: currentSale.items || [],
       });
     }
@@ -122,19 +105,21 @@ export const SalesForm: React.FC<SalesFormProps> = ({
 
   const handleAddProduct = () => {
     if (selectedProductId && selectedProductQuantity > 0) {
-      const product = products.find((p) => p.productId?.toString() === selectedProductId);
+      const product = products.find(
+        (p) => (p.productId == null ? '' : String(p.productId)) === selectedProductId
+      );
       if (product) {
+        const pid = product.productId == null ? '' : String(product.productId);
         const newItem: SaleItem = {
-          productId: product.productId!.toString(),
+          productId: pid,
           productName: product.name,
           qty: selectedProductQuantity,
           price: product.price,
+          total: selectedProductQuantity * product.price,
         };
 
         // Check if product already exists, update quantity if it does
-        const existingItemIndex = formData.items.findIndex(
-          (item) => item.productId === product.productId!.toString()
-        );
+        const existingItemIndex = formData.items.findIndex((item) => item.productId === pid);
         if (existingItemIndex >= 0) {
           const updatedItems = [...formData.items];
           updatedItems[existingItemIndex].qty += selectedProductQuantity;
@@ -238,7 +223,9 @@ export const SalesForm: React.FC<SalesFormProps> = ({
         if (qtyNumber > 0) {
           // Check if default product is already in the items (added via plus icon)
           const existingDefaultItemIndex = finalItems.findIndex(
-            (item) => item.productId === defaultProduct.productId!.toString()
+            (item) =>
+              item.productId ===
+              (defaultProduct.productId == null ? '' : String(defaultProduct.productId))
           );
 
           if (existingDefaultItemIndex >= 0) {
@@ -246,11 +233,13 @@ export const SalesForm: React.FC<SalesFormProps> = ({
             finalItems[existingDefaultItemIndex].qty += qtyNumber;
           } else {
             // Add default product with form quantity
+            const pidDef = defaultProduct.productId == null ? '' : String(defaultProduct.productId);
             const defaultItem: SaleItem = {
-              productId: defaultProduct.productId!.toString(),
+              productId: pidDef,
               productName: defaultProduct.name,
               qty: qtyNumber,
               price: defaultProduct.price,
+              total: qtyNumber * defaultProduct.price,
             };
             finalItems.push(defaultItem);
           }
@@ -266,7 +255,8 @@ export const SalesForm: React.FC<SalesFormProps> = ({
           ...formData,
           id: currentSale.id,
           items: finalItems,
-          totalAmount: totalAmount,
+          totalPrice: totalAmount,
+          qty: parseInt(formData.qty),
         });
         resetForm();
         return;
@@ -290,11 +280,13 @@ export const SalesForm: React.FC<SalesFormProps> = ({
         remark: formData.remark,
         totalPrice: totalAmount,
         items: finalItems.map((item) => ({
-          productId: parseInt(item.productId),
+          productId: Number(item.productId) || 0,
           productName: item.productName,
           qty: item.qty,
           price: item.price,
-          total: item.qty * item.price,
+          total: item.total ?? item.qty * item.price,
+          orderDetailsId: Number(item.orderDetailsId) || 0,
+          orderId: Number(item.orderId) || 0,
         })),
       };
 
@@ -311,7 +303,8 @@ export const SalesForm: React.FC<SalesFormProps> = ({
       onSave({
         ...formData,
         items: finalItems,
-        totalAmount: totalAmount,
+        totalPrice: totalAmount,
+        qty: parseInt(formData.qty),
       });
 
       resetForm();
@@ -320,25 +313,24 @@ export const SalesForm: React.FC<SalesFormProps> = ({
         message: 'Customer and order created successfully!',
         type: 'success',
       });
-    } catch (error: any) {
-      console.error('Error saving customer:', error);
-      setError(error.response?.data?.message || 'Failed to save customer. Please try again.');
-      if (error.message === 'DUPLICATE_CUSTOMER') {
-        const duplicateCustomer = tempCustomer;
+    } catch (errUnknown) {
+      console.error('Error saving customer:', errUnknown);
+      const e = errUnknown as { response?: { data?: { message?: string } }; message?: string };
+      setError(e.response?.data?.message ?? 'Failed to save customer. Please try again.');
+      if (e.message === 'DUPLICATE_CUSTOMER') {
+        const duplicateCustomer = tempCustomer as (CustomerRequestDTO | null | undefined) | null;
         console.log('Duplicate customer data:', tempCustomer);
         setSnackbar({
           open: true,
-          message: `Customer already exists! Name: ${duplicateCustomer.name}, Contact: ${
-            duplicateCustomer.contact01 || duplicateCustomer.contact02
-          }`,
+          message: duplicateCustomer
+            ? `Customer already exists! Name: ${duplicateCustomer.name}, Contact: ${
+                duplicateCustomer.contact01 || duplicateCustomer.contact02
+              }`
+            : 'Customer already exists!',
           type: 'error',
         });
       } else {
-        setSnackbar({
-          open: true,
-          message: 'Error creating customer!',
-          type: 'error',
-        });
+        setSnackbar({ open: true, message: 'Error creating customer!', type: 'error' });
       }
     } finally {
       setIsLoading(false);
@@ -348,18 +340,48 @@ export const SalesForm: React.FC<SalesFormProps> = ({
   const resetForm = () => {
     setFormData({
       name: '',
+      customerId: '',
       address: '',
       contact01: '',
       contact02: '',
       status: 'pending',
       qty: '',
       remark: '',
-      items: [],
+      items: [] as SaleItem[],
     });
     setShowProductSelector(false);
     setSelectedProductId('');
     setSelectedProductQuantity(1);
     setError(null);
+  };
+
+  // Fill the form with sample data for faster testing
+  const fillSampleData = () => {
+    const sampleProduct = defaultProduct ?? products[0] ?? null;
+    const sampleItems: SaleItem[] = sampleProduct
+      ? [
+          {
+            productId: sampleProduct.productId == null ? '' : String(sampleProduct.productId),
+            productName: sampleProduct.name,
+            qty: 2,
+            price: sampleProduct.price,
+            total: 2 * sampleProduct.price,
+          },
+        ]
+      : [];
+
+    setFormData({
+      name: 'John Doe',
+      customerId: '',
+      address: '123 Sample Street',
+      contact01: '0771234563',
+      contact02: '0771234566',
+      status: 'pending',
+      qty: sampleProduct ? '2' : '',
+      remark: 'Sample order',
+      items: sampleItems,
+    });
+    setSnackbar({ open: true, message: 'Sample data loaded', type: 'success' });
   };
 
   // Disable save if required fields are empty
@@ -731,6 +753,14 @@ export const SalesForm: React.FC<SalesFormProps> = ({
             >
               <Trash2Icon className="w-5 h-5" />
               Clear Form
+            </button>
+            <button
+              type="button"
+              onClick={fillSampleData}
+              className="flex items-center justify-center gap-2 px-6 py-3 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 focus:ring-2 focus:ring-yellow-400 transition-all duration-200 font-medium"
+            >
+              <RefreshCwIcon className="w-5 h-5" />
+              Fill Sample
             </button>
           </div>
         </form>

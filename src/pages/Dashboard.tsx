@@ -2,11 +2,12 @@ import { CreditCardIcon, ScaleIcon, TrendingDownIcon, TrendingUpIcon } from 'luc
 import { useEffect, useState } from 'react';
 import { AlertSnackbar } from '../components/AlertSnackbar';
 import { BackgroundIcons } from '../components/BackgroundIcons';
-import { Sale, SalesTable } from '../components/SalesTable';
+import { SalesTable } from '../components/SalesTable';
+import { Sale } from '../models/sales';
 import { getCurrentUser } from '../service/auth';
 import { getDashboardStats } from '../service/dashboard';
-import { getAllCustomerOrders, getOrders } from '../service/order';
 import { getAllProducts } from '../service/product'; // Add this import
+import { getAllCustomerOrders, getOrders } from '../services/orders/orderService';
 
 type StatCardProps = {
   icon: React.ComponentType<any>;
@@ -135,24 +136,8 @@ export const Dashboard = () => {
         });
         setError('');
 
-        // Process sales
-        const mappedSales: Sale[] = salesApiData.map((order) => ({
-          id: String(order.orderId),
-          customerId: String(order.customer.customerId),
-          name: order.customer.name,
-          address: order.customer.address,
-          contact01: order.customer.contact01,
-          contact02: order.customer.contact02 || '-',
-          status: order.status,
-          quantity: String(order.orderDetails.reduce((sum, item) => sum + item.qty, 0)),
-          items: order.orderDetails.map((detail) => ({
-            productId: String(detail.productId.productId),
-            productName: detail.productId.name,
-            qty: detail.qty,
-            price: detail.productId.price,
-          })),
-        }));
-        setSales(mappedSales);
+        // salesApiData is expected to be the canonical Sale[] from orderService
+        setSales(salesApiData as Sale[]);
         setSalesError('');
       } catch (err) {
         console.error('Failed to fetch dashboard data:', err);

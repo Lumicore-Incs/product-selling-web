@@ -8,28 +8,11 @@ import {
   Trash2Icon,
 } from 'lucide-react';
 import React, { useState } from 'react';
-
-export interface SaleItem {
-  productId: string;
-  productName: string;
-  qty: number;
-  price: number;
-}
-
-export interface Sale {
-  id: string;
-  customerId?: string;
-  name: string;
-  address: string;
-  contact01: string;
-  contact02: string;
-  status: string;
-  quantity: string;
-  items: SaleItem[];
-}
+import { Sale, SaleItem } from '../models/sales';
 
 interface SalesTableProps {
   sales: Sale[];
+  isLoading?: boolean;
   onEdit: (sale: Sale) => void;
   onDelete: (id: string) => void;
 }
@@ -160,15 +143,13 @@ export const SalesTable: React.FC<SalesTableProps> = ({ sales, onEdit, onDelete 
                   <td className="px-4 py-4 whitespace-nowrap">
                     <span
                       className={`inline-flex px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-                        sale.status
+                        sale.status ?? '-'
                       )}`}
                     >
-                      {sale.status || '-'}
+                      {sale.status ?? '-'}
                     </span>
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {sale.quantity}
-                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">{sale.qty}</td>
                   <td className="px-6 py-4">
                     <div className="max-w-xs">
                       {sale.items && sale.items.length > 0 ? (
@@ -254,8 +235,8 @@ export const SalesTable: React.FC<SalesTableProps> = ({ sales, onEdit, onDelete 
                     </div>
                     <div className="ml-3 flex items-center gap-2">
                       <span
-                        className={`inline-flex px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-                          sale.status
+                        className={`inline-flex px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                          sale.status ?? ''
                         )}`}
                       >
                         {sale.status}
@@ -319,7 +300,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({ sales, onEdit, onDelete 
                         </div>
                         <div className="flex justify-between items-center">
                           <span className="text-sm text-gray-600">Quantity:</span>
-                          <span className="text-sm font-medium text-gray-900">{sale.quantity}</span>
+                          <span className="text-sm font-medium text-gray-900">{sale.qty}</span>
                         </div>
                       </div>
                     </div>

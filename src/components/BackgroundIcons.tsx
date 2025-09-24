@@ -51,7 +51,7 @@ const shapes = [
   ),
 ];
 
-export const BackgroundIcons: React.FC<{ type?: string }> = ({ type }) => {
+export const BackgroundIcons: React.FC<{ type?: string }> = () => {
   return (
     <div className="fixed inset-0 pointer-events-none overflow-hidden">
       <div className="absolute inset-0">
