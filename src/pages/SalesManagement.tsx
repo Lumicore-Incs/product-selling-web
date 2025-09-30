@@ -3,9 +3,11 @@ import { useOutletContext } from 'react-router-dom';
 import { AlertSnackbar } from '../components/AlertSnackbar';
 import { BackgroundIcons } from '../components/BackgroundIcons';
 import { SalesForm } from '../components/SalesForm';
-import { SalesTable, Sale as TableSale, SaleItem as TableSaleItem } from '../components/SalesTable';
+import { SalesTable, } from '../components/SalesTable';
+import { Sale as TableSale, SaleItem as TableSaleItem } from '../models/sales';
+
 import { getCurrentUser } from '../service/auth';
-import { CustomerDtoGet, dashboardApi, orderApi } from '../services/api';
+import { dashboardApi, orderApi } from '../services/api';
 import { salesService } from '../services/salesService';
 
 type Sale = TableSale;
@@ -19,8 +21,7 @@ interface OutletContext {
 }
 
 export const SalesManagement: React.FC = () => {
-  const { salesTitle, salesBackgroundColor, showSettings, setShowSettings } =
-    useOutletContext<OutletContext>();
+  const { salesTitle } = useOutletContext<OutletContext>();
   const [sales, setSales] = useState<Sale[]>([]);
   const [currentSale, setCurrentSale] = useState<Sale | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -93,6 +94,21 @@ export const SalesManagement: React.FC = () => {
           ? order.items
           : [];
 
+        const items = Array.isArray(rawItems)
+          ? rawItems.map((detail: any) => ({
+              productId: String(detail.productId?.productId || detail.productId || ''),
+              productName: detail.productId?.name || detail.productName || detail.name || '',
+              qty: Number(detail.qty || detail.quantity || 0),
+              price: Number(detail.productId?.price || detail.price || 0),
+              total: Number(
+                (detail.qty || detail.quantity || 0) *
+                  (detail.productId?.price || detail.price || 0)
+              ),
+            }))
+          : ([] as SaleItem[]);
+
+        const totalQty = items.reduce((acc, it) => acc + (it.qty || 0), 0);
+
         const converted = {
           id: String(order.orderId || order.id || ''),
           name: customer?.name || order.name || '',
@@ -100,25 +116,12 @@ export const SalesManagement: React.FC = () => {
           contact01: customer?.contact01 || order.contact01 || order.contact || '',
           contact02: customer?.contact02 || order.contact02 || '',
           status: order.status || '',
-          quantity: String(
-            rawItems?.reduce(
-              (sum: number, item: any) => sum + (item.qty || item.quantity || 0),
-              0
-            ) || 0
-          ),
+          // legacy compatibility field
+          quantity: String(totalQty),
           remark: customer?.remark || order.remark || '',
-          totalPrice: order.totalPrice || order.totalAmount || 0,
-          items: Array.isArray(rawItems)
-            ? rawItems.map(
-                (detail: any) =>
-                  ({
-                    productId: String(detail.productId?.productId || detail.productId || ''),
-                    productName: detail.productId?.name || detail.productName || detail.name || '',
-                    qty: detail.qty || 0,
-                    price: detail.productId?.price || detail.price || 0,
-                  } as SaleItem)
-              )
-            : ([] as SaleItem[]),
+          totalPrice: Number(order.totalPrice || order.totalAmount || 0),
+          items,
+          qty: totalQty,
         } as Sale;
 
         console.log(`Converted order ${index}:`, converted);
@@ -154,11 +157,11 @@ export const SalesManagement: React.FC = () => {
     }
   };
 
-  const addSale = (sale: Omit<Sale, 'id'>) => {
+  const addSale = () => {
     loadOrders();
   };
 
-  const handleCustomerCreated = (customer: CustomerDtoGet) => {
+  const handleCustomerCreated = () => {
     // Refresh orders after a new customer/order is created
     loadOrders();
   };

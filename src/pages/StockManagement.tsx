@@ -1,15 +1,8 @@
 import { useState } from 'react';
-import StockForm from '../components/stock/StockForm';
 import { BackgroundIcons } from '../components/BackgroundIcons';
 import Filters from '../components/stock/Filters';
+import StockForm, { StockItem } from '../components/stock/StockForm';
 import StockTable from '../components/stock/StockTable';
-
-interface StockItem {
-  id: number;
-  type: string;
-  date: string;
-  quantity: number;
-}
 
 const initialData: StockItem[] = [
   { id: 1, type: 'Electronics', date: '2025-04-01', quantity: 10 },
@@ -45,7 +38,8 @@ export const StockManagement = () => {
     setFilterDate(date);
   };
 
-  return <div className="space-y-6 mx-6 relative">
+  return (
+    <div className="space-y-6 mx-6 relative">
       <BackgroundIcons type="stock" />
       <h1 className="text-2xl font-bold mb-6">Stock Management</h1>
       <StockForm onSubmit={handleSave} initialValues={editItem} />
@@ -57,5 +51,6 @@ export const StockManagement = () => {
         filterType={filterType}
         filterDate={filterDate}
       />
-    </div>;
+    </div>
+  );
 };

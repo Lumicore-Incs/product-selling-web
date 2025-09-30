@@ -1,15 +1,12 @@
-import { Edit2Icon, TrashIcon } from "lucide-react";
-import { Product } from "../../App";
+import { Edit2Icon, TrashIcon } from 'lucide-react';
+import { Product } from '../../models/product';
 interface ProductTableProps {
   products: Product[];
   onEdit: (product: Product) => void;
-  onDelete: (productId: string) => void;
+  onDelete: (productId: string | number) => void;
+  loading?: boolean;
 }
-export function ProductTable({
-  products,
-  onEdit,
-  onDelete,
-}: ProductTableProps) {
+export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) {
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
       {products.length === 0 ? (
@@ -53,11 +50,11 @@ export function ProductTable({
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
                       className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        product.status === "active"
-                          ? "bg-green-100 text-green-800"
-                          : product.status === "inactive"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : "bg-red-100 text-red-800"
+                        product.status === 'active'
+                          ? 'bg-green-100 text-green-800'
+                          : product.status === 'inactive'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-red-100 text-red-800'
                       }`}
                     >
                       {product.status}

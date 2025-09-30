@@ -21,8 +21,7 @@ interface OutletContext {
 }
 
 export const DuplicateSales: React.FC = () => {
-  const { salesTitle, salesBackgroundColor, showSettings, setShowSettings } =
-    useOutletContext<OutletContext>();
+  const { salesTitle } = useOutletContext<OutletContext>();
   const [sales, setSales] = useState<Sale[]>([]);
   const [currentSale, setCurrentSale] = useState<Sale | null>(null);
   const [isEditing, setIsEditing] = useState(false);
