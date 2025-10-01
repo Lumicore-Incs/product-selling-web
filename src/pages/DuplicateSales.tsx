@@ -126,7 +126,7 @@ export const DuplicateSales: React.FC = () => {
 
     try {
       // Call backend update. salesService will try common endpoints and fall back when needed
-      await salesService.updateOrder(updatedSale.customerId ?? '', updatedSale as unknown);
+      await salesService.updateOrder(updatedSale.id, updatedSale as unknown);
       setSnackbar({ open: true, message: 'Order updated successfully', type: 'success' });
     } catch (err: unknown) {
       // Rollback on failure and show error

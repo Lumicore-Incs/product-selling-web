@@ -3,15 +3,15 @@ import { useOutletContext } from 'react-router-dom';
 import { AlertSnackbar } from '../components/AlertSnackbar';
 import { BackgroundIcons } from '../components/BackgroundIcons';
 import { SalesForm } from '../components/SalesForm';
-import { SalesTable, } from '../components/SalesTable';
-import { Sale as TableSale, SaleItem as TableSaleItem } from '../models/sales';
+import { SalesTable } from '../components/SalesTable';
+import { Sale as TableSale } from '../models/sales';
 
 import { getCurrentUser } from '../service/auth';
 import { dashboardApi, orderApi } from '../services/api';
+import { mapOrderDtoToSale } from '../services/mappers/salesMapper';
 import { salesService } from '../services/salesService';
 
 type Sale = TableSale;
-type SaleItem = TableSaleItem;
 
 interface OutletContext {
   salesTitle: string;
@@ -80,53 +80,9 @@ export const SalesManagement: React.FC = () => {
 
       // Convert backend OrderDtoGet to frontend Sale format
       // Use the same mapping as Dashboard component
-      const convertedSales: Sale[] = responseOrder.map((order: any, index: number) => {
-        console.log(`Converting order ${index}:`, order);
-        console.log(`Available fields:`, Object.keys(order));
-
-        // Source of customer data may be top-level or under customerId
-        const customer = order.customerId || order.customer || {};
-
-        // Items may be under orderDetails or items
-        const rawItems = Array.isArray(order.orderDetails)
-          ? order.orderDetails
-          : Array.isArray(order.items)
-          ? order.items
-          : [];
-
-        const items = Array.isArray(rawItems)
-          ? rawItems.map((detail: any) => ({
-              productId: String(detail.productId?.productId || detail.productId || ''),
-              productName: detail.productId?.name || detail.productName || detail.name || '',
-              qty: Number(detail.qty || detail.quantity || 0),
-              price: Number(detail.productId?.price || detail.price || 0),
-              total: Number(
-                (detail.qty || detail.quantity || 0) *
-                  (detail.productId?.price || detail.price || 0)
-              ),
-            }))
-          : ([] as SaleItem[]);
-
-        const totalQty = items.reduce((acc, it) => acc + (it.qty || 0), 0);
-
-        const converted = {
-          id: String(order.orderId || order.id || ''),
-          name: customer?.name || order.name || '',
-          address: customer?.address || order.address || '',
-          contact01: customer?.contact01 || order.contact01 || order.contact || '',
-          contact02: customer?.contact02 || order.contact02 || '',
-          status: order.status || '',
-          // legacy compatibility field
-          quantity: String(totalQty),
-          remark: customer?.remark || order.remark || '',
-          totalPrice: Number(order.totalPrice || order.totalAmount || 0),
-          items,
-          qty: totalQty,
-        } as Sale;
-
-        console.log(`Converted order ${index}:`, converted);
-        return converted;
-      });
+      const convertedSales: Sale[] = responseOrder.map((order: unknown) =>
+        mapOrderDtoToSale(order)
+      );
 
       console.log('Final convertedSales:', convertedSales);
       console.log('Setting sales state with', convertedSales.length, 'items');

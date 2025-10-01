@@ -7,7 +7,7 @@ export const salesService = {
    */
   updateOrder: async (id: string, payload: unknown): Promise<unknown> => {
     try {
-      const putResp = await api.put(`${API_BASE_URL}/customer/${id}`, payload as object);
+      const putResp = await api.put(`${API_BASE_URL}/order/${id}/resolve`, payload as object);
       return putResp.data;
     } catch (err) {
       console.error('Failed to update order:', err);

@@ -137,16 +137,20 @@ export const ProductManagement = () => {
         status: validStatus,
       };
 
-      const savedProduct = await productApi.updateProduct(updatedProduct.productId, updateData);
+      const id =
+        typeof updatedProduct.productId === 'string'
+          ? parseInt(updatedProduct.productId)
+          : updatedProduct.productId;
+      const savedProduct = await productApi.updateProduct(id, updateData);
 
       setProducts(
         products.map((product) =>
           product.productId === id
             ? {
-                productId: savedProduct.productId || id,
+                productId: savedProduct.productId ?? id,
                 name: savedProduct.name,
                 price: savedProduct.price,
-                status: savedProduct.status || 'active',
+                status: savedProduct.status ?? 'active',
               }
             : product
         )
