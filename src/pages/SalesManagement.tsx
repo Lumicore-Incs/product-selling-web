@@ -7,7 +7,7 @@ import { SalesTable } from '../components/SalesTable';
 import { Sale as TableSale } from '../models/sales';
 
 import { getCurrentUser } from '../service/auth';
-import { dashboardApi, orderApi } from '../services/api';
+import { dashboardApi } from '../services/api';
 import { mapOrderDtoToSale } from '../services/mappers/salesMapper';
 import { orderService } from '../services/orders/orderService';
 
@@ -60,9 +60,9 @@ export const SalesManagement: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      // Load all orders from backend
-      console.log('Calling orderApi.getAllOrders()...');
-      const responseOrder = await orderApi.getAllOrders();
+      // Load all orders from backend via orderService
+      console.log('Calling orderService.getAllCustomerOrders()...');
+      const responseOrder = await orderService.getAllCustomerOrders();
 
       // Check if response exists and is an array
       if (!responseOrder || !Array.isArray(responseOrder)) {

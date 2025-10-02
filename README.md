@@ -47,13 +47,7 @@ This repository is a Vite + React + TypeScript application for a simple product 
 
 #### orderApi
 
-- getTodaysOrders(): Promise<OrderDtoGet[]>
-
-  - GET /order — fetch today's orders
-
-- getAllOrders(): Promise<OrderDtoGet[]>
-
-  - GET /order/allCustomer — fetch all orders; includes a 404 fallback to `/order` if the endpoint is missing
+-
 
 - getAllDuplicateOrders(): Promise<OrderDtoGet[]>
 
@@ -80,21 +74,47 @@ This repository is a Vite + React + TypeScript application for a simple product 
 - exportSalesExcel(endpoint: string): Promise<Blob>
   - GET {endpoint} with responseType 'blob' — used to download Excel/Blob payloads (example: `/dashboard/conform` in existing usage)
 
----
+#### authService (src/services/authService.ts)
 
-## Notes & Next Steps
+- login(credentials: LoginRequest): Promise<LoginResponse>
 
-- The `api.ts` file currently mixes low-level axios config usage and many concrete endpoint functions. To improve maintainability:
+  - POST /auth/login — authenticate user and persist token via `authUtils.setToken`
 
-  1.  Export the configured axios instance from `src/services/axiosConfig` (already present) and keep only that in `api.ts` (or rename `api.ts` to `apiClient.ts`).
-  2.  Move the grouped endpoint functions into per-resource service modules (e.g., `src/services/products.ts`, `src/services/customers.ts`, `src/services/orders.ts`, `src/services/users.ts`, `src/services/dashboard.ts`).
-  3.  Add TypeScript types and small runtime guards for DTO shapes where useful, or add unit tests for mapping helpers.
+- logout(): void
+  - Clears stored token (client-side) and redirects to `/auth` via `authUtils.logout`
 
-- I can proceed to: (choose one)
-  - Move all endpoint functions out of `src/services/api.ts` into resource files and replace `api.ts` with a single axios export.
-  - Or: generate the new service files with the existing functions (automated refactor), run type-checks, and open a PR/branch.
+#### orderService (src/services/orders/orderService.ts)
 
-If you want me to proceed with the refactor, tell me whether you prefer the endpoints moved to `src/services/products.ts` / `orders.ts` / `customers.ts` etc., and if you want me to also create tests.
+- getAllDuplicateOrders(): Promise<Sale[]>
+
+  - GET /order/duplicate — fetch duplicate orders and map backend DTO → frontend `Sale` model
+
+- ✅ deleteOrder(id: string): Promise<unknown>
+
+  - DELETE /order/{id} — delete order by id
+
+- ✅ getTodaysOrders(): Promise<OrderDtoGet[]>
+
+  - GET /order — fetch today's orders
+
+- updateOrder(id: string, payload: unknown): Promise<unknown>
+
+  - PUT /order/{id}/resolve — update/resolve an order
+
+- getOrders(): Promise<Sale[]>
+
+  - Fallbacks to other order endpoints when available; returns mapped `Sale[]`
+
+- ✅ getAllCustomerOrders(): Promise<Sale[]>
+
+  - GET /order/allCustomer — fetch all orders; includes a 404 fallback to `/order` if the endpoint is missing
+
+    Note: `orderService` is the recommended place for order-related API logic (used by pages such as `DuplicateSales` and `SalesManagement`).
+
+#### Local product helper (src/service/product.tsx)
+
+- getAllProducts(): Promise<ProductDto[]>
+  - GET /products — convenience wrapper that uses the shared axios client (`axiosConfig`) and returns response data.
 
 ### DTO / Type definitions (declared in `api.ts`)
 

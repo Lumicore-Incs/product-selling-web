@@ -190,52 +190,6 @@ export const customerApi = {
 
 // Updated orderApi section for api.ts
 export const orderApi = {
-  // Get today's orders
-  getTodaysOrders: async (): Promise<OrderDtoGet[]> => {
-    try {
-      console.log("Fetching today's orders from endpoint: /order");
-      const response = await api.get<OrderDtoGet[]>('/order');
-      console.log("Today's orders response:", response.data);
-      return response.data;
-    } catch (error: any) {
-      console.error("Error fetching today's orders:", error);
-      console.error('Request URL:', error.config?.url);
-      console.error('Response status:', error.response?.status);
-      console.error('Response data:', error.response?.data);
-      throw error;
-    }
-  },
-
-  // Get all orders
-  getAllOrders: async (): Promise<OrderDtoGet[]> => {
-    try {
-      console.log('Fetching all orders from endpoint: /order/allCustomer');
-      const response = await api.get<OrderDtoGet[]>('/order/allCustomer');
-      console.log('All orders response:', response.data);
-      return response.data;
-    } catch (error: any) {
-      console.error('Error fetching all orders:', error);
-      console.error('Request URL:', error.config?.url);
-      console.error('Response status:', error.response?.status);
-      console.error('Response data:', error.response?.data);
-
-      // If 404, try alternative endpoint
-      if (error.response?.status === 404) {
-        console.log('Trying alternative endpoint: /order');
-        try {
-          const fallbackResponse = await api.get<OrderDtoGet[]>('/order');
-          console.log('Fallback response successful:', fallbackResponse.data);
-          return fallbackResponse.data;
-        } catch (fallbackError) {
-          console.error('Fallback also failed:', fallbackError);
-          throw error; // Throw original error
-        }
-      }
-
-      throw error;
-    }
-  },
-
   // Test endpoint connectivity
   testConnection: async (): Promise<boolean> => {
     try {

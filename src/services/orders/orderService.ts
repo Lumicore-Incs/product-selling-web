@@ -1,15 +1,6 @@
 import { Sale } from '../../models/sales';
-import { orderApi } from '../api';
 import apiClient from '../axiosConfig';
 import { mapOrderDtoToSale } from '../mappers/salesMapper';
-
-type PossibleOrderApi = {
-  getAllDuplicateOrders?: () => Promise<unknown>;
-  deleteOrder?: (id: string) => Promise<unknown>;
-  [k: string]: unknown;
-};
-
-const api = orderApi as unknown as PossibleOrderApi;
 
 class OrderService {
   async getAllDuplicateOrders(): Promise<Sale[]> {
@@ -26,6 +17,24 @@ class OrderService {
       return [];
     } catch (err) {
       console.error('orderService.getAllDuplicateOrders failed:', err);
+      throw err;
+    }
+  }
+
+  //currently not used
+  async getTodaysOrders(): Promise<Sale[]> {
+    try {
+      const resp = await apiClient.get('/order');
+      const data = resp?.data;
+      if (!data) return [];
+      if (Array.isArray(data)) return (data as unknown[]).map((o) => mapOrderDtoToSale(o));
+      const maybeData =
+        data && typeof data === 'object' ? (data as Record<string, unknown>)['data'] : undefined;
+      if (Array.isArray(maybeData))
+        return (maybeData as unknown[]).map((o) => mapOrderDtoToSale(o));
+      return [];
+    } catch (err) {
+      console.error('orderService.getTodaysOrders failed:', err);
       throw err;
     }
   }
@@ -54,16 +63,16 @@ class OrderService {
 
   async getOrders(): Promise<Sale[]> {
     try {
-      if (typeof (api as any).getOrders === 'function') {
-        const resp = await (api as any).getOrders();
-        if (!resp) return [];
-        if (Array.isArray(resp)) return (resp as unknown[]).map((o) => mapOrderDtoToSale(o));
-        const maybeData =
-          resp && typeof resp === 'object' ? (resp as Record<string, unknown>)['data'] : undefined;
-        if (Array.isArray(maybeData))
-          return (maybeData as unknown[]).map((o) => mapOrderDtoToSale(o));
-      }
-      // Fallback to getAllDuplicateOrders if available
+      // Prefer direct backend call for today's orders
+      const resp = await apiClient.get('/order');
+      const data = resp?.data;
+      if (!data) return [];
+      if (Array.isArray(data)) return (data as unknown[]).map((o) => mapOrderDtoToSale(o));
+      const maybeData =
+        data && typeof data === 'object' ? (data as Record<string, unknown>)['data'] : undefined;
+      if (Array.isArray(maybeData))
+        return (maybeData as unknown[]).map((o) => mapOrderDtoToSale(o));
+      // Fallback to duplicate orders endpoint
       return this.getAllDuplicateOrders();
     } catch (err) {
       console.error('orderService.getOrders failed:', err);
@@ -73,23 +82,20 @@ class OrderService {
 
   async getAllCustomerOrders(): Promise<Sale[]> {
     try {
-      if (typeof (api as any).getAllCustomerOrders === 'function') {
-        const resp = await (api as any).getAllCustomerOrders();
-        if (!resp) return [];
-        if (Array.isArray(resp)) return (resp as unknown[]).map((o) => mapOrderDtoToSale(o));
-        const maybeData =
-          resp && typeof resp === 'object' ? (resp as Record<string, unknown>)['data'] : undefined;
-        if (Array.isArray(maybeData))
-          return (maybeData as unknown[]).map((o) => mapOrderDtoToSale(o));
-      }
+      const resp = await apiClient.get('/order/allCustomer');
+      const data = resp?.data;
+      if (!data) return [];
+      if (Array.isArray(data)) return (data as unknown[]).map((o) => mapOrderDtoToSale(o));
+      const maybeData =
+        data && typeof data === 'object' ? (data as Record<string, unknown>)['data'] : undefined;
+      if (Array.isArray(maybeData))
+        return (maybeData as unknown[]).map((o) => mapOrderDtoToSale(o));
       return [];
     } catch (err) {
       console.error('orderService.getAllCustomerOrders failed:', err);
       throw err;
     }
   }
-
-  // Add other wrappers as needed (getById, updateOrder, createOrder)
 }
 
 export const orderService = new OrderService();
