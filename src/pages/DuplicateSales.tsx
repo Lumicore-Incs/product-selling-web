@@ -8,7 +8,6 @@ import { Sale as TableSale } from '../models/sales';
 import { getCurrentUser } from '../service/auth';
 import { dashboardApi } from '../services/api';
 import { orderService } from '../services/orders/orderService';
-import { salesService } from '../services/salesService';
 
 // Use the table types so shapes match the SalesTable component
 type Sale = TableSale;
@@ -118,40 +117,41 @@ export const DuplicateSales: React.FC = () => {
   };
 
   const updateSale = async (updatedSale: Sale) => {
-    // Optimistic UI update: update local state immediately
-    const prev = sales;
-    setSales((s) => s.map((sale) => (sale.id === updatedSale.id ? updatedSale : sale)));
-    setCurrentSale(null);
-    setIsEditing(false);
-
+    // Wait for server response before updating local state
+    setIsLoading(true);
+    setError(null);
     try {
-      // Call backend update. salesService will try common endpoints and fall back when needed
-      await salesService.updateOrder(updatedSale.id, updatedSale as unknown);
+      const resp = await orderService.updateOrder(updatedSale.id, updatedSale as unknown);
+      // If backend returns the updated sale, replace local state; otherwise, use updatedSale
+      const newSale = (resp as unknown) || updatedSale;
+      setSales((s) => s.map((sale) => (sale.id === updatedSale.id ? (newSale as Sale) : sale)));
+      setCurrentSale(null);
+      setIsEditing(false);
       setSnackbar({ open: true, message: 'Order updated successfully', type: 'success' });
     } catch (err: unknown) {
-      // Rollback on failure and show error
-      setSales(prev);
       const message = (err as Error)?.message || 'Failed to update order';
       setSnackbar({ open: true, message, type: 'error' });
       console.error('Update order failed:', err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const deleteSale = async (id: string) => {
-    // For now, just update local state since you don't have delete API endpoint
-    setSales(sales.filter((sale) => sale.id !== id));
-    if (currentSale?.id === id) {
-      setCurrentSale(null);
-      setIsEditing(false);
-    }
-
-    // TODO: Add API call to delete order when backend supports it
+    setIsLoading(true);
+    setError(null);
     try {
-      // Try service wrapper which will call orderApi.deleteOrder if available
+      // Wait for server to delete the order before updating UI
       await orderService.deleteOrder(id);
-    } catch (err) {
-      // If delete isn't implemented server-side it's fine to silently continue for now
-      console.warn('Delete order not performed via API:', err);
+      // Refresh the full list from server to keep data consistent
+      await loadOrders();
+      setSnackbar({ open: true, message: 'Order deleted successfully', type: 'success' });
+    } catch (err: unknown) {
+      const message = (err as Error)?.message || 'Failed to delete order';
+      setSnackbar({ open: true, message, type: 'error' });
+      console.error('Delete order failed:', err);
+    } finally {
+      setIsLoading(false);
     }
   };
 

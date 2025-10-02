@@ -1,5 +1,5 @@
 // src/services/api.ts
-import http, { API_BASE_URL } from './axiosConfig';
+import http from './axiosConfig';
 
 const api = http;
 
@@ -193,7 +193,7 @@ export const orderApi = {
   // Get today's orders
   getTodaysOrders: async (): Promise<OrderDtoGet[]> => {
     try {
-      console.log("Fetching today's orders from:", `${API_BASE_URL}/order`);
+      console.log("Fetching today's orders from endpoint: /order");
       const response = await api.get<OrderDtoGet[]>('/order');
       console.log("Today's orders response:", response.data);
       return response.data;
@@ -209,7 +209,7 @@ export const orderApi = {
   // Get all orders
   getAllOrders: async (): Promise<OrderDtoGet[]> => {
     try {
-      console.log('Fetching all orders from:', `${API_BASE_URL}/order/allCustomer`);
+      console.log('Fetching all orders from endpoint: /order/allCustomer');
       const response = await api.get<OrderDtoGet[]>('/order/allCustomer');
       console.log('All orders response:', response.data);
       return response.data;
@@ -224,35 +224,6 @@ export const orderApi = {
         console.log('Trying alternative endpoint: /order');
         try {
           const fallbackResponse = await api.get<OrderDtoGet[]>('/order');
-          console.log('Fallback response successful:', fallbackResponse.data);
-          return fallbackResponse.data;
-        } catch (fallbackError) {
-          console.error('Fallback also failed:', fallbackError);
-          throw error; // Throw original error
-        }
-      }
-
-      throw error;
-    }
-  },
-  // Get all duplicate orders
-  getAllDuplicateOrders: async (): Promise<OrderDtoGet[]> => {
-    try {
-      console.log('Fetching all duplicate orders from:', `${API_BASE_URL}/order/duplicate`);
-      const response = await api.get<OrderDtoGet[]>('/order/duplicate');
-      console.log('All duplicate orders response:', response.data);
-      return response.data;
-    } catch (error: any) {
-      console.error('Error fetching all duplicate orders:', error);
-      console.error('Request URL:', error.config?.url);
-      console.error('Response status:', error.response?.status);
-      console.error('Response data:', error.response?.data);
-
-      // If 404, try alternative endpoint
-      if (error.response?.status === 404) {
-        console.log('Trying alternative endpoint: /order');
-        try {
-          const fallbackResponse = await api.get<OrderDtoGet[]>('/order/duplicate');
           console.log('Fallback response successful:', fallbackResponse.data);
           return fallbackResponse.data;
         } catch (fallbackError) {

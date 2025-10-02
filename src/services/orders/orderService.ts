@@ -1,5 +1,6 @@
 import { Sale } from '../../models/sales';
 import { orderApi } from '../api';
+import apiClient from '../axiosConfig';
 import { mapOrderDtoToSale } from '../mappers/salesMapper';
 
 type PossibleOrderApi = {
@@ -13,20 +14,16 @@ const api = orderApi as unknown as PossibleOrderApi;
 class OrderService {
   async getAllDuplicateOrders(): Promise<Sale[]> {
     try {
-      if (typeof api.getAllDuplicateOrders === 'function') {
-        const resp = await api.getAllDuplicateOrders();
-        if (!resp) return [];
-        if (Array.isArray(resp)) {
-          return (resp as unknown[]).map((o) => mapOrderDtoToSale(o));
-        }
-        // If API returned an object with data array (e.g. { data: [...] })
-        const maybeData =
-          resp && typeof resp === 'object' ? (resp as Record<string, unknown>)['data'] : undefined;
-        if (Array.isArray(maybeData))
-          return (maybeData as unknown[]).map((o) => mapOrderDtoToSale(o));
-        return [];
-      }
-      throw new Error('getAllDuplicateOrders not implemented on orderApi');
+      // Directly call the backend endpoint and map DTOs to Sale model
+      const resp = await apiClient.get('/order/duplicate');
+      const data = resp?.data;
+      if (!data) return [];
+      if (Array.isArray(data)) return (data as unknown[]).map((o) => mapOrderDtoToSale(o));
+      const maybeData =
+        data && typeof data === 'object' ? (data as Record<string, unknown>)['data'] : undefined;
+      if (Array.isArray(maybeData))
+        return (maybeData as unknown[]).map((o) => mapOrderDtoToSale(o));
+      return [];
     } catch (err) {
       console.error('orderService.getAllDuplicateOrders failed:', err);
       throw err;
@@ -35,12 +32,22 @@ class OrderService {
 
   async deleteOrder(id: string): Promise<unknown> {
     try {
-      if (typeof api.deleteOrder === 'function') {
-        return await api.deleteOrder(id);
-      }
-      throw new Error('deleteOrder not implemented on orderApi');
+      // Call the backend DELETE /order/{id}
+      const resp = await apiClient.delete(`/order/${id}`);
+      return resp.data;
     } catch (err) {
       console.error('orderService.deleteOrder failed:', err);
+      throw err;
+    }
+  }
+
+  async updateOrder(id: string, payload: unknown): Promise<unknown> {
+    try {
+      // Delegate to backend endpoint for resolving/updating an order
+      const putResp = await apiClient.put(`/order/${id}/resolve`, payload as object);
+      return putResp.data;
+    } catch (err) {
+      console.error('orderService.updateOrder failed:', err);
       throw err;
     }
   }

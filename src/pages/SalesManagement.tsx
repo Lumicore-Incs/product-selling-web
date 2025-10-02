@@ -9,7 +9,7 @@ import { Sale as TableSale } from '../models/sales';
 import { getCurrentUser } from '../service/auth';
 import { dashboardApi, orderApi } from '../services/api';
 import { mapOrderDtoToSale } from '../services/mappers/salesMapper';
-import { salesService } from '../services/salesService';
+import { orderService } from '../services/orders/orderService';
 
 type Sale = TableSale;
 
@@ -127,28 +127,36 @@ export const SalesManagement: React.FC = () => {
     setSales((s) => s.map((sale) => (sale.id === updatedSale.id ? updatedSale : sale)));
     setCurrentSale(null);
     setIsEditing(false);
+    setIsLoading(true);
 
     try {
-      await salesService.updateOrder(updatedSale.id, updatedSale as unknown);
+      await orderService.updateOrder(updatedSale.id, updatedSale as unknown);
       setSnackbar({ open: true, message: 'Order updated successfully', type: 'success' });
     } catch (err: unknown) {
       setSales(prev);
       const message = (err as Error)?.message || 'Failed to update order';
       setSnackbar({ open: true, message, type: 'error' });
       console.error('Update order failed:', err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const deleteSale = async (id: string) => {
-    // For now, just update local state since you don't have delete API endpoint
-    setSales(sales.filter((sale) => sale.id !== id));
-    if (currentSale?.id === id) {
-      setCurrentSale(null);
-      setIsEditing(false);
+    setIsLoading(true);
+    setError(null);
+    try {
+      await orderService.deleteOrder(id);
+      // Refresh the full list from server to keep data consistent
+      await loadOrders();
+      setSnackbar({ open: true, message: 'Order deleted successfully', type: 'success' });
+    } catch (err: unknown) {
+      const message = (err as Error)?.message || 'Failed to delete order';
+      setSnackbar({ open: true, message, type: 'error' });
+      console.error('Delete order failed:', err);
+    } finally {
+      setIsLoading(false);
     }
-
-    // TODO: Add API call to delete order when backend supports it
-    // await orderApi.deleteOrder(id);
   };
 
   const editSale = (sale: Sale) => {
