@@ -68,18 +68,6 @@ export interface OrderDetailsDto {
   orderId?: number;
 }
 
-// User type for API response
-export interface UserApiDto {
-  id: number;
-  name: string;
-  email: string;
-  telephone: string;
-  role: string;
-  registration_date: string;
-  status: string;
-  type?: string | null;
-}
-
 // API service functions
 export const productApi = {
   // Get all products
@@ -213,63 +201,6 @@ export interface User {
   registration_date: string;
   status: 'active' | 'inactive' | 'pending';
 }
-
-export const userApi = {
-  getAllUsers: async (): Promise<User[]> => {
-    try {
-      const response = await api.get<UserApiDto[]>('/user/get_all_user');
-      return response.data.map((user: UserApiDto) => ({
-        id: user.id.toString(),
-        name: user.name,
-        email: user.email,
-        contact: user.telephone,
-        role: user.role,
-        registration_date: user.registration_date,
-        status: (user.status?.toLowerCase() as 'active' | 'inactive' | 'pending') || 'pending',
-      }));
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      throw error;
-    }
-  },
-  updateUser: async (id: string, userData: Partial<User>): Promise<User> => {
-    try {
-      const response = await api.put<UserApiDto>(`/user/update/${id}`, {
-        name: userData.name,
-        email: userData.email,
-        telephone: userData.contact,
-        role: userData.role,
-        type: 'USER',
-      });
-      const updatedUser = response.data;
-      return {
-        id: updatedUser.id.toString(),
-        name: updatedUser.name,
-        email: updatedUser.email,
-        contact: updatedUser.telephone,
-        role: updatedUser.role,
-        registration_date: updatedUser.registration_date,
-        status:
-          (updatedUser.status?.toLowerCase() as 'active' | 'inactive' | 'pending') || 'pending',
-      };
-    } catch (error) {
-      console.error('Error updating user:', error);
-      throw error;
-    }
-  },
-
-  deleteUser: async (id: string): Promise<boolean> => {
-    try {
-      const response = await api.delete(`/user/${id}`);
-      return response.status === 200;
-    } catch (error) {
-      console.error('Error deleting user:', error);
-      throw error;
-    }
-  },
-
-  // single getAllUsers implemented above
-};
 
 /**
  * Export sales as Excel file by calling /dashboard/conform endpoint.
