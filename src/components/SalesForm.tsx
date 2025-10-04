@@ -97,6 +97,57 @@ export const SalesForm: React.FC<SalesFormProps> = ({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+    // If the quantity field changed and there's a default product, sync it with items
+    if (name === 'qty') {
+      const qtyValue = value;
+      const defaultPid = defaultProduct
+        ? defaultProduct.productId == null
+          ? ''
+          : String(defaultProduct.productId)
+        : null;
+
+      let updatedItems = [...formData.items];
+
+      if (defaultPid) {
+        const existingIndex = updatedItems.findIndex((it) => it.productId === defaultPid);
+        const parsed = parseInt(qtyValue || '0');
+
+        if (!qtyValue || isNaN(parsed) || parsed <= 0) {
+          // remove default product from items if present
+          if (existingIndex >= 0) {
+            updatedItems = updatedItems.filter((it) => it.productId !== defaultPid);
+          }
+        } else {
+          // add or update default product entry
+          const def = defaultProduct as ProductDto;
+          const price = def.price;
+          const name = def.name;
+          if (existingIndex >= 0) {
+            updatedItems[existingIndex] = {
+              ...updatedItems[existingIndex],
+              qty: parsed,
+              total: parsed * price,
+            };
+          } else {
+            updatedItems.push({
+              productId: defaultPid,
+              productName: name,
+              qty: parsed,
+              price: price,
+              total: parsed * price,
+            });
+          }
+        }
+      }
+
+      setFormData({
+        ...formData,
+        qty: qtyValue,
+        items: updatedItems,
+      });
+      return;
+    }
+
     setFormData({
       ...formData,
       [name]: value,
@@ -161,10 +212,26 @@ export const SalesForm: React.FC<SalesFormProps> = ({
       item.productId === productId ? { ...item, qty: newQuantity } : item
     );
 
-    setFormData({
-      ...formData,
-      items: updatedItems,
-    });
+    // If the updated item is the default product, also update the default qty field
+    const defaultPid = defaultProduct
+      ? defaultProduct.productId == null
+        ? ''
+        : String(defaultProduct.productId)
+      : null;
+    if (defaultPid && productId === defaultPid) {
+      // find the updated qty for the default product
+      const updatedDefaultItem = updatedItems.find((it) => it.productId === defaultPid);
+      setFormData({
+        ...formData,
+        items: updatedItems,
+        qty: updatedDefaultItem ? String(updatedDefaultItem.qty) : formData.qty,
+      });
+    } else {
+      setFormData({
+        ...formData,
+        items: updatedItems,
+      });
+    }
   };
 
   const getTotalAmount = () => {
@@ -213,39 +280,20 @@ export const SalesForm: React.FC<SalesFormProps> = ({
     }
     let tempCustomer = null;
 
+    // Prepare items array
+    const finalItems: SaleItem[] = [...formData.items];
+
+    // Validate at least one product
+    if (!(finalItems?.length > 0)) {
+      setSnackbar({
+        open: true,
+        message: 'At least one product must be added.',
+        type: 'error',
+      });
+      setIsLoading(false);
+      return;
+    }
     try {
-      // Prepare items array based on the logic you described
-      const finalItems: SaleItem[] = [...formData.items]; // Items added via plus icon
-
-      // Check if user entered quantity in form and has default product
-      if (formData.qty && formData.qty.trim() !== '' && defaultProduct) {
-        const qtyNumber = parseInt(formData.qty);
-        if (qtyNumber > 0) {
-          // Check if default product is already in the items (added via plus icon)
-          const existingDefaultItemIndex = finalItems.findIndex(
-            (item) =>
-              item.productId ===
-              (defaultProduct.productId == null ? '' : String(defaultProduct.productId))
-          );
-
-          if (existingDefaultItemIndex >= 0) {
-            // Add the form quantity to existing default product
-            finalItems[existingDefaultItemIndex].qty += qtyNumber;
-          } else {
-            // Add default product with form quantity
-            const pidDef = defaultProduct.productId == null ? '' : String(defaultProduct.productId);
-            const defaultItem: SaleItem = {
-              productId: pidDef,
-              productName: defaultProduct.name,
-              qty: qtyNumber,
-              price: defaultProduct.price,
-              total: qtyNumber * defaultProduct.price,
-            };
-            finalItems.push(defaultItem);
-          }
-        }
-      }
-
       // Calculate total amount
       const totalAmount = finalItems.reduce((sum, item) => sum + item.qty * item.price, 0);
 
@@ -607,6 +655,9 @@ export const SalesForm: React.FC<SalesFormProps> = ({
                       {products.map((product) => (
                         <option key={product.productId} value={product.productId}>
                           {product.name} - ${product.price}
+                          {defaultProduct?.productId === product.productId
+                            ? '  -  default product'
+                            : ' '}
                         </option>
                       ))}
                     </select>

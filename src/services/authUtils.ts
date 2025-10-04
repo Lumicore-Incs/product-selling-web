@@ -21,6 +21,7 @@ export function getToken(): string | null {
 export function removeToken(): void {
   try {
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem('productId');
   } catch (err) {
     console.warn('Failed to remove auth token', err);
   }

@@ -75,11 +75,8 @@ export const Users = () => {
   // Handle user deletion
   const handleDelete = (id: string) => {
     // Open a confirmation snackbar instead of native confirm
+    // trigger ConfirmDialog by setting pendingDeleteId
     setPendingDeleteId(id);
-    setAlertType('error');
-    setAlertOpen(true);
-    // set the message via showToast to keep existing UI consistent
-    setError('Are you sure you want to delete this user?');
   };
 
   const performDelete = async (id: string | null) => {
@@ -228,11 +225,9 @@ export const Users = () => {
         cancelLabel="Cancel"
         onConfirm={() => {
           performDelete(pendingDeleteId);
-          setAlertOpen(false);
         }}
         onCancel={() => {
           setPendingDeleteId(null);
-          setAlertOpen(false);
         }}
       />
       <div className="flex justify-between items-center">
