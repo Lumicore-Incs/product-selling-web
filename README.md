@@ -58,7 +58,7 @@ This repository is a Vite + React + TypeScript application for a simple product 
 
 #### userApi
 
-- getAllUsers(): Promise<User[]> (maps backend `UserApiDto[]` into frontend `User[]`)
+- ✅ getAllUsers(): Promise<User[]> (maps backend `UserApiDto[]` into frontend `User[]`)
 
   - GET /user/get_all_user
 
@@ -66,7 +66,7 @@ This repository is a Vite + React + TypeScript application for a simple product 
 
   - PUT /user/update/{id} — update user; maps backend DTO into frontend `User`
 
-- deleteUser(id: string): Promise<boolean>
+- ✅deleteUser(id: string): Promise<boolean>
   - DELETE /user/{id} — delete user (returns boolean success)
 
 #### dashboardApi

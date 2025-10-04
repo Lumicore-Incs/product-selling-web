@@ -20,6 +20,7 @@ import { useEffect, useState } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { BackgroundIcons } from '../components/BackgroundIcons';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { InputField } from '../components/InputField';
 import { productApi } from '../services/api';
 import type { User as ServiceUser } from '../services/users/userService';
@@ -34,6 +35,7 @@ export const Users = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [products, setProducts] = useState<{ productId: number; name: string }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [newUser, setNewUser] = useState<User>({
     id: Date.now().toString(),
     email: '',
@@ -71,16 +73,26 @@ export const Users = () => {
   const handleNext = () => setCurrentPage((p) => Math.min(totalPages, p + 1));
 
   // Handle user deletion
-  const handleDelete = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this user?')) {
-      try {
-        await userService.deleteUser(id);
-        setUsers(users.filter((user) => user.id !== id));
-        showToast('User deleted successfully!', 'success');
-      } catch (error) {
-        console.error('Failed to delete user:', error);
-        showToast('Failed to delete user. Please try again.', 'error');
-      }
+  const handleDelete = (id: string) => {
+    // Open a confirmation snackbar instead of native confirm
+    setPendingDeleteId(id);
+    setAlertType('error');
+    setAlertOpen(true);
+    // set the message via showToast to keep existing UI consistent
+    setError('Are you sure you want to delete this user?');
+  };
+
+  const performDelete = async (id: string | null) => {
+    if (!id) return;
+    try {
+      await userService.deleteUser(id);
+      setUsers(users.filter((user) => user.id !== id));
+      showToast('User deleted successfully!', 'success');
+    } catch (error) {
+      console.error('Failed to delete user:', error);
+      showToast('Failed to delete user. Please try again.', 'error');
+    } finally {
+      setPendingDeleteId(null);
     }
   };
 
@@ -207,6 +219,21 @@ export const Users = () => {
         pauseOnFocusLoss
         draggable
         pauseOnHover
+      />
+      <ConfirmDialog
+        open={Boolean(pendingDeleteId)}
+        title="Delete user"
+        message="Are you sure you want to delete this user? This action cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={() => {
+          performDelete(pendingDeleteId);
+          setAlertOpen(false);
+        }}
+        onCancel={() => {
+          setPendingDeleteId(null);
+          setAlertOpen(false);
+        }}
       />
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">Users Management</h1>
