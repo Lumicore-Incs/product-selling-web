@@ -317,6 +317,7 @@ export const SalesManagement: React.FC = () => {
             onDelete={deleteSale}
             isLoading={isLoading}
             userRole={user?.role}
+            onRefresh={refreshData}
           />
         </div>
       </div>

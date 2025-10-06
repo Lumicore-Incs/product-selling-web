@@ -302,6 +302,7 @@ export const DuplicateSales: React.FC = () => {
             onDelete={deleteSale}
             isLoading={isLoading}
             userRole={user?.role}
+            onRefresh={refreshData}
           />
         </div>
 

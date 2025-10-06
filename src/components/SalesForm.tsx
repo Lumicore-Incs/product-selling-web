@@ -342,7 +342,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
 
       tempCustomer = customerData;
 
-      const savedCustomer = await customerApi.createCustomer(customerData);
+      await customerApi.createCustomer(customerData);
 
       // Also call the original onSave for backward compatibility
       onSave({

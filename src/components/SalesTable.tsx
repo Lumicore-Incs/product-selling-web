@@ -5,11 +5,13 @@ import {
   MapPinIcon,
   PackageIcon,
   PhoneIcon,
+  RefreshCwIcon,
   Trash2Icon,
 } from 'lucide-react';
 import React, { useState } from 'react';
 import { Sale, SaleItem } from '../models/sales';
 import { ConfirmDialog } from './ConfirmDialog';
+import Spinner from './Spinner';
 
 interface SalesTableProps {
   sales: Sale[];
@@ -17,9 +19,17 @@ interface SalesTableProps {
   onEdit: (sale: Sale) => void;
   onDelete: (id: string) => void;
   userRole?: string;
+  onRefresh?: () => void;
 }
 
-export const SalesTable: React.FC<SalesTableProps> = ({ sales, onEdit, onDelete, userRole }) => {
+export const SalesTable: React.FC<SalesTableProps> = ({
+  sales,
+  isLoading,
+  onEdit,
+  onDelete,
+  userRole,
+  onRefresh,
+}) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
@@ -72,6 +82,30 @@ export const SalesTable: React.FC<SalesTableProps> = ({ sales, onEdit, onDelete,
   const handlePrev = () => setCurrentPage((p) => Math.max(1, p - 1));
   const handleNext = () => setCurrentPage((p) => Math.min(totalPages, p + 1));
 
+  // Show skeleton loader when data is loading
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 sm:p-6 flex items-center justify-between">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-bold text-white">Sales Entries</h2>
+            <p className="text-blue-100 text-sm mt-1">Loading...</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-white bg-opacity-10 flex items-center justify-center">
+              <Spinner size={20} colorClass="text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div className="p-8 flex flex-col items-center justify-center">
+          <Spinner size={48} colorClass="text-blue-600 mb-4" />
+          <div className="text-gray-600 text-lg">Loading sales data...</div>
+        </div>
+      </div>
+    );
+  }
+
   if (sales.length === 0) {
     return (
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 sm:p-8 text-center">
@@ -89,9 +123,20 @@ export const SalesTable: React.FC<SalesTableProps> = ({ sales, onEdit, onDelete,
   return (
     <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 sm:p-6">
-        <h2 className="text-xl sm:text-2xl font-bold text-white">Sales Entries</h2>
-        <p className="text-blue-100 text-sm mt-1">{sales.length} total entries</p>
+      <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 sm:p-6 flex items-center justify-between">
+        <div>
+          <h2 className="text-xl sm:text-2xl font-bold text-white">Sales Entries</h2>
+          <p className="text-blue-100 text-sm mt-1">{sales.length} total entries</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => onRefresh && onRefresh()}
+            title="Refresh"
+            className="p-2 bg-white bg-opacity-10 hover:bg-opacity-20 rounded text-white"
+          >
+            <RefreshCwIcon className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* Desktop Table View */}
