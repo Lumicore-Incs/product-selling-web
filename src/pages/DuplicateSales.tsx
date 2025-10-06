@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { useOutletContext } from 'react-router-dom';
 import { AlertSnackbar } from '../components/AlertSnackbar';
 import { BackgroundIcons } from '../components/BackgroundIcons';
 import { SalesForm } from '../components/SalesForm';
@@ -12,20 +11,12 @@ import { orderService } from '../services/orders/orderService';
 // Use the table types so shapes match the SalesTable component
 type Sale = TableSale;
 
-interface OutletContext {
-  salesTitle: string;
-  salesBackgroundColor: string;
-  showSettings: boolean;
-  setShowSettings: (show: boolean) => void;
-}
-
 export const DuplicateSales: React.FC = () => {
-  const { salesTitle } = useOutletContext<OutletContext>();
   const [sales, setSales] = useState<Sale[]>([]);
   const [currentSale, setCurrentSale] = useState<Sale | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
+  // removed unused isExporting state (exporting handled inline via showExportPopup)
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<{ role: string } | null>(null);
   const [snackbar, setSnackbar] = useState<{
@@ -156,7 +147,6 @@ export const DuplicateSales: React.FC = () => {
   };
 
   const exportSales = async (exportType: string) => {
-    setIsExporting(true);
     setError(null);
     try {
       let endpoint = '';
@@ -191,7 +181,6 @@ export const DuplicateSales: React.FC = () => {
       setError(errorMessage);
       setSnackbar({ open: true, message: errorMessage, type: 'error' });
     } finally {
-      setIsExporting(false);
       setShowExportPopup(false);
     }
   };
@@ -264,7 +253,7 @@ export const DuplicateSales: React.FC = () => {
       <header className="mb-8">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">{salesTitle}</h1>
+            <h1 className="text-3xl font-bold text-gray-800">Resolve Duplicate Orders</h1>
             <p className="text-gray-600 mt-2">Add, edit, and manage your sales entries</p>
           </div>
           <div className="flex space-x-3">
@@ -277,17 +266,6 @@ export const DuplicateSales: React.FC = () => {
             >
               {isLoading ? 'Refreshing...' : 'Refresh'}
             </button>
-            {user?.role === 'ADMIN' && (
-              <button
-                onClick={() => setShowExportPopup(true)}
-                disabled={isExporting}
-                className={`px-4 py-2 rounded-md text-white ${
-                  isExporting ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
-                }`}
-              >
-                {isExporting ? 'Exporting...' : 'Export Sales'}
-              </button>
-            )}
           </div>
         </div>
       </header>
@@ -307,16 +285,21 @@ export const DuplicateSales: React.FC = () => {
         </div>
 
         <div>
-          <SalesForm
-            onSave={addSale}
-            onUpdate={updateSale}
-            currentSale={currentSale}
-            isEditing={isEditing}
-            onCancelEdit={() => {
-              setCurrentSale(null);
-              setIsEditing(false);
-            }}
-          />
+          {/* Render the SalesForm only when editing. By default the form is hidden
+              on this page and is shown when the user clicks the update/edit icon
+              in the table which calls `editSale` and sets `isEditing`/`currentSale`. */}
+          {isEditing && (
+            <SalesForm
+              onSave={addSale}
+              onUpdate={updateSale}
+              currentSale={currentSale}
+              isEditing={isEditing}
+              onCancelEdit={() => {
+                setCurrentSale(null);
+                setIsEditing(false);
+              }}
+            />
+          )}
         </div>
       </div>
     </div>
