@@ -111,11 +111,6 @@ export const DuplicateSales: React.FC = () => {
     loadOrders();
   };
 
-  const handleCustomerCreated = () => {
-    // Refresh orders after a new customer/order is created
-    loadOrders();
-  };
-
   const updateSale = async (updatedSale: Sale) => {
     // Wait for server response before updating local state
     setIsLoading(true);
@@ -301,7 +296,13 @@ export const DuplicateSales: React.FC = () => {
 
       <div className="space-y-8">
         <div>
-          <SalesTable sales={sales} onEdit={editSale} onDelete={deleteSale} isLoading={isLoading} />
+          <SalesTable
+            sales={sales}
+            onEdit={editSale}
+            onDelete={deleteSale}
+            isLoading={isLoading}
+            userRole={user?.role}
+          />
         </div>
 
         <div>
@@ -314,7 +315,6 @@ export const DuplicateSales: React.FC = () => {
               setCurrentSale(null);
               setIsEditing(false);
             }}
-            onCustomerCreated={handleCustomerCreated}
           />
         </div>
       </div>

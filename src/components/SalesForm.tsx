@@ -10,7 +10,6 @@ interface SalesFormProps {
   currentSale: Sale | null;
   isEditing: boolean;
   onCancelEdit: () => void;
-  onCustomerCreated?: (customer: any) => void;
 }
 
 export const SalesForm: React.FC<SalesFormProps> = ({
@@ -19,7 +18,6 @@ export const SalesForm: React.FC<SalesFormProps> = ({
   currentSale,
   isEditing,
   onCancelEdit,
-  onCustomerCreated,
 }) => {
   const [formData, setFormData] = useState({
     name: '',
@@ -99,58 +97,62 @@ export const SalesForm: React.FC<SalesFormProps> = ({
     const { name, value } = e.target;
     // If the quantity field changed and there's a default product, sync it with items
     if (name === 'qty') {
-      const qtyValue = value;
-      const defaultPid = defaultProduct
-        ? defaultProduct.productId == null
-          ? ''
-          : String(defaultProduct.productId)
-        : null;
-
-      let updatedItems = [...formData.items];
-
-      if (defaultPid) {
-        const existingIndex = updatedItems.findIndex((it) => it.productId === defaultPid);
-        const parsed = parseInt(qtyValue || '0');
-
-        if (!qtyValue || isNaN(parsed) || parsed <= 0) {
-          // remove default product from items if present
-          if (existingIndex >= 0) {
-            updatedItems = updatedItems.filter((it) => it.productId !== defaultPid);
-          }
-        } else {
-          // add or update default product entry
-          const def = defaultProduct as ProductDto;
-          const price = def.price;
-          const name = def.name;
-          if (existingIndex >= 0) {
-            updatedItems[existingIndex] = {
-              ...updatedItems[existingIndex],
-              qty: parsed,
-              total: parsed * price,
-            };
-          } else {
-            updatedItems.push({
-              productId: defaultPid,
-              productName: name,
-              qty: parsed,
-              price: price,
-              total: parsed * price,
-            });
-          }
-        }
-      }
-
-      setFormData({
-        ...formData,
-        qty: qtyValue,
-        items: updatedItems,
-      });
+      syncDefaultProductWithQty(value);
       return;
     }
 
     setFormData({
       ...formData,
       [name]: value,
+    });
+  };
+
+  // Helper: sync the default product in items with the qty input value
+  const syncDefaultProductWithQty = (qtyValue: string) => {
+    const defaultPid = defaultProduct
+      ? defaultProduct.productId == null
+        ? ''
+        : String(defaultProduct.productId)
+      : null;
+
+    let updatedItems = [...formData.items];
+
+    if (defaultPid) {
+      const existingIndex = updatedItems.findIndex((it) => it.productId === defaultPid);
+      const parsed = parseInt(qtyValue || '0');
+
+      if (!qtyValue || isNaN(parsed) || parsed <= 0) {
+        // remove default product from items if present
+        if (existingIndex >= 0) {
+          updatedItems = updatedItems.filter((it) => it.productId !== defaultPid);
+        }
+      } else {
+        // add or update default product entry
+        const def = defaultProduct as ProductDto;
+        const price = def.price;
+        const name = def.name;
+        if (existingIndex >= 0) {
+          updatedItems[existingIndex] = {
+            ...updatedItems[existingIndex],
+            qty: parsed,
+            total: parsed * price,
+          };
+        } else {
+          updatedItems.push({
+            productId: defaultPid,
+            productName: name,
+            qty: parsed,
+            price: price,
+            total: parsed * price,
+          });
+        }
+      }
+    }
+
+    setFormData({
+      ...formData,
+      qty: qtyValue,
+      items: updatedItems,
     });
   };
 
@@ -293,6 +295,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
       setIsLoading(false);
       return;
     }
+
     try {
       // Calculate total amount
       const totalAmount = finalItems.reduce((sum, item) => sum + item.qty * item.price, 0);
@@ -310,7 +313,6 @@ export const SalesForm: React.FC<SalesFormProps> = ({
         return;
       }
 
-      // For new customers, save to backend
       // Remove leading 0 before sending to API (convert 10 digits to 9 digits)
       const contact01ForBackend = formData.contact01.startsWith('0')
         ? formData.contact01.substring(1)
@@ -341,11 +343,6 @@ export const SalesForm: React.FC<SalesFormProps> = ({
       tempCustomer = customerData;
 
       const savedCustomer = await customerApi.createCustomer(customerData);
-
-      // Notify parent component about the new customer
-      if (onCustomerCreated) {
-        onCustomerCreated(savedCustomer);
-      }
 
       // Also call the original onSave for backward compatibility
       onSave({
@@ -604,6 +601,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
                   type="text"
                   value={formData.qty}
                   onChange={handleChange}
+                  disabled={!defaultProduct}
                   className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-base"
                   placeholder="Enter quantity"
                 />
@@ -653,7 +651,10 @@ export const SalesForm: React.FC<SalesFormProps> = ({
                     >
                       <option value="">Choose a product...</option>
                       {products.map((product) => (
-                        <option key={product.productId} value={product.productId}>
+                        // Ensure the key is always a primitive (string/number).
+                        // product.productId may sometimes be undefined or an object in upstream data,
+                        // so stringify to guarantee a unique primitive key.
+                        <option key={String(product.productId)} value={product.productId}>
                           {product.name} - ${product.price}
                           {defaultProduct?.productId === product.productId
                             ? '  -  default product'
@@ -704,9 +705,12 @@ export const SalesForm: React.FC<SalesFormProps> = ({
               <div className="border border-gray-300 rounded-lg p-4 bg-white">
                 <h4 className="text-base font-medium text-gray-800 mb-4">Selected Products</h4>
                 <div className="space-y-3">
-                  {formData.items.map((item) => (
+                  {formData.items.map((item, index) => (
+                    // Use composite key with index to ensure uniqueness even when productId
+                    // could be non-unique or unexpectedly an object. Index is acceptable here
+                    // because items order is stable within the form and items are editable.
                     <div
-                      key={item.productId}
+                      key={`${String(item.productId)}-${index}`}
                       className="border border-gray-200 rounded-lg p-4 bg-gray-50"
                     >
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">

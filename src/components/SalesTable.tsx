@@ -9,17 +9,21 @@ import {
 } from 'lucide-react';
 import React, { useState } from 'react';
 import { Sale, SaleItem } from '../models/sales';
+import { ConfirmDialog } from './ConfirmDialog';
 
 interface SalesTableProps {
   sales: Sale[];
   isLoading?: boolean;
   onEdit: (sale: Sale) => void;
   onDelete: (id: string) => void;
+  userRole?: string;
 }
 
-export const SalesTable: React.FC<SalesTableProps> = ({ sales, onEdit, onDelete }) => {
+export const SalesTable: React.FC<SalesTableProps> = ({ sales, onEdit, onDelete, userRole }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [showBlockDialog, setShowBlockDialog] = useState(false);
   const rowsPerPage = 5;
 
   const toggleRowExpansion = (id: string) => {
@@ -191,7 +195,13 @@ export const SalesTable: React.FC<SalesTableProps> = ({ sales, onEdit, onDelete 
                         <EditIcon className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => onDelete(sale.id)}
+                        onClick={() => {
+                          if (userRole === 'ADMIN') {
+                            setPendingDeleteId(sale.id);
+                          } else {
+                            setShowBlockDialog(true);
+                          }
+                        }}
                         className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-all duration-200"
                         title="Delete"
                       >
@@ -267,7 +277,13 @@ export const SalesTable: React.FC<SalesTableProps> = ({ sales, onEdit, onDelete 
                         <EditIcon className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => onDelete(sale.id)}
+                        onClick={() => {
+                          if (userRole === 'ADMIN') {
+                            setPendingDeleteId(sale.id);
+                          } else {
+                            setShowBlockDialog(true);
+                          }
+                        }}
                         className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-all duration-200"
                       >
                         <Trash2Icon className="w-4 h-4" />
@@ -393,6 +409,30 @@ export const SalesTable: React.FC<SalesTableProps> = ({ sales, onEdit, onDelete 
           </div>
         </div>
       </div>
+      {/* ConfirmDialog for admin delete */}
+      <ConfirmDialog
+        open={Boolean(pendingDeleteId)}
+        title="Delete Sale"
+        message="Are you sure you want to delete this sale record? This action cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={() => {
+          if (pendingDeleteId) onDelete(pendingDeleteId);
+          setPendingDeleteId(null);
+        }}
+        onCancel={() => setPendingDeleteId(null)}
+      />
+
+      {/* Block dialog for non-admins */}
+      <ConfirmDialog
+        open={showBlockDialog}
+        title="Permission Denied"
+        message="You do not have permission to delete this record."
+        confirmLabel="OK"
+        hideCancel={true}
+        onConfirm={() => setShowBlockDialog(false)}
+        onCancel={() => setShowBlockDialog(false)}
+      />
     </div>
   );
 };

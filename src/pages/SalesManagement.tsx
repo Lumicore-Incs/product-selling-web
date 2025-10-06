@@ -117,11 +117,6 @@ export const SalesManagement: React.FC = () => {
     loadOrders();
   };
 
-  const handleCustomerCreated = () => {
-    // Refresh orders after a new customer/order is created
-    loadOrders();
-  };
-
   const updateSale = async (updatedSale: Sale) => {
     const prev = sales;
     setSales((s) => s.map((sale) => (sale.id === updatedSale.id ? updatedSale : sale)));
@@ -313,11 +308,16 @@ export const SalesManagement: React.FC = () => {
               setCurrentSale(null);
               setIsEditing(false);
             }}
-            onCustomerCreated={handleCustomerCreated}
           />
         </div>
         <div>
-          <SalesTable sales={sales} onEdit={editSale} onDelete={deleteSale} isLoading={isLoading} />
+          <SalesTable
+            sales={sales}
+            onEdit={editSale}
+            onDelete={deleteSale}
+            isLoading={isLoading}
+            userRole={user?.role}
+          />
         </div>
       </div>
     </div>
