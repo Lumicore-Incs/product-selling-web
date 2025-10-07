@@ -105,6 +105,7 @@ export const DuplicateSales: React.FC = () => {
       // If backend returns the updated sale, replace local state; otherwise, use updatedSale
       const newSale = (resp as unknown) || updatedSale;
       setSales((s) => s.map((sale) => (sale.id === updatedSale.id ? (newSale as Sale) : sale)));
+      await loadOrders();
       setCurrentSale(null);
       setIsEditing(false);
       setSnackbar({ open: true, message: 'Order updated successfully', type: 'success' });
