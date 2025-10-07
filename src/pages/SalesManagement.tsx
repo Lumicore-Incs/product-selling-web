@@ -71,11 +71,6 @@ export const SalesManagement: React.FC = () => {
 
       console.log('Number of orders received:', responseOrder.length);
 
-      // Convert backend OrderDtoGet to frontend Sale format
-      // Use the same mapping as Dashboard component
-      // const convertedSales: Sale[] = responseOrder.map((order: unknown) =>
-      //   mapOrderDtoToSale(order)
-      // );
       const canonicalSales = responseOrder as Sale[];
       setSales(canonicalSales);
     } catch (error: any) {
