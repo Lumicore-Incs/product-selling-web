@@ -62,14 +62,8 @@ export const DuplicateSales: React.FC = () => {
 
       console.log('Number of orders received:', responseOrder.length);
 
-      // Debug: Log first order structure if available
-      if (responseOrder.length > 0) {
-        console.log('First order structure:', responseOrder[0]);
-        console.log('First order keys:', Object.keys(responseOrder[0]));
-      }
-
       // orderService returns canonical `Sale[]` (mapping done in the service)
-      const canonicalSales = responseOrder as unknown as Sale[];
+      const canonicalSales = responseOrder as Sale[];
       console.log('Setting sales state with', canonicalSales.length, 'items');
       setSales(canonicalSales);
     } catch (error: unknown) {
@@ -102,12 +96,12 @@ export const DuplicateSales: React.FC = () => {
     loadOrders();
   };
 
-  const updateSale = async (updatedSale: Sale) => {
+  const updateDuplicateSale = async (updatedSale: Sale) => {
     // Wait for server response before updating local state
     setIsLoading(true);
     setError(null);
     try {
-      const resp = await orderService.updateOrder(updatedSale.id, updatedSale as unknown);
+      const resp = await orderService.updateDuplicateOrder(updatedSale.id, updatedSale as unknown);
       // If backend returns the updated sale, replace local state; otherwise, use updatedSale
       const newSale = (resp as unknown) || updatedSale;
       setSales((s) => s.map((sale) => (sale.id === updatedSale.id ? (newSale as Sale) : sale)));
@@ -291,7 +285,7 @@ export const DuplicateSales: React.FC = () => {
           {isEditing && (
             <SalesForm
               onSave={addSale}
-              onUpdate={updateSale}
+              onUpdate={updateDuplicateSale}
               currentSale={currentSale}
               isEditing={isEditing}
               onCancelEdit={() => {

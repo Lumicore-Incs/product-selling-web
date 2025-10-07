@@ -28,19 +28,11 @@ export function mapOrderItemDtoToSaleItem(detail: unknown): FrontSaleItem {
     return cur as T | undefined;
   };
 
-  const productIdRaw =
-    d['productId'] ?? get(d, ['product', 'productId']) ?? get(d, ['productId', 'productId']);
-  const productName =
-    get(d, ['product', 'name']) ??
-    (d['productName'] as unknown) ??
-    (d['name'] as unknown) ??
-    get(d, ['productId', 'name']) ??
-    '';
-  const qty = Number(d['qty'] ?? d['quantity'] ?? 0);
-  const price = Number(
-    d['price'] ?? get(d, ['product', 'price']) ?? get(d, ['productId', 'price']) ?? 0
-  );
-  const total = Number(d['total'] ?? qty * price);
+  const productIdRaw = get(d, ['productId', 'productId']) ?? 0;
+  const productName = get(d, ['productId', 'name']) ?? '';
+  const qty = Number(d['qty'] ?? 0);
+  const price = Number(d['price'] ?? get(d, ['productId', 'price']) ?? 0);
+  const total = Number(get(d, ['productId', 'price']) ?? qty * price);
 
   return {
     productId: toStringId(productIdRaw),
@@ -56,13 +48,9 @@ export function mapOrderItemDtoToSaleItem(detail: unknown): FrontSaleItem {
 
 export function mapOrderDtoToSale(order: unknown): FrontSale {
   const ord = (order ?? {}) as Record<string, unknown>;
-  const customer = (ord['customerId'] ?? ord['customer'] ?? {}) as Record<string, unknown>;
+  const customer = (ord['customer'] ?? {}) as Record<string, unknown>;
 
-  const rawItems = Array.isArray(ord['orderDetails'])
-    ? (ord['orderDetails'] as unknown[])
-    : Array.isArray(ord['items'])
-    ? (ord['items'] as unknown[])
-    : [];
+  const rawItems = Array.isArray(ord['orderDetails']) ? (ord['orderDetails'] as unknown[]) : [];
 
   const items: FrontSaleItem[] = rawItems.map((r) => mapOrderItemDtoToSaleItem(r));
   const qty = items.reduce(

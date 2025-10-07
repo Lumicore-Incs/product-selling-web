@@ -8,7 +8,6 @@ import { Sale as TableSale } from '../models/sales';
 
 import { getCurrentUser } from '../service/auth';
 import { dashboardApi } from '../services/api';
-import { mapOrderDtoToSale } from '../services/mappers/salesMapper';
 import { orderService } from '../services/orders/orderService';
 
 type Sale = TableSale;
@@ -72,22 +71,13 @@ export const SalesManagement: React.FC = () => {
 
       console.log('Number of orders received:', responseOrder.length);
 
-      // Debug: Log first order structure if available
-      if (responseOrder.length > 0) {
-        console.log('First order structure:', responseOrder[0]);
-        console.log('First order keys:', Object.keys(responseOrder[0]));
-      }
-
       // Convert backend OrderDtoGet to frontend Sale format
       // Use the same mapping as Dashboard component
-      const convertedSales: Sale[] = responseOrder.map((order: unknown) =>
-        mapOrderDtoToSale(order)
-      );
-
-      console.log('Final convertedSales:', convertedSales);
-      console.log('Setting sales state with', convertedSales.length, 'items');
-
-      setSales(convertedSales);
+      // const convertedSales: Sale[] = responseOrder.map((order: unknown) =>
+      //   mapOrderDtoToSale(order)
+      // );
+      const canonicalSales = responseOrder as Sale[];
+      setSales(canonicalSales);
     } catch (error: any) {
       console.error('Error loading orders:', error);
       console.error('Error stack:', error.stack);
@@ -125,7 +115,8 @@ export const SalesManagement: React.FC = () => {
     setIsLoading(true);
 
     try {
-      await orderService.updateOrder(updatedSale.id, updatedSale as unknown);
+      // use the duplicate-specific update endpoint implemented in orderService
+      await orderService.updateDuplicateOrder(updatedSale.id, updatedSale as unknown);
       setSnackbar({ open: true, message: 'Order updated successfully', type: 'success' });
     } catch (err: unknown) {
       setSales(prev);

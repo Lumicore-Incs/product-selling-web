@@ -50,10 +50,10 @@ class OrderService {
     }
   }
 
-  async updateOrder(id: string, payload: unknown): Promise<unknown> {
+  async updateDuplicateOrder(id: string, payload: unknown): Promise<unknown> {
     try {
       // Delegate to backend endpoint for resolving/updating an order
-      const putResp = await apiClient.put(`/order/${id}/resolve`, payload as object);
+      const putResp = await apiClient.put(`/order/${id}/duplicate`, payload as object);
       return putResp.data;
     } catch (err) {
       console.error('orderService.updateOrder failed:', err);

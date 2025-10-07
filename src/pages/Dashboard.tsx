@@ -1,5 +1,5 @@
 import { CreditCardIcon, ScaleIcon, TrendingDownIcon, TrendingUpIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { AlertSnackbar } from '../components/AlertSnackbar';
 import { BackgroundIcons } from '../components/BackgroundIcons';
 import { SalesTable } from '../components/SalesTable';
@@ -7,7 +7,7 @@ import { Sale } from '../models/sales';
 import { getCurrentUser } from '../service/auth';
 import { getDashboardStats } from '../service/dashboard';
 import { getAllProducts } from '../service/product'; // Add this import
-import { getAllCustomerOrders, getOrders } from '../services/orders/orderService';
+import { getAllCustomerOrders, getOrders, orderService } from '../services/orders/orderService';
 
 type StatCardProps = {
   icon: React.ComponentType<any>;
@@ -112,47 +112,47 @@ export const Dashboard = () => {
     fetchProducts();
   }, []);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setSalesLoading(true);
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setSalesLoading(true);
 
-        const [statsData, salesApiData] = await Promise.all([
-          getDashboardStats(),
-          showTodayOnly ? getOrders() : getAllCustomerOrders(),
-        ]);
+      const [statsData, salesApiData] = await Promise.all([
+        getDashboardStats(),
+        showTodayOnly ? getOrders() : getAllCustomerOrders(),
+      ]);
 
-        // Process stats
-        setStats({
-          total_order: String(statsData.total_order || 0),
-          todayOrders: String(statsData.today_order || 0),
-          confirmedOrders: String(statsData.conform_order || 0),
-          cancelledOrders: String(statsData.cancel_order || 0),
-          totalOrdersTrend: statsData.totalOrdersTrend || '+0%',
-          todayOrdersTrend: statsData.todayOrdersTrend || '+0%',
-          confirmedOrdersTrend: statsData.confirmedOrdersTrend || '+0%',
-          cancelledOrdersTrend: statsData.cancelledOrdersTrend || '+0%',
-        });
-        setError('');
+      // Process stats
+      setStats({
+        total_order: String(statsData.total_order || 0),
+        todayOrders: String(statsData.today_order || 0),
+        confirmedOrders: String(statsData.conform_order || 0),
+        cancelledOrders: String(statsData.cancel_order || 0),
+        totalOrdersTrend: statsData.totalOrdersTrend || '+0%',
+        todayOrdersTrend: statsData.todayOrdersTrend || '+0%',
+        confirmedOrdersTrend: statsData.confirmedOrdersTrend || '+0%',
+        cancelledOrdersTrend: statsData.cancelledOrdersTrend || '+0%',
+      });
+      setError('');
 
-        // salesApiData is expected to be the canonical Sale[] from orderService
-        setSales(salesApiData as Sale[]);
-        setSalesError('');
-      } catch (err) {
-        console.error('Failed to fetch dashboard data:', err);
-        setError('Failed to load dashboard statistics');
-        setSnackbar({ open: true, message: 'Failed to load dashboard statistics', type: 'error' });
-        setSalesError('Failed to load recent sales');
-        setSnackbar({ open: true, message: 'Failed to load recent sales', type: 'error' });
-      } finally {
-        setLoading(false);
-        setSalesLoading(false);
-      }
-    };
-
-    fetchData();
+      // salesApiData is expected to be the canonical Sale[] from orderService
+      setSales(salesApiData as Sale[]);
+      setSalesError('');
+    } catch (err) {
+      console.error('Failed to fetch dashboard data:', err);
+      setError('Failed to load dashboard statistics');
+      setSnackbar({ open: true, message: 'Failed to load dashboard statistics', type: 'error' });
+      setSalesError('Failed to load recent sales');
+      setSnackbar({ open: true, message: 'Failed to load recent sales', type: 'error' });
+    } finally {
+      setLoading(false);
+      setSalesLoading(false);
+    }
   }, [showTodayOnly]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const filteredSales =
     statusFilter === 'all' ? sales : sales.filter((sale) => sale.status === statusFilter);
@@ -169,8 +169,21 @@ export const Dashboard = () => {
     console.log('Editing:', sale);
   };
 
-  const handleDelete = (id: string) => {
-    console.log('Deleting:', id);
+  const handleDelete = async (id: string) => {
+    setLoading(true);
+    setError('');
+    try {
+      await orderService.deleteOrder(id);
+      // Refresh the full list from server to keep data consistent
+      await fetchData();
+      setSnackbar({ open: true, message: 'Order deleted successfully', type: 'success' });
+    } catch (err: unknown) {
+      const message = (err as Error)?.message || 'Failed to delete order';
+      setSnackbar({ open: true, message, type: 'error' });
+      console.error('Delete order failed:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Add product filter handler
@@ -326,7 +339,13 @@ export const Dashboard = () => {
           {salesLoading && <p>Loading sales...</p>}
           {salesError && <p className="text-red-500">{salesError}</p>}
           {!salesLoading && !salesError && (
-            <SalesTable sales={productFilteredSales} onEdit={handleEdit} onDelete={handleDelete} />
+            <SalesTable
+              sales={productFilteredSales}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              userRole={user?.role}
+              onRefresh={fetchData}
+            />
           )}
         </div>
       </div>
