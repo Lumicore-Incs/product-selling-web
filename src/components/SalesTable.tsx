@@ -146,6 +146,9 @@ export const SalesTable: React.FC<SalesTableProps> = ({
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                  Serial
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                   Customer
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
@@ -177,6 +180,9 @@ export const SalesTable: React.FC<SalesTableProps> = ({
             <tbody className="divide-y divide-gray-100">
               {paginatedSales.map((sale) => (
                 <tr key={sale.id} className="hover:bg-gray-50 transition-colors duration-150">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                    {sale.serialNo}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="font-medium text-gray-900">{sale.name}</div>
                   </td>
@@ -275,7 +281,12 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                 <div className="p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-semibold text-gray-900 truncate">{sale.name}</h3>
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold text-gray-900 truncate">
+                          {sale.name}
+                        </h3>
+                        <div className="text-xs text-gray-500 ml-3">{sale.serialNo}</div>
+                      </div>
                       <div className="flex items-center gap-1 mt-1">
                         <MapPinIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
                         <p className="text-sm text-gray-600 truncate">{sale.address}</p>
