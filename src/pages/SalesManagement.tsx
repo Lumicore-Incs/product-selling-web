@@ -113,6 +113,7 @@ export const SalesManagement: React.FC = () => {
       // use the duplicate-specific update endpoint implemented in orderService
       await orderService.updateDuplicateOrder(updatedSale.id, updatedSale as unknown);
       setSnackbar({ open: true, message: 'Order updated successfully', type: 'success' });
+      await loadOrders();
     } catch (err: unknown) {
       setSales(prev);
       const message = (err as Error)?.message || 'Failed to update order';
