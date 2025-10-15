@@ -276,6 +276,13 @@ export const DuplicateSales: React.FC = () => {
             isLoading={isLoading}
             userRole={user?.role}
             onRefresh={refreshData}
+            onStatusChange={async (saleId, newStatus) => {
+              const sale = sales.find(s => s.id === saleId);
+              if (!sale) return;
+              const updatedSale = { ...sale, status: newStatus };
+              await updateDuplicateSale(updatedSale);
+            }}
+            allowTemporaryStatusUpdate={true}
           />
         </div>
 

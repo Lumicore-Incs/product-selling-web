@@ -9,9 +9,11 @@ import {
   Trash2Icon,
 } from 'lucide-react';
 import React, { useState } from 'react';
+
 import { Sale, SaleItem } from '../models/sales';
 import { ConfirmDialog } from './ConfirmDialog';
 import Spinner from './Spinner';
+
 
 interface SalesTableProps {
   sales: Sale[];
@@ -20,6 +22,8 @@ interface SalesTableProps {
   onDelete: (id: string) => void;
   userRole?: string;
   onRefresh?: () => void;
+  onStatusChange?: (saleId: string, newStatus: string) => void;
+  allowTemporaryStatusUpdate?: boolean;
 }
 
 export const SalesTable: React.FC<SalesTableProps> = ({
@@ -29,7 +33,14 @@ export const SalesTable: React.FC<SalesTableProps> = ({
   onDelete,
   userRole,
   onRefresh,
+  onStatusChange,
+  allowTemporaryStatusUpdate = false,
 }) => {
+  // Status options
+  const statusOptions = [
+    'TEMPORARY',
+    'PENDING'
+  ];
   const [currentPage, setCurrentPage] = useState(1);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
@@ -196,13 +207,39 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                     {sale.contact02 || '-'}
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap">
-                    <span
-                      className={`inline-flex px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-                        sale.status ?? '-'
-                      )}`}
-                    >
-                      {sale.status ?? '-'}
-                    </span>
+                    {onStatusChange ? (
+                      sale.status === 'TEMPORARY' && !allowTemporaryStatusUpdate ? (
+                        <span
+                          className={`inline-flex px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                            sale.status ?? '-'
+                          )}`}
+                        >
+                          {sale.status ?? '-'}
+                        </span>
+                      ) : (
+                        <select
+                          className={`px-2 py-1 rounded-full text-xs font-medium border focus:outline-none ${getStatusColor(
+                            sale.status ?? '-'
+                          )}`}
+                          value={sale.status || 'Pending'}
+                          onChange={e => onStatusChange(sale.id, e.target.value)}
+                        >
+                          {statusOptions.map(option => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                      )
+                    ) : (
+                      <span
+                        className={`inline-flex px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                          sale.status ?? '-'
+                        )}`}
+                      >
+                        {sale.status ?? '-'}
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">{sale.qty}</td>
                   <td className="px-6 py-4">
@@ -300,13 +337,29 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                       </div>
                     </div>
                     <div className="ml-3 flex items-center gap-2">
-                      <span
-                        className={`inline-flex px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-                          sale.status ?? ''
-                        )}`}
-                      >
-                        {sale.status}
-                      </span>
+                      {onStatusChange ? (
+                        <select
+                          className={`px-2 py-1 rounded-full text-xs font-medium border focus:outline-none ${getStatusColor(
+                            sale.status ?? '-'
+                          )}`}
+                          value={sale.status || 'Pending'}
+                          onChange={e => onStatusChange(sale.id, e.target.value)}
+                        >
+                          {statusOptions.map(option => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span
+                          className={`inline-flex px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                            sale.status ?? '-'
+                          )}`}
+                        >
+                          {sale.status}
+                        </span>
+                      )}
                     </div>
                   </div>
 
