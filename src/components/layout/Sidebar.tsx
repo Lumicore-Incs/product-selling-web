@@ -17,6 +17,7 @@ const getNavItems = (userRole: string) => {
     { icon: HomeIcon, label: 'Dashboard', to: '/' },
     { icon: ScaleIcon, label: 'Add New Order', to: '/sale' },
     { icon: ScaleIcon, label: 'Duplicate Orders', to: '/sale/duplicate' },
+    { icon: ScaleIcon, label: 'Tracking ID', to: '/tracking-id' },
     { icon: ProportionsIcon, label: 'Product', to: '/product', adminOnly: true },
     { icon: UsersIcon, label: 'Users', to: '/users', adminOnly: true },
     { icon: StoreIcon, label: 'Stock', to: '/stock', adminOnly: true },
