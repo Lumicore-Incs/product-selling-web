@@ -2,39 +2,45 @@ import React, { useEffect, useState } from 'react';
 import { Product } from '../../models/product';
 interface ProductFormProps {
   product: Product | null;
-  onAdd: (name: string, price: number) => void;
+  onAdd: (name: string, price: number, serialPrefix: string) => void;
   onUpdate: (product: Product) => void;
   loading?: boolean;
 }
 export function ProductForm({ product, onAdd, onUpdate, loading }: Readonly<ProductFormProps>) {
   const [name, setName] = useState('');
+  const [serialPrefix, setSerialPrefix] = useState('');
   const [price, setPrice] = useState('');
   const [status, setStatus] = useState<'active' | 'inactive' | 'remove'>('active');
   const [errors, setErrors] = useState({
     name: '',
     price: '',
+    serialPrefix: '',
   });
   // Initialize form when editing a product
   useEffect(() => {
     if (product) {
       setName(product.name);
+      setSerialPrefix(product.serialPrefix);
       setPrice(product.price.toString());
       setStatus((product.status as 'active' | 'inactive' | 'remove') ?? 'active');
     } else {
       // Reset form for new product
       setName('');
       setPrice('');
+      setSerialPrefix('');
       setStatus('active');
     }
     setErrors({
       name: '',
       price: '',
+      serialPrefix: '',
     });
   }, [product]);
   const validate = () => {
     const newErrors = {
       name: '',
       price: '',
+      serialPrefix: '',
     };
     let isValid = true;
     if (!name.trim()) {
@@ -44,6 +50,10 @@ export function ProductForm({ product, onAdd, onUpdate, loading }: Readonly<Prod
     const priceValue = parseFloat(price);
     if (!price || isNaN(priceValue) || priceValue <= 0) {
       newErrors.price = 'Valid price is required';
+      isValid = false;
+    }
+    if (!serialPrefix.trim()) {
+      newErrors.serialPrefix = 'Serial prefix is required';
       isValid = false;
     }
     setErrors(newErrors);
@@ -58,12 +68,13 @@ export function ProductForm({ product, onAdd, onUpdate, loading }: Readonly<Prod
       onUpdate({
         ...product,
         name,
+        serialPrefix,
         price: priceValue,
         status,
       });
     } else {
       // Add new product
-      onAdd(name, priceValue);
+      onAdd(name, priceValue, serialPrefix);
     }
   };
   return (
@@ -83,6 +94,21 @@ export function ProductForm({ product, onAdd, onUpdate, loading }: Readonly<Prod
             } rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
           />
           {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
+        </div>
+        <div>
+          <label htmlFor="serialPrefix" className="block text-sm font-medium text-gray-700">
+            Serial Number Prefix
+          </label>
+          <input
+            type="text"
+            id="serialPrefix"
+            value={serialPrefix}
+            onChange={(e) => setSerialPrefix(e.target.value)}
+            className={`mt-1 block w-full px-3 py-2 border ${
+              errors.serialPrefix ? 'border-red-500' : 'border-gray-300'
+            } rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
+          />
+          {errors.serialPrefix && <p className="mt-1 text-sm text-red-600">{errors.serialPrefix}</p>}
         </div>
         <div>
           <label htmlFor="price" className="block text-sm font-medium text-gray-700">

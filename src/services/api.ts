@@ -8,6 +8,7 @@ export interface ProductDto {
   productId?: number;
   name: string;
   price: number;
+  serialPrefix: string;
   status?: 'active' | 'inactive' | 'remove';
 }
 
