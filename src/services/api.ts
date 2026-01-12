@@ -1,5 +1,5 @@
 // src/services/api.ts
-import http, { API_BASE_URL } from './axiosConfig';
+import http from './axiosConfig';
 
 const api = http;
 
@@ -8,6 +8,7 @@ export interface ProductDto {
   productId?: number;
   name: string;
   price: number;
+  serialPrefix: string;
   status?: 'active' | 'inactive' | 'remove';
 }
 
@@ -17,6 +18,8 @@ export interface OrderItem {
   qty: number;
   price: number;
   total: number;
+  orderDetailsId: number;
+  orderId: number;
 }
 
 export interface CustomerRequestDTO {
@@ -64,18 +67,6 @@ export interface OrderDetailsDto {
   total: number;
   productId: number;
   orderId?: number;
-}
-
-// User type for API response
-export interface UserApiDto {
-  id: number;
-  name: string;
-  email: string;
-  telephone: string;
-  role: string;
-  registration_date: string;
-  status: string;
-  type?: string | null;
 }
 
 // API service functions
@@ -188,52 +179,6 @@ export const customerApi = {
 
 // Updated orderApi section for api.ts
 export const orderApi = {
-  // Get today's orders
-  getTodaysOrders: async (): Promise<OrderDtoGet[]> => {
-    try {
-      console.log("Fetching today's orders from:", `${API_BASE_URL}/order`);
-      const response = await api.get<OrderDtoGet[]>('/order');
-      console.log("Today's orders response:", response.data);
-      return response.data;
-    } catch (error: any) {
-      console.error("Error fetching today's orders:", error);
-      console.error('Request URL:', error.config?.url);
-      console.error('Response status:', error.response?.status);
-      console.error('Response data:', error.response?.data);
-      throw error;
-    }
-  },
-
-  // Get all orders
-  getAllOrders: async (): Promise<OrderDtoGet[]> => {
-    try {
-      console.log('Fetching all orders from:', `${API_BASE_URL}/order/allCustomer`);
-      const response = await api.get<OrderDtoGet[]>('/order/allCustomer');
-      console.log('All orders response:', response.data);
-      return response.data;
-    } catch (error: any) {
-      console.error('Error fetching all orders:', error);
-      console.error('Request URL:', error.config?.url);
-      console.error('Response status:', error.response?.status);
-      console.error('Response data:', error.response?.data);
-
-      // If 404, try alternative endpoint
-      if (error.response?.status === 404) {
-        console.log('Trying alternative endpoint: /order');
-        try {
-          const fallbackResponse = await api.get<OrderDtoGet[]>('/order');
-          console.log('Fallback response successful:', fallbackResponse.data);
-          return fallbackResponse.data;
-        } catch (fallbackError) {
-          console.error('Fallback also failed:', fallbackError);
-          throw error; // Throw original error
-        }
-      }
-
-      throw error;
-    }
-  },
-
   // Test endpoint connectivity
   testConnection: async (): Promise<boolean> => {
     try {
@@ -258,71 +203,15 @@ export interface User {
   status: 'active' | 'inactive' | 'pending';
 }
 
-export const userApi = {
-  getAllUsers: async (): Promise<User[]> => {
-    try {
-      const response = await api.get<UserApiDto[]>('/user/get_all_user');
-      return response.data.map((user: UserApiDto) => ({
-        id: user.id.toString(),
-        name: user.name,
-        email: user.email,
-        contact: user.telephone,
-        role: user.role,
-        registration_date: user.registration_date,
-        status: (user.status?.toLowerCase() as 'active' | 'inactive' | 'pending') || 'pending',
-      }));
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      throw error;
-    }
-  },
-  updateUser: async (id: string, userData: Partial<User>): Promise<User> => {
-    try {
-      const response = await api.put<UserApiDto>(`/user/update/${id}`, {
-        name: userData.name,
-        email: userData.email,
-        telephone: userData.contact,
-        role: userData.role,
-        type: 'USER',
-      });
-      const updatedUser = response.data;
-      return {
-        id: updatedUser.id.toString(),
-        name: updatedUser.name,
-        email: updatedUser.email,
-        contact: updatedUser.telephone,
-        role: updatedUser.role,
-        registration_date: updatedUser.registration_date,
-        status:
-          (updatedUser.status?.toLowerCase() as 'active' | 'inactive' | 'pending') || 'pending',
-      };
-    } catch (error) {
-      console.error('Error updating user:', error);
-      throw error;
-    }
-  },
-
-  deleteUser: async (id: string): Promise<boolean> => {
-    try {
-      const response = await api.delete(`/user/${id}`);
-      return response.status === 200;
-    } catch (error) {
-      console.error('Error deleting user:', error);
-      throw error;
-    }
-  },
-
-  // single getAllUsers implemented above
-};
-
 /**
  * Export sales as Excel file by calling /dashboard/conform endpoint.
  * Returns a Blob (Excel file)
  */
 export const dashboardApi = {
-  exportSalesExcel: async (endpoint: string): Promise<Blob> => {
+  exportSalesExcel: async (productName: string): Promise<Blob> => {
     try {
-      const response = await api.get<Blob>(endpoint, {
+      const encodedName = encodeURIComponent(productName);
+      const response = await api.get<Blob>(`/dashboard/excel/${encodedName}`, {
         responseType: 'blob',
       });
       return response.data;

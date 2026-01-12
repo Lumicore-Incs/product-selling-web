@@ -1,12 +1,13 @@
 import { CreditCardIcon, ScaleIcon, TrendingDownIcon, TrendingUpIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { AlertSnackbar } from '../components/AlertSnackbar';
 import { BackgroundIcons } from '../components/BackgroundIcons';
-import { Sale, SalesTable } from '../components/SalesTable';
+import { SalesTable } from '../components/SalesTable';
+import { Sale } from '../models/sales';
 import { getCurrentUser } from '../service/auth';
 import { getDashboardStats } from '../service/dashboard';
-import { getAllCustomerOrders, getOrders } from '../service/order';
 import { getAllProducts } from '../service/product'; // Add this import
+import { getAllCustomerOrders, getOrders, orderService } from '../services/orders/orderService';
 
 type StatCardProps = {
   icon: React.ComponentType<any>;
@@ -39,10 +40,10 @@ export const Dashboard = () => {
     todayOrders: '0',
     confirmedOrders: '0',
     cancelledOrders: '0',
-    totalOrdersTrend: '+0%',
-    todayOrdersTrend: '+0%',
-    confirmedOrdersTrend: '+0%',
-    cancelledOrdersTrend: '+0%',
+    totalOrdersTrend: 'upcomming',
+    todayOrdersTrend: 'upcomming',
+    confirmedOrdersTrend: 'upcomming',
+    cancelledOrdersTrend: 'upcomming',
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -68,13 +69,11 @@ export const Dashboard = () => {
   const [selectedProduct, setSelectedProduct] = useState<string>('all');
 
   const statusOptions = [
-    { value: 'all', label: 'All Statuses' },
-    { value: 'pending', label: 'Pending' },
-    { value: 'confirmed', label: 'Confirmed' },
-    { value: 'processing', label: 'Processing' },
-    { value: 'shipped', label: 'Shipped' },
-    { value: 'delivered', label: 'Delivered' },
-    { value: 'cancelled', label: 'Cancelled' },
+    { value: 'all', label: 'ALL STATUS' },
+    { value: 'PENDING', label: 'PENDING' },
+    { value: 'TEMPORARY', label: 'DUPLICATE' },
+    { value: 'PROCESSING', label: 'PROCESSING' },
+    { value: 'FAILED TO DELIVERY', label: 'CANCELLED' },
   ];
 
   useEffect(() => {
@@ -99,7 +98,7 @@ export const Dashboard = () => {
       try {
         setProductsLoading(true);
         const productsData = await getAllProducts();
-        setProducts(productsData);
+        setProducts(productsData as any[]);
       } catch (err) {
         console.error('Failed to fetch products:', err);
         setProducts([]);
@@ -111,62 +110,47 @@ export const Dashboard = () => {
     fetchProducts();
   }, []);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setSalesLoading(true);
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setSalesLoading(true);
 
-        const [statsData, salesApiData] = await Promise.all([
-          getDashboardStats(),
-          showTodayOnly ? getOrders() : getAllCustomerOrders(),
-        ]);
+      const [statsData, salesApiData] = await Promise.all([
+        getDashboardStats(),
+        showTodayOnly ? getOrders() : getAllCustomerOrders(),
+      ]);
 
-        // Process stats
-        setStats({
-          total_order: String(statsData.total_order || 0),
-          todayOrders: String(statsData.today_order || 0),
-          confirmedOrders: String(statsData.conform_order || 0),
-          cancelledOrders: String(statsData.cancel_order || 0),
-          totalOrdersTrend: statsData.totalOrdersTrend || '+0%',
-          todayOrdersTrend: statsData.todayOrdersTrend || '+0%',
-          confirmedOrdersTrend: statsData.confirmedOrdersTrend || '+0%',
-          cancelledOrdersTrend: statsData.cancelledOrdersTrend || '+0%',
-        });
-        setError('');
+      // Process stats
+      setStats({
+        total_order: String(statsData.total_order || 0),
+        todayOrders: String(statsData.today_order || 0),
+        confirmedOrders: String(statsData.conform_order || 0),
+        cancelledOrders: String(statsData.cancel_order || 0),
+        totalOrdersTrend: statsData.totalOrdersTrend || 'upcomming',
+        todayOrdersTrend: statsData.todayOrdersTrend || 'upcomming',
+        confirmedOrdersTrend: statsData.confirmedOrdersTrend || 'upcomming',
+        cancelledOrdersTrend: statsData.cancelledOrdersTrend || 'upcomming',
+      });
+      setError('');
 
-        // Process sales
-        const mappedSales: Sale[] = salesApiData.map((order) => ({
-          id: String(order.orderId),
-          name: order.customer.name,
-          address: order.customer.address,
-          contact01: order.customer.contact01,
-          contact02: order.customer.contact02 || '-',
-          status: order.status,
-          quantity: String(order.orderDetails.reduce((sum, item) => sum + item.qty, 0)),
-          items: order.orderDetails.map((detail) => ({
-            productId: String(detail.productId.productId),
-            productName: detail.productId.name,
-            quantity: detail.qty,
-            price: detail.productId.price,
-          })),
-        }));
-        setSales(mappedSales);
-        setSalesError('');
-      } catch (err) {
-        console.error('Failed to fetch dashboard data:', err);
-        setError('Failed to load dashboard statistics');
-        setSnackbar({ open: true, message: 'Failed to load dashboard statistics', type: 'error' });
-        setSalesError('Failed to load recent sales');
-        setSnackbar({ open: true, message: 'Failed to load recent sales', type: 'error' });
-      } finally {
-        setLoading(false);
-        setSalesLoading(false);
-      }
-    };
-
-    fetchData();
+      // salesApiData is expected to be the canonical Sale[] from orderService
+      setSales(salesApiData as Sale[]);
+      setSalesError('');
+    } catch (err) {
+      console.error('Failed to fetch dashboard data:', err);
+      setError('Failed to load dashboard statistics');
+      setSnackbar({ open: true, message: 'Failed to load dashboard statistics', type: 'error' });
+      setSalesError('Failed to load recent sales');
+      setSnackbar({ open: true, message: 'Failed to load recent sales', type: 'error' });
+    } finally {
+      setLoading(false);
+      setSalesLoading(false);
+    }
   }, [showTodayOnly]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const filteredSales =
     statusFilter === 'all' ? sales : sales.filter((sale) => sale.status === statusFilter);
@@ -183,8 +167,21 @@ export const Dashboard = () => {
     console.log('Editing:', sale);
   };
 
-  const handleDelete = (id: string) => {
-    console.log('Deleting:', id);
+  const handleDelete = async (id: string) => {
+    setLoading(true);
+    setError('');
+    try {
+      await orderService.deleteOrder(id);
+      // Refresh the full list from server to keep data consistent
+      await fetchData();
+      setSnackbar({ open: true, message: 'Order deleted successfully', type: 'success' });
+    } catch (err: unknown) {
+      const message = (err as Error)?.message || 'Failed to delete order';
+      setSnackbar({ open: true, message, type: 'error' });
+      console.error('Delete order failed:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Add product filter handler
@@ -193,7 +190,7 @@ export const Dashboard = () => {
   };
 
   return (
-    <div className="space-y-6 overflow-x-hidden mx-6 relative">
+    <div className="px-4 space-y-6 relative max-w-full">
       <BackgroundIcons type="dashboard" />
       <AlertSnackbar
         message={snackbar.message}
@@ -201,13 +198,13 @@ export const Dashboard = () => {
         open={snackbar.open}
         onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
       />
-      <div className="flex justify-between items-center mb-6 ">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Dashboard Overview</h1>
         {!userLoading && user && user.role.toLowerCase() === 'admin' && (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 max-w-full overflow-x-auto pb-2">
             <button
               onClick={() => handleProductFilter('all')}
-              className={`px-4 py-2 rounded-lg transition-all duration-200 flex items-center ${
+              className={`px-4 py-2 rounded-lg transition-all duration-200 flex items-center shrink-0 ${
                 selectedProduct === 'all'
                   ? 'bg-blue-600 text-white'
                   : 'bg-blue-100 bg-opacity-70 hover:bg-opacity-100 text-blue-600'
@@ -253,7 +250,7 @@ export const Dashboard = () => {
 
       {error && <></>}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 px-4 mr-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-2">
         <StatCard
           icon={ScaleIcon}
           label="Total Order"
@@ -280,15 +277,15 @@ export const Dashboard = () => {
         />
       </div>
 
-      <div className="bg-gray-200 w-[85%] md:w-[100%] bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl p-6 shadow-2xl">
-        <div className="flex justify-between items-center mb-4">
+      <div className="bg-gray-200 w-full bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl p-4 sm:p-6 shadow-2xl overflow-hidden">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
           <h2 className="text-xl font-semibold text-gray-800">Sales</h2>
-          <div className="flex items-center space-x-4">
-            <div className="relative">
+          <div className="flex flex-wrap items-center gap-4 w-full sm:w-auto">
+            <div className="relative min-w-[150px]">
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="appearance-none bg-white border border-gray-300 rounded-md pl-3 pr-6 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full appearance-none bg-white border border-gray-300 rounded-md pl-3 pr-6 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 {statusOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -340,7 +337,13 @@ export const Dashboard = () => {
           {salesLoading && <p>Loading sales...</p>}
           {salesError && <p className="text-red-500">{salesError}</p>}
           {!salesLoading && !salesError && (
-            <SalesTable sales={productFilteredSales} onEdit={handleEdit} onDelete={handleDelete} />
+            <SalesTable
+              sales={productFilteredSales}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              userRole={user?.role}
+              onRefresh={fetchData}
+            />
           )}
         </div>
       </div>

@@ -11,14 +11,14 @@ export const Settings: React.FC<SettingsProps> = ({
   onBackgroundColorChange 
 }) => {
   const [title, setTitle] = useState('Sales Management');
-  const [backgroundColor, setBackgroundColor] = useState('#ffffff');
+  const [backgroundColor, setBackgroundColor] = useState('#e0f2fe');
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [tempTitle, setTempTitle] = useState(title);
 
   // Load saved settings from localStorage on component mount
   useEffect(() => {
     const savedTitle = localStorage.getItem('salesTitle') || 'Sales Management';
-    const savedColor = localStorage.getItem('appBackgroundColor') || '#ffffff';
+    const savedColor = localStorage.getItem('appBackgroundColor') || '#e0f2fe';
     
     setTitle(savedTitle);
     setTempTitle(savedTitle);

@@ -1,31 +1,22 @@
 import React, { useEffect, useState } from 'react';
-import { useOutletContext } from 'react-router-dom';
 import { AlertSnackbar } from '../components/AlertSnackbar';
 import { BackgroundIcons } from '../components/BackgroundIcons';
 import { SalesForm } from '../components/SalesForm';
 import { SalesTable } from '../components/SalesTable';
 import { Sale as TableSale } from '../models/sales';
-
 import { getCurrentUser } from '../service/auth';
 import { dashboardApi } from '../services/api';
 import { orderService } from '../services/orders/orderService';
 
+// Use the table types so shapes match the SalesTable component
 type Sale = TableSale;
 
-interface OutletContext {
-  salesTitle: string;
-  salesBackgroundColor: string;
-  showSettings: boolean;
-  setShowSettings: (show: boolean) => void;
-}
-
-export const SalesManagement: React.FC = () => {
-  const { salesTitle } = useOutletContext<OutletContext>();
+export const DuplicateSales: React.FC = () => {
   const [sales, setSales] = useState<Sale[]>([]);
   const [currentSale, setCurrentSale] = useState<Sale | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
+  // removed unused isExporting state (exporting handled inline via showExportPopup)
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<{ role: string } | null>(null);
   const [snackbar, setSnackbar] = useState<{
@@ -59,9 +50,9 @@ export const SalesManagement: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      // Load all orders from backend via orderService
-      console.log('Calling orderService.getAllCustomerOrders()...');
-      const responseOrder = await orderService.getAllCustomerOrders();
+      // Load all orders from backend via service
+      console.log('Calling orderService.getAllDuplicateOrders()...');
+      const responseOrder = await orderService.getAllDuplicateOrders();
 
       // Check if response exists and is an array
       if (!responseOrder || !Array.isArray(responseOrder)) {
@@ -71,21 +62,24 @@ export const SalesManagement: React.FC = () => {
 
       console.log('Number of orders received:', responseOrder.length);
 
+      // orderService returns canonical `Sale[]` (mapping done in the service)
       const canonicalSales = responseOrder as Sale[];
+      console.log('Setting sales state with', canonicalSales.length, 'items');
       setSales(canonicalSales);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error loading orders:', error);
-      console.error('Error stack:', error.stack);
+
+      const err = error as { message?: string; response?: { status?: number } };
 
       let errorMessage = 'Failed to load orders. ';
 
-      if (error.response?.status === 404) {
+      if (err.response?.status === 404) {
         errorMessage +=
           'Endpoint not found. Please check if your backend server is running and the endpoint exists.';
-      } else if (error.response?.status === 401) {
+      } else if (err.response?.status === 401) {
         errorMessage += 'Authentication failed. Please login again.';
-      } else if (error.message) {
-        errorMessage += error.message;
+      } else if (err.message) {
+        errorMessage += err.message;
       } else {
         errorMessage += 'Please try again.';
       }
@@ -102,20 +96,20 @@ export const SalesManagement: React.FC = () => {
     loadOrders();
   };
 
-  const updateSale = async (updatedSale: Sale) => {
-    const prev = sales;
-    setSales((s) => s.map((sale) => (sale.id === updatedSale.id ? updatedSale : sale)));
-    setCurrentSale(null);
-    setIsEditing(false);
+  const updateDuplicateSale = async (updatedSale: Sale) => {
+    // Wait for server response before updating local state
     setIsLoading(true);
-
+    setError(null);
     try {
-      // use the duplicate-specific update endpoint implemented in orderService
-      await orderService.updateDuplicateOrder(updatedSale.id, updatedSale as unknown);
-      setSnackbar({ open: true, message: 'Order updated successfully', type: 'success' });
+      const resp = await orderService.updateDuplicateOrder(updatedSale.id, updatedSale as unknown);
+      // If backend returns the updated sale, replace local state; otherwise, use updatedSale
+      const newSale = (resp as unknown) || updatedSale;
+      setSales((s) => s.map((sale) => (sale.id === updatedSale.id ? (newSale as Sale) : sale)));
       await loadOrders();
+      setCurrentSale(null);
+      setIsEditing(false);
+      setSnackbar({ open: true, message: 'Order updated successfully', type: 'success' });
     } catch (err: unknown) {
-      setSales(prev);
       const message = (err as Error)?.message || 'Failed to update order';
       setSnackbar({ open: true, message, type: 'error' });
       console.error('Update order failed:', err);
@@ -128,6 +122,7 @@ export const SalesManagement: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
+      // Wait for server to delete the order before updating UI
       await orderService.deleteOrder(id);
       // Refresh the full list from server to keep data consistent
       await loadOrders();
@@ -147,7 +142,6 @@ export const SalesManagement: React.FC = () => {
   };
 
   const exportSales = async (exportType: string) => {
-    setIsExporting(true);
     setError(null);
     try {
       let endpoint = '';
@@ -176,12 +170,12 @@ export const SalesManagement: React.FC = () => {
         message: `Exported ${exportType} data successfully`,
         type: 'success',
       });
-    } catch (error: any) {
-      const errorMessage = `Failed to export ${exportType} data. ${error?.message || ''}`;
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      const errorMessage = `Failed to export ${exportType} data. ${err?.message || ''}`;
       setError(errorMessage);
       setSnackbar({ open: true, message: errorMessage, type: 'error' });
     } finally {
-      setIsExporting(false);
       setShowExportPopup(false);
     }
   };
@@ -201,8 +195,8 @@ export const SalesManagement: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl w-full mx-auto p-6 rounded-lg relative">
-      <BackgroundIcons type="sales" />
+    <div className="w-full px-4 relative overflow-hidden">
+      <BackgroundIcons />
       <AlertSnackbar
         message={snackbar.message}
         type={snackbar.type}
@@ -254,7 +248,7 @@ export const SalesManagement: React.FC = () => {
       <header className="mb-8">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">{salesTitle}</h1>
+            <h1 className="text-3xl font-bold text-gray-800">Resolve Duplicate Orders</h1>
             <p className="text-gray-600 mt-2">Add, edit, and manage your sales entries</p>
           </div>
           <div className="flex space-x-3">
@@ -267,17 +261,6 @@ export const SalesManagement: React.FC = () => {
             >
               {isLoading ? 'Refreshing...' : 'Refresh'}
             </button>
-            {user?.role === 'ADMIN' && (
-              <button
-                onClick={() => setShowExportPopup(true)}
-                disabled={isExporting}
-                className={`px-4 py-2 rounded-md text-white ${
-                  isExporting ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
-                }`}
-              >
-                {isExporting ? 'Exporting...' : 'Export Sales'}
-              </button>
-            )}
           </div>
         </div>
       </header>
@@ -285,18 +268,6 @@ export const SalesManagement: React.FC = () => {
       {error && <></>}
 
       <div className="space-y-8">
-        <div>
-          <SalesForm
-            onSave={addSale}
-            onUpdate={updateSale}
-            currentSale={currentSale}
-            isEditing={isEditing}
-            onCancelEdit={() => {
-              setCurrentSale(null);
-              setIsEditing(false);
-            }}
-          />
-        </div>
         <div>
           <SalesTable
             sales={sales}
@@ -309,9 +280,28 @@ export const SalesManagement: React.FC = () => {
               const sale = sales.find(s => s.id === saleId);
               if (!sale) return;
               const updatedSale = { ...sale, status: newStatus };
-              await updateSale(updatedSale);
+              await updateDuplicateSale(updatedSale);
             }}
+            allowTemporaryStatusUpdate={true}
           />
+        </div>
+
+        <div>
+          {/* Render the SalesForm only when editing. By default the form is hidden
+              on this page and is shown when the user clicks the update/edit icon
+              in the table which calls `editSale` and sets `isEditing`/`currentSale`. */}
+          {isEditing && (
+            <SalesForm
+              onSave={addSale}
+              onUpdate={updateDuplicateSale}
+              currentSale={currentSale}
+              isEditing={isEditing}
+              onCancelEdit={() => {
+                setCurrentSale(null);
+                setIsEditing(false);
+              }}
+            />
+          )}
         </div>
       </div>
     </div>

@@ -1,21 +1,32 @@
-import { useState, useEffect } from 'react';
-import { Search, Edit, Trash2, Plus, X, Save, User, Mail, Calendar, Shield, Phone, CheckCircle, XCircle, Clock, Package } from 'lucide-react';
-import { BackgroundIcons } from '../components/BackgroundIcons';
-import { userApi, productApi } from '../services/api';
+import {
+  Calendar,
+  CheckCircle,
+  Clock,
+  Edit,
+  Lock,
+  Mail,
+  Package,
+  Phone,
+  Plus,
+  Save,
+  Search,
+  Shield,
+  Trash2,
+  User,
+  X,
+  XCircle,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { BackgroundIcons } from '../components/BackgroundIcons';
+import { ConfirmDialog } from '../components/ConfirmDialog';
+import { InputField } from '../components/InputField';
+import { productApi } from '../services/api';
+import type { User as ServiceUser } from '../services/users/userService';
+import { userService } from '../services/users/userService';
 
-interface User {
-  id: string;
-  email: string;
-  name: string;
-  registration_date: string;
-  role: string;
-  status: 'active' | 'inactive' | 'pending';
-  contact: string;
-  productId?: number;
-  productName?: string;
-}
+type User = ServiceUser & { productName?: string };
 
 export const Users = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -23,19 +34,24 @@ export const Users = () => {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [products, setProducts] = useState<{ productId: number; name: string }[]>([]);
-  const [newUser, setNewUser] = useState<Omit<User, 'id'>>({
+  const [isLoading, setIsLoading] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [newUser, setNewUser] = useState<User>({
+    id: Date.now().toString(),
     email: '',
     name: '',
     registration_date: new Date().toISOString().split('T')[0],
     role: 'User',
+    type: '',
     status: 'pending',
     contact: '',
-    productId: undefined,
-    productName: undefined
+    productId: 0,
+    productName: '',
+    password: '',
   });
 
   // Filter users based on search term
-  const filteredUsers = users.filter(user => {
+  const filteredUsers = users.filter((user) => {
     const searchTermLower = searchTerm.toLowerCase();
     return (
       user.name.toLowerCase().includes(searchTermLower) ||
@@ -49,21 +65,31 @@ export const Users = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 5;
   const totalPages = Math.ceil(filteredUsers.length / rowsPerPage);
-  const paginatedUsers = filteredUsers.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+  const paginatedUsers = filteredUsers.slice(
+    (currentPage - 1) * rowsPerPage,
+    currentPage * rowsPerPage
+  );
   const handlePrev = () => setCurrentPage((p) => Math.max(1, p - 1));
   const handleNext = () => setCurrentPage((p) => Math.min(totalPages, p + 1));
 
   // Handle user deletion
-  const handleDelete = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this user?')) {
-      try {
-        await userApi.deleteUser(id);
-        setUsers(users.filter(user => user.id !== id));
-        showToast('User deleted successfully!', 'success');
-      } catch (error) {
-        console.error('Failed to delete user:', error);
-        showToast('Failed to delete user. Please try again.', 'error');
-      }
+  const handleDelete = (id: string) => {
+    // Open a confirmation snackbar instead of native confirm
+    // trigger ConfirmDialog by setting pendingDeleteId
+    setPendingDeleteId(id);
+  };
+
+  const performDelete = async (id: string | null) => {
+    if (!id) return;
+    try {
+      await userService.deleteUser(id);
+      setUsers(users.filter((user) => user.id !== id));
+      showToast('User deleted successfully!', 'success');
+    } catch (error) {
+      console.error('Failed to delete user:', error);
+      showToast('Failed to delete user. Please try again.', 'error');
+    } finally {
+      setPendingDeleteId(null);
     }
   };
 
@@ -76,7 +102,7 @@ export const Users = () => {
   // Show toast notification
   const showToast = (message: string, type: 'success' | 'error' | 'info' | 'warning') => {
     toast[type](message, {
-      position: "top-right",
+      position: 'top-right',
       autoClose: 5000,
       hideProgressBar: false,
       closeOnClick: true,
@@ -89,17 +115,25 @@ export const Users = () => {
   const handleSaveEdit = async () => {
     if (editingUser) {
       try {
-        const updatedUser = await userApi.updateUser(editingUser.id, {
+        const updatedUser = await userService.updateUser(editingUser.id, {
           name: editingUser.name,
           email: editingUser.email,
           contact: editingUser.contact,
-          role: editingUser.role
+          role: editingUser.role,
         });
-        
+
         // Update the local state with the updated user data
-        setUsers(users.map(user => 
-          user.id === updatedUser.id ? { ...updatedUser, productId: editingUser.productId, productName: editingUser.productName } : user
-        ));
+        setUsers(
+          users.map((user) =>
+            user.id === updatedUser.id
+              ? {
+                ...updatedUser,
+                productId: editingUser.productId,
+                productName: editingUser.productName,
+              }
+              : user
+          )
+        );
         setEditingUser(null);
         showToast('User updated successfully!', 'success');
       } catch (error) {
@@ -115,22 +149,34 @@ export const Users = () => {
   };
 
   // Handle add new user
-  const handleAddUser = () => {
-    const userToAdd: User = {
-      ...newUser,
-      id: Date.now().toString()
-    };
-    setUsers([...users, userToAdd]);
-    setNewUser({
-      email: '',
-      name: '',
-      registration_date: new Date().toISOString().split('T')[0],
-      role: 'User',
-      status: 'pending',
-      contact: ''
-    });
-    setShowAddForm(false);
-    showToast('User added successfully!', 'success');
+  const handleAddUser = async () => {
+    setIsLoading(true);
+    try {
+      await userService.createUser(newUser);
+      const latest = await userService.getAllUsers();
+      setUsers(latest);
+      showToast('User added successfully!', 'success');
+    } catch (err) {
+      console.error('Failed to create user:', err);
+      showToast('Failed to create user. Please try again.', 'error');
+      return; // do not modify local list when backend fails
+    } finally {
+      setIsLoading(false);
+      setNewUser({
+        id: Date.now().toString(),
+        email: '',
+        name: '',
+        registration_date: new Date().toISOString().split('T')[0],
+        role: 'User',
+        type: 'USER',
+        status: 'pending',
+        contact: '',
+        productId: 0,
+        productName: '',
+        password: '',
+      });
+      setShowAddForm(false);
+    }
   };
 
   // Get status color and icon
@@ -149,15 +195,12 @@ export const Users = () => {
 
   // Fetch users and products from API on mount
   useEffect(() => {
-    Promise.all([
-      userApi.getAllUsers(),
-      productApi.getAllProducts()
-    ])
-    .then(([usersData, productsData]) => {
-      setUsers(usersData);
-      setProducts(productsData.map(p => ({ productId: p.productId || 0, name: p.name })));
-    })
-    .catch((err) => console.error('Failed to fetch data', err));
+    Promise.all([userService.getAllUsers(), productApi.getAllProducts()])
+      .then(([usersData, productsData]) => {
+        setUsers(usersData);
+        setProducts(productsData.map((p) => ({ productId: p.productId || 0, name: p.name })));
+      })
+      .catch((err) => console.error('Failed to fetch data', err));
   }, []);
 
   return (
@@ -173,6 +216,19 @@ export const Users = () => {
         pauseOnFocusLoss
         draggable
         pauseOnHover
+      />
+      <ConfirmDialog
+        open={Boolean(pendingDeleteId)}
+        title="Delete user"
+        message="Are you sure you want to delete this user? This action cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={() => {
+          performDelete(pendingDeleteId);
+        }}
+        onCancel={() => {
+          setPendingDeleteId(null);
+        }}
       />
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">Users Management</h1>
@@ -238,11 +294,10 @@ export const Users = () => {
               onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
               className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
             >
-              <option value="User">User</option>
-              <option value="Manager">Manager</option>
-              <option value="Admin">Admin</option>
+              <option value="USER">USER</option>
+              <option value="SUPER USER">SUPER USER</option>
             </select>
-           <select
+            <select
               value={newUser.status}
               onChange={(e) => setNewUser({ ...newUser, status: e.target.value as User['status'] })}
               className="px-3 h-12 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
@@ -256,36 +311,67 @@ export const Users = () => {
                 id="product"
                 value={newUser.productId || ''}
                 onChange={(e) => {
-                  const selectedProduct = products.find(p => p.productId === Number(e.target.value));
+                  const selectedProduct = products.find(
+                    (p) => p.productId === Number(e.target.value)
+                  );
                   setNewUser({
                     ...newUser,
                     productId: Number(e.target.value),
-                    productName: selectedProduct?.name
+                    productName: selectedProduct?.name,
                   });
                 }}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
               >
                 <option value="">Select a product</option>
-                {products.map(product => (
+                {products.map((product) => (
                   <option key={product.productId} value={product.productId}>
                     {product.name}
                   </option>
                 ))}
               </select>
             </div>
-            <input
-              type="date"
-              value={newUser.registration_date}
-              onChange={(e) => setNewUser({ ...newUser, registration_date: e.target.value })}
-              className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
+            <InputField
+              id="password"
+              type="password"
+              label="Password"
+              icon={<Lock size={18} className="text-gray-400" />}
+              value={newUser.password ?? ''}
+              onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+              inputProps={{ placeholder: 'Password' }}
             />
           </div>
           <div className="flex gap-2 mt-4">
             <button
-              onClick={handleAddUser}
-              className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
+              onClick={() => {
+                const firstProduct = products[0];
+                setNewUser((prev) => ({
+                  ...prev,
+                  name: 'Sample User',
+                  email: `sample${Date.now() % 1000}@example.com`,
+                  contact: '0123456789',
+                  password: 'TempPass123!',
+                  role: 'User',
+                  type: '',
+                  status: 'pending',
+                  productId: firstProduct ? firstProduct.productId : 0,
+                  productName: firstProduct ? firstProduct.name : '',
+                }));
+              }}
+              disabled={isLoading}
+              className="bg-yellow-400 text-white px-4 py-2 rounded-lg hover:bg-yellow-500 transition-colors"
             >
-              Add User
+              Fill Sample
+            </button>
+            <button
+              onClick={handleAddUser}
+              disabled={isLoading}
+              aria-busy={isLoading}
+              className={`px-4 py-2 rounded-lg transition-colors ${isLoading
+                  ? 'bg-green-300 text-white cursor-wait'
+                  : 'bg-green-500 text-white hover:bg-green-600'
+                }`}
+            >
+              {isLoading ? 'Adding…' : 'Add User'}
             </button>
             <button
               onClick={() => setShowAddForm(false)}
@@ -301,217 +387,235 @@ export const Users = () => {
       <div className="bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full table-fixed divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="w-[15%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                <div className="flex items-center gap-2">
-                  <User className="w-4 h-4" />
-                  Name
-                </div>
-              </th>
-              <th className="w-[15%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                <div className="flex items-center gap-2">
-                  <Mail className="w-4 h-4" />
-                  Email
-                </div>
-              </th>
-              <th className="w-[12%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                <div className="flex items-center gap-2">
-                  <Phone className="w-4 h-4" />
-                  Contact
-                </div>
-              </th>
-              <th className="w-[10%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                <div className="flex items-center gap-2">
-                  <Shield className="w-4 h-4" />
-                  Role
-                </div>
-              </th>
-              <th className="w-[10%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
-              </th>
-              <th className="w-[12%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4" />
-                  Date
-                </div>
-              </th>
-              <th className="w-[15%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                <div className="flex items-center gap-2">
-                  <Package className="w-4 h-4" />
-                  Product
-                </div>
-              </th>
-              <th className="w-[11%] px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {paginatedUsers.length > 0 ? (
-              paginatedUsers.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    {editingUser?.id === user.id ? (
-                      <input
-                        type="text"
-                        value={editingUser.name}
-                        onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
-                        className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
-                      />
-                    ) : (
-                      <div className="text-sm font-medium text-gray-900 truncate">{user.name}</div>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    {editingUser?.id === user.id ? (
-                      <input
-                        type="email"
-                        value={editingUser.email}
-                        onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })}
-                        className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
-                      />
-                    ) : (
-                      <div className="text-sm text-gray-500 truncate">{user.email}</div>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    {editingUser?.id === user.id ? (
-                      <input
-                        type="tel"
-                        value={editingUser.contact}
-                        onChange={(e) => setEditingUser({ ...editingUser, contact: e.target.value })}
-                        className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
-                      />
-                    ) : (
-                      <div className="text-sm text-gray-500 truncate">{user.contact}</div>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    {editingUser?.id === user.id ? (
-                      <select
-                        value={editingUser.role}
-                        onChange={(e) => setEditingUser({ ...editingUser, role: e.target.value })}
-                        className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
-                      >
-                        <option value="User">User</option>
-                        <option value="Manager">Manager</option>
-                        <option value="Admin">Admin</option>
-                      </select>
-                    ) : (
-                      <div className="text-sm text-gray-500 truncate">{user.role}</div>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <div className="flex items-center gap-1">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusDisplay(user.status).color}`}>
-                        {user.status}
-                      </span>
-                      {getStatusDisplay(user.status).icon}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">
-                      {new Date(user.registration_date).toLocaleDateString()}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    {editingUser?.id === user.id ? (
-                      <select
-                        value={editingUser.productId || ''}
-                        onChange={(e) => {
-                          const selectedProduct = products.find(p => p.productId === Number(e.target.value));
-                          setEditingUser({
-                            ...editingUser,
-                            productId: Number(e.target.value),
-                            productName: selectedProduct?.name
-                          });
-                        }}
-                        className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
-                      >
-                        <option value="">Select a product</option>
-                        {products.map(product => (
-                          <option key={product.productId} value={product.productId}>
-                            {product.name}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <div className="text-sm text-gray-500 truncate">
-                        {user.productName || 'No product assigned'}
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="w-[15%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    Name
+                  </div>
+                </th>
+                <th className="w-[15%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <div className="flex items-center gap-2">
+                    <Mail className="w-4 h-4" />
+                    Email
+                  </div>
+                </th>
+                <th className="w-[12%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <div className="flex items-center gap-2">
+                    <Phone className="w-4 h-4" />
+                    Contact
+                  </div>
+                </th>
+                <th className="w-[10%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <div className="flex items-center gap-2">
+                    <Shield className="w-4 h-4" />
+                    Role
+                  </div>
+                </th>
+                <th className="w-[10%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="w-[12%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    Date
+                  </div>
+                </th>
+                <th className="w-[15%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <div className="flex items-center gap-2">
+                    <Package className="w-4 h-4" />
+                    Product
+                  </div>
+                </th>
+                <th className="w-[11%] px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-300">
+              {paginatedUsers.length > 0 ? (
+                paginatedUsers.map((user) => (
+                  <tr key={user.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      {editingUser?.id === user.id ? (
+                        <input
+                          type="text"
+                          value={editingUser.name}
+                          onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
+                          className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
+                        />
+                      ) : (
+                        <div className="text-sm font-medium text-gray-900 truncate">
+                          {user.name}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      {editingUser?.id === user.id ? (
+                        <input
+                          type="email"
+                          value={editingUser.email}
+                          onChange={(e) =>
+                            setEditingUser({ ...editingUser, email: e.target.value })
+                          }
+                          className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
+                        />
+                      ) : (
+                        <div className="text-sm text-gray-500 truncate">{user.email}</div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      {editingUser?.id === user.id ? (
+                        <input
+                          type="tel"
+                          value={editingUser.contact}
+                          onChange={(e) =>
+                            setEditingUser({ ...editingUser, contact: e.target.value })
+                          }
+                          className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
+                        />
+                      ) : (
+                        <div className="text-sm text-gray-500 truncate">{user.contact}</div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      {editingUser?.id === user.id ? (
+                        <select
+                          value={editingUser.role}
+                          onChange={(e) => setEditingUser({ ...editingUser, role: e.target.value })}
+                          className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
+                        >
+                          <option value="USER">USER</option>
+                          <option value="SUPER USER">SUPER USER</option>
+                        </select>
+                      ) : (
+                        <div className="text-sm text-gray-500 truncate">{user.role}</div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <div className="flex items-center gap-1">
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusDisplay(user.status).color
+                            }`}
+                        >
+                          {user.status}
+                        </span>
+                        {getStatusDisplay(user.status).icon}
                       </div>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                    {editingUser?.id === user.id ? (
-                      <div className="flex gap-2 justify-end">
-                        <button
-                          onClick={handleSaveEdit}
-                          className="text-green-600 hover:text-green-900"
-                          title="Save"
-                        >
-                          <Save className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={handleCancelEdit}
-                          className="text-gray-600 hover:text-gray-900"
-                          title="Cancel"
-                        >
-                          <X className="w-5 h-5" />
-                        </button>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <div className="text-sm text-gray-500">
+                        {new Date(user.registration_date).toLocaleDateString()}
                       </div>
-                    ) : (
-                      <div className="flex gap-2 justify-end">
-                        <button
-                          onClick={() => handleEdit(user)}
-                          className="text-blue-600 hover:text-blue-900"
-                          title="Edit"
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      {editingUser?.id === user.id ? (
+                        <select
+                          value={editingUser.productId || ''}
+                          onChange={(e) => {
+                            const selectedProduct = products.find(
+                              (p) => p.productId === Number(e.target.value)
+                            );
+                            setEditingUser({
+                              ...editingUser,
+                              productId: Number(e.target.value),
+                              productName: selectedProduct?.name,
+                            });
+                          }}
+                          className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
                         >
-                          <Edit className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(user.id)}
-                          className="text-red-600 hover:text-red-900"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
-                      </div>
-                    )}
+                          <option value="">Select a product</option>
+                          {products.map((product) => (
+                            <option key={product.productId} value={product.productId}>
+                              {product.name}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <div className="text-sm text-gray-500 truncate">
+                          {user.productName || 'No product assigned'}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                      {editingUser?.id === user.id ? (
+                        <div className="flex gap-2 justify-end">
+                          <button
+                            onClick={handleSaveEdit}
+                            className="text-green-600 hover:text-green-900"
+                            title="Save"
+                          >
+                            <Save className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={handleCancelEdit}
+                            className="text-gray-600 hover:text-gray-900"
+                            title="Cancel"
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex gap-2 justify-end">
+                          <button
+                            onClick={() => handleEdit(user)}
+                            className="text-blue-600 hover:text-blue-900"
+                            title="Edit"
+                          >
+                            <Edit className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(user.id)}
+                            className="text-red-600 hover:text-red-900"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
+                    No users found
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
-                  No users found
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-        <div className="px-4 py-3 border-t flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <p className="text-sm text-gray-500">Showing {paginatedUsers.length} of {filteredUsers.length} entries</p>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handlePrev}
-              disabled={currentPage === 1}
-              className={`px-3 py-1 rounded border ${currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-            >
-              Prev
-            </button>
-            <span className="text-sm text-gray-700">
-              Page {currentPage} of {totalPages}
-            </span>
-            <button
-              onClick={handleNext}
-              disabled={currentPage === totalPages}
-              className={`px-3 py-1 rounded border ${currentPage === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-            >
-              Next
-            </button>
+              )}
+            </tbody>
+          </table>
+          <div className="px-4 py-3 border-t flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <p className="text-sm text-gray-500">
+              Showing {paginatedUsers.length} of {filteredUsers.length} entries
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handlePrev}
+                disabled={currentPage === 1}
+                className={`px-3 py-1 rounded border ${currentPage === 1
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                  }`}
+              >
+                Prev
+              </button>
+              <span className="text-sm text-gray-700">
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                onClick={handleNext}
+                disabled={currentPage === totalPages}
+                className={`px-3 py-1 rounded border ${currentPage === totalPages
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                  }`}
+              >
+                Next
+              </button>
+            </div>
           </div>
-        </div>
         </div>
       </div>
     </div>

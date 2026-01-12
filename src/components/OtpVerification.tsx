@@ -92,8 +92,8 @@ export const OtpVerification = ({ email, onBack, onSuccess }: OtpVerificationPro
         if (response.status === 200) {
           setShowPasswordReset(true);
         } else {
-          const errorData = response.data;
-          setError(errorData.message || 'Invalid OTP. Please try again.');
+          const errorData: any = response.data;
+          setError(errorData?.message || 'Invalid OTP. Please try again.');
           setAlertType('error');
           setAlertOpen(true);
         }

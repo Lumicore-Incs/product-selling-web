@@ -1,41 +1,51 @@
 import {
   ChevronDownIcon,
   ChevronUpIcon,
-  EditIcon,
+  EyeIcon,
   MapPinIcon,
   PackageIcon,
   PhoneIcon,
-  Trash2Icon,
+  RefreshCwIcon,
+  PencilIcon,
+  Trash2Icon
 } from 'lucide-react';
 import React, { useState } from 'react';
 
-export interface SaleItem {
-  productId: string;
-  productName: string;
-  quantity: number;
-  price: number;
-}
+import { Sale, SaleItem } from '../models/sales';
+import { ConfirmDialog } from './ConfirmDialog';
+import Spinner from './Spinner';
+import { SalesViewModal } from './SalesViewModal';
 
-export interface Sale {
-  id: string;
-  name: string;
-  address: string;
-  contact01: string;
-  contact02: string;
-  status: string;
-  quantity: string;
-  items: SaleItem[];
-}
 
 interface SalesTableProps {
   sales: Sale[];
+  isLoading?: boolean;
   onEdit: (sale: Sale) => void;
   onDelete: (id: string) => void;
+  userRole?: string;
+  onRefresh?: () => void;
+  onStatusChange?: (saleId: string, newStatus: string) => void;
 }
 
-export const SalesTable: React.FC<SalesTableProps> = ({ sales, onEdit, onDelete }) => {
+export const SalesTable: React.FC<SalesTableProps> = ({
+  sales,
+  isLoading,
+  onEdit,
+  onDelete,
+  userRole,
+  onRefresh,
+  onStatusChange
+}) => {
+  // Status options
+  const statusOptions = [
+    'TEMPORARY',
+    'PENDING'
+  ];
   const [currentPage, setCurrentPage] = useState(1);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [showBlockDialog, setShowBlockDialog] = useState(false);
+  const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
   const rowsPerPage = 5;
 
   const toggleRowExpansion = (id: string) => {
@@ -49,22 +59,30 @@ export const SalesTable: React.FC<SalesTableProps> = ({ sales, onEdit, onDelete 
   };
 
   const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'deliver':
-        return 'bg-green-100 text-green-800 border-green-200';
+    switch (status) {
+      case 'PROCESSING':
+        return 'bg-blue-500 text-white border-blue-600';
+      case 'COLLECTED AT SORTING CENTER':
+        return 'bg-blue-200 text-white border-blue-300';
+      case 'COLLECTED FROM WAREHOUSE':
+        return 'bg-green-300 text-white border-green-400';
+      case 'DISPATCHED TO DESTINATION':
+        return 'bg-blue-800 text-white border-yellow-200';
+      case 'RECEIVED AT DESTINATION':
+        return 'bg-yellow-400 text-white border-yellow-500';
+      case 'OUT FOR DELIVERY':
+        return 'bg-gray-300 text-yellow-800 border-gray-400';
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'failed to deliver':
-        return 'bg-red-100 text-red-800 border-red-200';
-      case 'processing':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+        return 'bg-orange-200 text-yellow-800 border-orange-300';
+      case 'FAILED TO DELIVER':
+        return 'bg-red-300 text-red-800 border-red-400';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
   const getTotalAmount = (items: SaleItem[]) => {
-    return items.reduce((sum, item) => sum + item.quantity * item.price, 0);
+    return items.reduce((sum, item) => sum + item.qty * item.price, 0);
   };
 
   // Pagination logic
@@ -84,6 +102,30 @@ export const SalesTable: React.FC<SalesTableProps> = ({ sales, onEdit, onDelete 
   const handlePrev = () => setCurrentPage((p) => Math.max(1, p - 1));
   const handleNext = () => setCurrentPage((p) => Math.min(totalPages, p + 1));
 
+  // Show skeleton loader when data is loading
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 sm:p-6 flex items-center justify-between">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-bold text-white">Sales Entries</h2>
+            <p className="text-blue-100 text-sm mt-1">Loading...</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-white bg-opacity-10 flex items-center justify-center">
+              <Spinner size={20} colorClass="text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div className="p-8 flex flex-col items-center justify-center">
+          <Spinner size={48} colorClass="text-blue-600 mb-4" />
+          <div className="text-gray-600 text-lg">Loading sales data...</div>
+        </div>
+      </div>
+    );
+  }
+
   if (sales.length === 0) {
     return (
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 sm:p-8 text-center">
@@ -101,33 +143,47 @@ export const SalesTable: React.FC<SalesTableProps> = ({ sales, onEdit, onDelete 
   return (
     <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 sm:p-6">
-        <h2 className="text-xl sm:text-2xl font-bold text-white">Sales Entries</h2>
-        <p className="text-blue-100 text-sm mt-1">{sales.length} total entries</p>
+      <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 sm:p-6 flex items-center justify-between">
+        <div>
+          <h2 className="text-xl sm:text-2xl font-bold text-white">Sales Entries</h2>
+          <p className="text-blue-100 text-sm mt-1">{sales.length} total entries</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => onRefresh && onRefresh()}
+            title="Refresh"
+            className="p-2 bg-white bg-opacity-10 hover:bg-opacity-20 rounded text-white"
+          >
+            <RefreshCwIcon className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* Desktop Table View */}
       <div className="hidden lg:block">
-        <div className="overflow-x-auto">
-          <table className="w-full">
+        <div className="overflow-x-auto min-w-full">
+          <table className="w-full table-fixed">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                <th className="px-4 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                  Serial
+                </th>
+                <th className="px-4 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                   Customer
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                <th className="px-4 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                   Address
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                <th className="px-4 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                   Contact 1
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                <th className="px-4 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                   Contact 2
                 </th>
-                <th className="px-4 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-4 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                <th className="pl-12 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                   Qty
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
@@ -144,30 +200,47 @@ export const SalesTable: React.FC<SalesTableProps> = ({ sales, onEdit, onDelete 
             <tbody className="divide-y divide-gray-100">
               {paginatedSales.map((sale) => (
                 <tr key={sale.id} className="hover:bg-gray-50 transition-colors duration-150">
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                    {sale.serialNo}
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap">
                     <div className="font-medium text-gray-900">{sale.name}</div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-4">
                     <div className="text-sm text-gray-600 max-w-xs truncate">{sale.address}</div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
                     {sale.contact01}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                     {sale.contact02 || '-'}
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap">
-                    <span
-                      className={`inline-flex px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-                        sale.status
-                      )}`}
-                    >
-                      {sale.status || '-'}
-                    </span>
+                    {onStatusChange && sale.status === 'TEMPORARY' ? (
+                      <select
+                        className={`px-2 py-1 rounded-full text-xs font-medium border focus:outline-none ${getStatusColor(
+                          sale.status ?? '-'
+                        )}`}
+                        value={sale.status}
+                        onChange={e => onStatusChange(sale.id, e.target.value)}
+                      >
+                        {statusOptions.map(option => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span
+                        className={`inline-flex px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                          sale.status ?? '-'
+                        )}`}
+                      >
+                        {sale.status ?? '-'}
+                      </span>
+                    )}
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {sale.quantity}
-                  </td>
+                  <td className="pl-12 py-4 whitespace-nowrap text-sm text-gray-600">{sale.qty}</td>
                   <td className="px-6 py-4">
                     <div className="max-w-xs">
                       {sale.items && sale.items.length > 0 ? (
@@ -177,7 +250,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({ sales, onEdit, onDelete 
                               key={item.productId + '-' + index}
                               className="text-xs text-gray-600"
                             >
-                              {item.productName} (x{item.quantity})
+                              {item.productName} (x{item.qty})
                             </div>
                           ))}
                           {sale.items.length > 2 && (
@@ -186,7 +259,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({ sales, onEdit, onDelete 
                             </div>
                           )}
                           <div className="text-xs font-medium text-blue-600 mt-1">
-                            Total: {sale.items.reduce((sum, item) => sum + item.quantity, 0)} items
+                            Total: {sale.items.reduce((sum, item) => sum + item.qty, 0)} items
                           </div>
                         </div>
                       ) : (
@@ -194,7 +267,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({ sales, onEdit, onDelete 
                       )}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-1 py-4 whitespace-nowrap">
                     <div className="text-lg font-semibold text-green-600">
                       LKR {sale.items ? getTotalAmount(sale.items).toFixed(2) : '0.00'}
                     </div>
@@ -202,16 +275,23 @@ export const SalesTable: React.FC<SalesTableProps> = ({ sales, onEdit, onDelete 
                   <td className="px-6 py-4 whitespace-nowrap text-right">
                     <div className="flex items-center justify-end gap-2">
                       <button
-                        onClick={() => onEdit(sale)}
+                        onClick={() => setSelectedSale(sale)}
                         className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all duration-200"
-                        title="Edit"
+                        title="View Details"
                       >
-                        <EditIcon className="w-4 h-4" />
+                        <EyeIcon className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => onDelete(sale.id)}
+                        onClick={() => onEdit(sale)}
+                        className="p-2 text-yellow-600 hover:text-yellow-800 hover:bg-yellow-50 rounded-lg transition-all duration-200"
+                        title="Edit Sale"
+                      >
+                        <PencilIcon className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => setPendingDeleteId(sale.id)}
                         className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-all duration-200"
-                        title="Delete"
+                        title="Delete Sale"
                       >
                         <Trash2Icon className="w-4 h-4" />
                       </button>
@@ -238,7 +318,12 @@ export const SalesTable: React.FC<SalesTableProps> = ({ sales, onEdit, onDelete 
                 <div className="p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-semibold text-gray-900 truncate">{sale.name}</h3>
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold text-gray-900 truncate">
+                          {sale.name}
+                        </h3>
+                        <div className="text-xs text-gray-500 ml-3">{sale.serialNo}</div>
+                      </div>
                       <div className="flex items-center gap-1 mt-1">
                         <MapPinIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
                         <p className="text-sm text-gray-600 truncate">{sale.address}</p>
@@ -252,13 +337,29 @@ export const SalesTable: React.FC<SalesTableProps> = ({ sales, onEdit, onDelete 
                       </div>
                     </div>
                     <div className="ml-3 flex items-center gap-2">
-                      <span
-                        className={`inline-flex px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-                          sale.status
-                        )}`}
-                      >
-                        {sale.status}
-                      </span>
+                      {onStatusChange && sale.status === 'TEMPORARY' ? (
+                        <select
+                          className={`px-2 py-1 rounded-full text-xs font-medium border focus:outline-none ${getStatusColor(
+                            sale.status ?? '-'
+                          )}`}
+                          value={sale.status}
+                          onChange={e => onStatusChange(sale.id, e.target.value)}
+                        >
+                          {statusOptions.map(option => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span
+                          className={`inline-flex px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                            sale.status ?? '-'
+                          )}`}
+                        >
+                          {sale.status}
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -279,14 +380,23 @@ export const SalesTable: React.FC<SalesTableProps> = ({ sales, onEdit, onDelete 
                         )}
                       </button>
                       <button
-                        onClick={() => onEdit(sale)}
+                        onClick={() => setSelectedSale(sale)}
                         className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                        title="View Details"
                       >
-                        <EditIcon className="w-4 h-4" />
+                        <EyeIcon className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => onDelete(sale.id)}
+                        onClick={() => onEdit(sale)}
+                        className="p-2 text-yellow-600 hover:text-yellow-800 hover:bg-yellow-50 rounded-lg transition-all duration-200"
+                        title="Edit Sale"
+                      >
+                        <PencilIcon className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => setPendingDeleteId(sale.id)}
                         className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-all duration-200"
+                        title="Delete Sale"
                       >
                         <Trash2Icon className="w-4 h-4" />
                       </button>
@@ -318,7 +428,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({ sales, onEdit, onDelete 
                         </div>
                         <div className="flex justify-between items-center">
                           <span className="text-sm text-gray-600">Quantity:</span>
-                          <span className="text-sm font-medium text-gray-900">{sale.quantity}</span>
+                          <span className="text-sm font-medium text-gray-900">{sale.qty}</span>
                         </div>
                       </div>
                     </div>
@@ -343,11 +453,9 @@ export const SalesTable: React.FC<SalesTableProps> = ({ sales, onEdit, onDelete 
                                 <div className="text-xs text-gray-600">LKR {item.price} each</div>
                               </div>
                               <div className="text-right">
-                                <div className="text-sm font-medium text-gray-900">
-                                  x{item.quantity}
-                                </div>
+                                <div className="text-sm font-medium text-gray-900">x{item.qty}</div>
                                 <div className="text-xs text-green-600">
-                                  LKR {(item.quantity * item.price).toFixed(2)}
+                                  LKR {(item.qty * item.price).toFixed(2)}
                                 </div>
                               </div>
                             </div>
@@ -358,7 +466,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({ sales, onEdit, onDelete 
                                 Total Items:
                               </span>
                               <span className="text-sm font-semibold text-blue-600">
-                                {sale.items.reduce((sum, item) => sum + item.quantity, 0)} items
+                                {sale.items.reduce((sum, item) => sum + item.qty, 0)} items
                               </span>
                             </div>
                           </div>
@@ -386,11 +494,10 @@ export const SalesTable: React.FC<SalesTableProps> = ({ sales, onEdit, onDelete 
             <button
               onClick={handlePrev}
               disabled={currentPage === 1}
-              className={`px-4 py-2 rounded-lg border font-medium transition-all duration-200 ${
-                currentPage === 1
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
-                  : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300 hover:border-gray-400'
-              }`}
+              className={`px-4 py-2 rounded-lg border font-medium transition-all duration-200 ${currentPage === 1
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
+                : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300 hover:border-gray-400'
+                }`}
             >
               Previous
             </button>
@@ -402,17 +509,46 @@ export const SalesTable: React.FC<SalesTableProps> = ({ sales, onEdit, onDelete 
             <button
               onClick={handleNext}
               disabled={currentPage === totalPages}
-              className={`px-4 py-2 rounded-lg border font-medium transition-all duration-200 ${
-                currentPage === totalPages
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
-                  : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300 hover:border-gray-400'
-              }`}
+              className={`px-4 py-2 rounded-lg border font-medium transition-all duration-200 ${currentPage === totalPages
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
+                : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300 hover:border-gray-400'
+                }`}
             >
               Next
             </button>
           </div>
         </div>
       </div>
+      {/* ConfirmDialog for admin delete */}
+      <ConfirmDialog
+        open={Boolean(pendingDeleteId)}
+        title="Delete Sale"
+        message="Are you sure you want to delete this sale record? This action cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={() => {
+          if (pendingDeleteId) onDelete(pendingDeleteId);
+          setPendingDeleteId(null);
+        }}
+        onCancel={() => setPendingDeleteId(null)}
+      />
+
+      {/* Block dialog for non-admins */}
+      <ConfirmDialog
+        open={showBlockDialog}
+        title="Permission Denied"
+        message="You do not have permission to delete this record."
+        confirmLabel="OK"
+        hideCancel={true}
+        onConfirm={() => setShowBlockDialog(false)}
+        onCancel={() => setShowBlockDialog(false)}
+      />
+
+      {/* View Modal */}
+      <SalesViewModal 
+        sale={selectedSale} 
+        onClose={() => setSelectedSale(null)} 
+      />
     </div>
   );
 };
