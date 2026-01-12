@@ -208,9 +208,10 @@ export interface User {
  * Returns a Blob (Excel file)
  */
 export const dashboardApi = {
-  exportSalesExcel: async (endpoint: string): Promise<Blob> => {
+  exportSalesExcel: async (productName: string): Promise<Blob> => {
     try {
-      const response = await api.get<Blob>(endpoint, {
+      const encodedName = encodeURIComponent(productName);
+      const response = await api.get<Blob>(`/dashboard/excel/${encodedName}`, {
         responseType: 'blob',
       });
       return response.data;

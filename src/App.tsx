@@ -8,6 +8,7 @@ import { ProductManagement } from './pages/ProductManagement';
 import { SalesManagement } from './pages/SalesManagement';
 import { StockManagement } from './pages/StockManagement';
 import { Users } from './pages/Users';
+import UserProfile from './pages/UserProfile';
 import { TrackingId } from './pages/TrackingId';
 import { getToken } from './services/authUtils';
 
@@ -109,6 +110,7 @@ export function App() {
             <Route path="sale/settings" element={<SalesManagement />} />
             <Route path="product" element={<ProductManagement />} />
             <Route path="users" element={<Users />} />
+            <Route path="profile" element={<UserProfile />} />
             <Route path="stock" element={<StockManagement />} />
             <Route path="tracking-id" element={<TrackingId />} />
           </Route>

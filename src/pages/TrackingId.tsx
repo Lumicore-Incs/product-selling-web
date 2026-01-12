@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { AlertSnackbar } from '../components/AlertSnackbar';
 import { parseTrackingExcel, TrackingRow } from '../utils/excelUtils';
+import { uploadTracking } from '../services/orders/orderService';
 
 // Responsive breakpoint for mobile (Tailwind: md = 768px)
 function useIsMobile() {
@@ -57,6 +58,31 @@ export const TrackingId: React.FC = () => {
     }
   };
 
+  const handleSubmit = async () => {
+    if (rows.length === 0) {
+      setAlert({ open: true, message: 'No data to submit', type: 'error' });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const trackingData = rows.map(row => ({
+        wayBillNo: row.waybillId,
+        orderId: row.orderId,
+        customerName: row.customerName,
+        contact: row.phoneNumber
+      }));
+
+      await uploadTracking(trackingData);
+      setAlert({ open: true, message: 'Data uploaded successfully!', type: 'success' });
+      handleClear();
+    } catch (error) {
+      setAlert({ open: true, message: 'Failed to upload tracking data', type: 'error' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className=" w-full mx-auto p-6 rounded-lg relative">
       <AlertSnackbar
@@ -75,19 +101,31 @@ export const TrackingId: React.FC = () => {
               className="hidden"
               onChange={handleExcelUpload}
               ref={fileInputRef}
+              disabled={isLoading}
             />
-            <span className="px-4 py-2 bg-blue-600 text-white rounded-md cursor-pointer hover:bg-blue-700 transition">
-              {rows.length > 0 ? 'Submit' : 'Upload Excel'}
+            <span className={`px-4 py-2 ${!rows.length ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-400'} text-white rounded-md cursor-pointer transition ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+              Upload Excel
             </span>
           </label>
           {rows.length > 0 && (
-            <button
-              type="button"
-              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition"
-              onClick={handleClear}
-            >
-              Clear
-            </button>
+            <>
+              <button
+                type="button"
+                className={`px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                onClick={handleSubmit}
+                disabled={isLoading}
+              >
+                {isLoading ? 'Submitting...' : 'Submit'}
+              </button>
+              <button
+                type="button"
+                className={`px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                onClick={handleClear}
+                disabled={isLoading}
+              >
+                Clear
+              </button>
+            </>
           )}
         </div>
       </div>

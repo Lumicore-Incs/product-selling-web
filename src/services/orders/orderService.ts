@@ -100,7 +100,25 @@ class OrderService {
 
 export const orderService = new OrderService();
 
+interface TrackingUploadDto {
+  wayBillNo: string;
+  orderId: string;
+  customerName: string;
+  contact: string;
+}
+
+async function uploadTrackingData(trackingList: TrackingUploadDto[]): Promise<string> {
+  try {
+    const response = await apiClient.post('/order', trackingList);
+    return response.data as string;
+  } catch (error) {
+    console.error('Failed to upload tracking data:', error);
+    throw error;
+  }
+}
+
 export const getAllDuplicateOrders = () => orderService.getAllDuplicateOrders();
 export const deleteOrder = (id: string) => orderService.deleteOrder(id);
 export const getOrders = () => orderService.getOrders();
 export const getAllCustomerOrders = () => orderService.getAllCustomerOrders();
+export const uploadTracking = (trackingList: TrackingUploadDto[]) => uploadTrackingData(trackingList);

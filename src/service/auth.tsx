@@ -38,3 +38,13 @@ export async function getCurrentUser(): Promise<User> {
   const response = await axios.post<User>('/user/get_user_info_by_token');
   return response.data;
 }
+
+export async function updateUser(userId: string | number, payload: Partial<User> | Record<string, unknown>) {
+  try {
+    const response = await axios.put(`/user/update/${userId}`, payload);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating user:', error);
+    throw error;
+  }
+}

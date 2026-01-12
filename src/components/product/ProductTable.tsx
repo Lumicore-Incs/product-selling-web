@@ -54,17 +54,25 @@ export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) 
                     Lkr {product.price.toFixed(2)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        product.status === 'active'
+                    {(() => {
+                      const status = (product.status || '').toString();
+                      const lower = status.toLowerCase();
+                      const label = status
+                        ? status.charAt(0).toUpperCase() + status.slice(1).toLowerCase()
+                        : '-';
+                      const classes =
+                        lower === 'active'
                           ? 'bg-green-100 text-green-800'
-                          : product.status === 'inactive'
+                          : lower === 'inactive'
                           ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}
-                    >
-                      {product.status}
-                    </span>
+                          : 'bg-red-100 text-red-800';
+
+                      return (
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${classes}`}>
+                          {label}
+                        </span>
+                      );
+                    })()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end gap-2">

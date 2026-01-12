@@ -13,18 +13,46 @@ import { getCurrentUser } from '../../service/auth';
 import { logout } from '../../services/authUtils';
 
 const getNavItems = (userRole: string) => {
-  const allNavItems = [
+  // Normalize role string for comparison
+  const normalized = (userRole || '').toUpperCase();
+
+  // Check for specific roles
+  const isSuperUser = 
+    normalized === 'SUPER USER' || 
+    normalized === 'SUPER_USER' || 
+    normalized === 'SUPERUSER';
+  const isAdmin = normalized === 'ADMIN';
+
+  // Admin menu items
+  const adminBaseItems = [
+    { icon: HomeIcon, label: 'Dashboard', to: '/' },
+    { icon: ProportionsIcon, label: 'Product', to: '/product' },
+    { icon: UsersIcon, label: 'Users', to: '/users' },
+    { icon: StoreIcon, label: 'Stock', to: '/stock' },
+    { icon: SettingsIcon, label: 'Settings', to: '/sale/settings', isSettings: true },
+  ];
+
+  // Add Duplicate Orders only for SUPER USER
+  const adminItems = isSuperUser ? [
+    { icon: HomeIcon, label: 'Dashboard', to: '/' },
+    { icon: ScaleIcon, label: 'Duplicate Orders', to: '/sale/duplicate' },
+    { icon: ProportionsIcon, label: 'Product', to: '/product' },
+    { icon: UsersIcon, label: 'Users', to: '/users' },
+    { icon: StoreIcon, label: 'Stock', to: '/stock' },
+    { icon: SettingsIcon, label: 'Settings', to: '/sale/settings', isSettings: true },
+  ] : adminBaseItems;
+
+  // Regular users keep the existing, broader set
+  const userItems = [
     { icon: HomeIcon, label: 'Dashboard', to: '/' },
     { icon: ScaleIcon, label: 'Add New Order', to: '/sale' },
     { icon: ScaleIcon, label: 'Duplicate Orders', to: '/sale/duplicate' },
     { icon: ScaleIcon, label: 'Tracking ID', to: '/tracking-id' },
-    { icon: ProportionsIcon, label: 'Product', to: '/product', adminOnly: true },
-    { icon: UsersIcon, label: 'Users', to: '/users', adminOnly: true },
-    { icon: StoreIcon, label: 'Stock', to: '/stock', adminOnly: true },
     { icon: SettingsIcon, label: 'Settings', to: '/sale/settings', isSettings: true },
   ];
 
-  return allNavItems.filter((item) => !item.adminOnly || userRole === 'ADMIN');
+  // Return admin menu if admin/superuser, otherwise return user menu
+  return (isAdmin || isSuperUser) ? adminItems : userItems;
 };
 
 interface SidebarProps {

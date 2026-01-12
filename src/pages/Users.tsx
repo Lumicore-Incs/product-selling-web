@@ -127,10 +127,10 @@ export const Users = () => {
           users.map((user) =>
             user.id === updatedUser.id
               ? {
-                  ...updatedUser,
-                  productId: editingUser.productId,
-                  productName: editingUser.productName,
-                }
+                ...updatedUser,
+                productId: editingUser.productId,
+                productName: editingUser.productName,
+              }
               : user
           )
         );
@@ -294,9 +294,8 @@ export const Users = () => {
               onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
               className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
             >
-              <option value="User">User</option>
-              <option value="Manager">Manager</option>
-              <option value="Admin">Admin</option>
+              <option value="USER">USER</option>
+              <option value="SUPER USER">SUPER USER</option>
             </select>
             <select
               value={newUser.status}
@@ -367,11 +366,10 @@ export const Users = () => {
               onClick={handleAddUser}
               disabled={isLoading}
               aria-busy={isLoading}
-              className={`px-4 py-2 rounded-lg transition-colors ${
-                isLoading
+              className={`px-4 py-2 rounded-lg transition-colors ${isLoading
                   ? 'bg-green-300 text-white cursor-wait'
                   : 'bg-green-500 text-white hover:bg-green-600'
-              }`}
+                }`}
             >
               {isLoading ? 'Adding…' : 'Add User'}
             </button>
@@ -435,7 +433,7 @@ export const Users = () => {
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-gray-300">
               {paginatedUsers.length > 0 ? (
                 paginatedUsers.map((user) => (
                   <tr key={user.id} className="hover:bg-gray-50 transition-colors">
@@ -488,9 +486,8 @@ export const Users = () => {
                           onChange={(e) => setEditingUser({ ...editingUser, role: e.target.value })}
                           className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
                         >
-                          <option value="User">User</option>
-                          <option value="Manager">Manager</option>
-                          <option value="Admin">Admin</option>
+                          <option value="USER">USER</option>
+                          <option value="SUPER USER">SUPER USER</option>
                         </select>
                       ) : (
                         <div className="text-sm text-gray-500 truncate">{user.role}</div>
@@ -499,9 +496,8 @@ export const Users = () => {
                     <td className="px-4 py-3 whitespace-nowrap">
                       <div className="flex items-center gap-1">
                         <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            getStatusDisplay(user.status).color
-                          }`}
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusDisplay(user.status).color
+                            }`}
                         >
                           {user.status}
                         </span>
@@ -598,11 +594,10 @@ export const Users = () => {
               <button
                 onClick={handlePrev}
                 disabled={currentPage === 1}
-                className={`px-3 py-1 rounded border ${
-                  currentPage === 1
+                className={`px-3 py-1 rounded border ${currentPage === 1
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                     : 'bg-white text-gray-700 hover:bg-gray-50'
-                }`}
+                  }`}
               >
                 Prev
               </button>
@@ -612,11 +607,10 @@ export const Users = () => {
               <button
                 onClick={handleNext}
                 disabled={currentPage === totalPages}
-                className={`px-3 py-1 rounded border ${
-                  currentPage === totalPages
+                className={`px-3 py-1 rounded border ${currentPage === totalPages
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                     : 'bg-white text-gray-700 hover:bg-gray-50'
-                }`}
+                  }`}
               >
                 Next
               </button>

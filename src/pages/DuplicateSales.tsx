@@ -195,7 +195,7 @@ export const DuplicateSales: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl w-full mx-auto p-6 rounded-lg relative">
+    <div className="w-full px-4 relative overflow-hidden">
       <BackgroundIcons />
       <AlertSnackbar
         message={snackbar.message}
