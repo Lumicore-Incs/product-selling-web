@@ -200,13 +200,13 @@ export const SalesTable: React.FC<SalesTableProps> = ({
             <tbody className="divide-y divide-gray-100">
               {paginatedSales.map((sale) => (
                 <tr key={sale.id} className="hover:bg-gray-50 transition-colors duration-150">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                  <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-700">
                     {sale.serialNo}
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
+                  <td className="py-4 whitespace-nowrap">
                     <div className="font-medium text-gray-900">{sale.name}</div>
                   </td>
-                  <td className="px-4 py-4">
+                  <td className="px-6 py-4">
                     <div className="text-sm text-gray-600 max-w-xs truncate">{sale.address}</div>
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
@@ -269,7 +269,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                   </td>
                   <td className="px-1 py-4 whitespace-nowrap">
                     <div className="text-lg font-semibold text-green-600">
-                      LKR {sale.items ? getTotalAmount(sale.items).toFixed(2) : '0.00'}
+                      LKR {sale.totalPrice ? sale.totalPrice.toFixed(2) : '0.00'}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">
@@ -366,7 +366,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                   {/* Quick Info Row */}
                   <div className="flex items-center justify-between">
                     <div className="text-lg font-bold text-green-600">
-                      LKR {sale.items ? getTotalAmount(sale.items).toFixed(2) : '0.00'}
+                      LKR {sale.totalPrice ? sale.totalPrice.toFixed(2) : '0.00'}
                     </div>
                     <div className="flex items-center gap-2">
                       <button

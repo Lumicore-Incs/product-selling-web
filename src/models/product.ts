@@ -1,6 +1,7 @@
 export interface Product {
   productId: number | string;
   name: string;
+  shortName: string;
   price: number;
   serialPrefix: string;
   status?: 'active' | 'inactive' | 'remove' | string;

@@ -5,7 +5,7 @@ interface ProductModalProps {
   isOpen: boolean;
   onClose: () => void;
   product: Product | null;
-  onAdd: (name: string, price: number, serialPrefix: string) => void;
+  onAdd: (name: string, shortName: string, price: number, serialPrefix: string) => void;
   onUpdate: (product: Product) => void;
   loading?: boolean;
 }

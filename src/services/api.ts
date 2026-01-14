@@ -7,6 +7,7 @@ const api = http;
 export interface ProductDto {
   productId?: number;
   name: string;
+  shortName: string;
   price: number;
   serialPrefix: string;
   status?: 'active' | 'inactive' | 'remove';
