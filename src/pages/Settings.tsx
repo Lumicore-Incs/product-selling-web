@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { BackgroundIcons } from '../components/BackgroundIcons';
 
 interface SettingsProps {
   onTitleChange?: (title: string) => void;
@@ -10,14 +11,14 @@ export const Settings: React.FC<SettingsProps> = ({
   onBackgroundColorChange 
 }) => {
   const [title, setTitle] = useState('Sales Management');
-  const [backgroundColor, setBackgroundColor] = useState('#ffffff');
+  const [backgroundColor, setBackgroundColor] = useState('#e0f2fe');
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [tempTitle, setTempTitle] = useState(title);
 
   // Load saved settings from localStorage on component mount
   useEffect(() => {
     const savedTitle = localStorage.getItem('salesTitle') || 'Sales Management';
-    const savedColor = localStorage.getItem('appBackgroundColor') || '#ffffff';
+    const savedColor = localStorage.getItem('appBackgroundColor') || '#e0f2fe';
     
     setTitle(savedTitle);
     setTempTitle(savedTitle);
@@ -52,7 +53,8 @@ export const Settings: React.FC<SettingsProps> = ({
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      <BackgroundIcons type="settings" />
       {/* Title Section */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
         <h2 className="text-lg font-semibold text-gray-800 mb-3">Page Title</h2>

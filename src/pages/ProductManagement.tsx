@@ -1,18 +1,17 @@
 import { useEffect, useState } from 'react';
-import { Header } from '../components/product/Header';
-import { ProductTable } from '../components/product/ProductTable';
-import { ProductModal } from '../components/product/ProductModal';
-import { productApi, ProductDto, authUtils } from '../services/api';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { BackgroundIcons } from '../components/BackgroundIcons';
+import { Header } from '../components/product/Header';
+import { ProductModal } from '../components/product/ProductModal';
+import { ProductTable } from '../components/product/ProductTable';
+import { productApi, ProductDto } from '../services/api';
+import { isAuthenticated, removeToken } from '../services/authUtils';
 
 // Updated Product type to match backend
-export type Product = {
-  productId: number;
-  name: string;
-  price: number;
-  status: 'active' | 'inactive' | 'remove';
-};
+import { Product as ProductModel } from '../models/product';
+
+export type Product = ProductModel;
 
 export const ProductManagement = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -25,7 +24,10 @@ export const ProductManagement = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 5;
   const totalPages = Math.ceil(filteredProducts.length / rowsPerPage);
-  const paginatedProducts = filteredProducts.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+  const paginatedProducts = filteredProducts.slice(
+    (currentPage - 1) * rowsPerPage,
+    currentPage * rowsPerPage
+  );
 
   // Reset to first page when filter/search changes
   useEffect(() => {
@@ -42,9 +44,10 @@ export const ProductManagement = () => {
     if (searchTerm.trim() === '') {
       setFilteredProducts(products);
     } else {
-      const results = products.filter(product =>
-        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.productId.toString().includes(searchTerm.toLowerCase())
+      const results = products.filter(
+        (product) =>
+          product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          product.productId.toString().includes(searchTerm.toLowerCase())
       );
       setFilteredProducts(results);
     }
@@ -53,7 +56,7 @@ export const ProductManagement = () => {
   // Show toast notification
   const showToast = (message: string, type: 'success' | 'error' | 'info' | 'warning') => {
     toast[type](message, {
-      position: "top-right",
+      position: 'top-right',
       autoClose: 5000,
       hideProgressBar: false,
       closeOnClick: true,
@@ -69,20 +72,25 @@ export const ProductManagement = () => {
     try {
       const backendProducts = await productApi.getAllProducts();
 
-      const transformedProducts: Product[] = backendProducts.map(product => ({
+      const transformedProducts: Product[] = backendProducts.map((product) => ({
         productId: product.productId || 0,
         name: product.name,
+        shortName: product.shortName || '',
         price: product.price,
-        status: product.status || 'active'
+        serialPrefix: product.serialPrefix,
+        status: product.status || 'active',
       }));
 
       setProducts(transformedProducts);
     } catch (error: any) {
       console.error('Failed to load products:', error);
-      showToast('Failed to load products. Please check your connection and authentication.', 'error');
+      showToast(
+        'Failed to load products. Please check your connection and authentication.',
+        'error'
+      );
 
       if (error.response?.status === 401) {
-        authUtils.removeToken();
+        removeToken();
         showToast('Authentication expired. Please log in again.', 'error');
       }
     } finally {
@@ -91,13 +99,15 @@ export const ProductManagement = () => {
   };
 
   // Handler for adding a new product
-  const handleAddProduct = async (name: string, price: number) => {
+  const handleAddProduct = async (name: string, shortName: string, price: number, serialPrefix: string) => {
     setLoading(true);
     try {
       const newProductData: Omit<ProductDto, 'productId'> = {
         name,
+        shortName,
         price,
-        status: 'active'
+        serialPrefix,
+        status: 'active',
       };
 
       const savedProduct = await productApi.createProduct(newProductData);
@@ -105,8 +115,10 @@ export const ProductManagement = () => {
       const newProduct: Product = {
         productId: savedProduct.productId || 0,
         name: savedProduct.name,
+        shortName: savedProduct.shortName || shortName,
         price: savedProduct.price,
-        status: savedProduct.status || 'active'
+        serialPrefix: savedProduct.serialPrefix,
+        status: savedProduct.status || 'active',
       };
 
       setProducts([...products, newProduct]);
@@ -124,25 +136,35 @@ export const ProductManagement = () => {
   const handleUpdateProduct = async (updatedProduct: Product) => {
     setLoading(true);
     try {
-       const validStatus = updatedProduct.status === 'inactive' ? 'inactive' : 'active';
+      const validStatus = updatedProduct.status === 'inactive' ? 'inactive' : 'active';
       const updateData: Omit<ProductDto, 'productId'> = {
         name: updatedProduct.name,
+        shortName: updatedProduct.shortName,
         price: updatedProduct.price,
-        status: validStatus 
+        serialPrefix: updatedProduct.serialPrefix,
+        status: validStatus,
       };
 
-      const savedProduct = await productApi.updateProduct(updatedProduct.productId, updateData);
+      const id =
+        typeof updatedProduct.productId === 'string'
+          ? parseInt(updatedProduct.productId)
+          : updatedProduct.productId;
+      const savedProduct = await productApi.updateProduct(id, updateData);
 
-      setProducts(products.map(product =>
-        product.productId === updatedProduct.productId
-          ? {
-            productId: savedProduct.productId || updatedProduct.productId,
-            name: savedProduct.name,
-            price: savedProduct.price,
-            status: savedProduct.status || 'active'
-          }
-          : product
-      ));
+      setProducts(
+        products.map((product) =>
+          product.productId === id
+            ? {
+                productId: savedProduct.productId ?? id,
+                name: savedProduct.name,
+                shortName: savedProduct.shortName || updatedProduct.shortName,
+                price: savedProduct.price,
+                serialPrefix: savedProduct.serialPrefix,
+                status: savedProduct.status ?? 'active',
+              }
+            : product
+        )
+      );
 
       setIsModalOpen(false);
       setCurrentProduct(null);
@@ -159,23 +181,29 @@ export const ProductManagement = () => {
   const handleDeleteProduct = async (productId: string | number) => {
     const id = typeof productId === 'string' ? parseInt(productId) : productId;
 
-      setLoading(true);
-      try {
-        await productApi.deleteProduct(id);
-        setProducts(products.filter(product => product.productId !== id));
-        showToast('Product deleted successfully!', 'success');
-        loadProducts(); // Refresh the table after delete
-      } catch (error: any) {
-        console.error('Failed to delete product:', error);
-        showToast('Failed to delete product. Please try again.', 'error');
-      } finally {
-        setLoading(false);
-      }
+    setLoading(true);
+    try {
+      await productApi.deleteProduct(id);
+      setProducts(products.filter((product) => product.productId !== id));
+      showToast('Product deleted successfully!', 'success');
+      loadProducts(); // Refresh the table after delete
+    } catch (error: any) {
+      console.error('Failed to delete product:', error);
+      showToast('Failed to delete product. Please try again.', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Handler for opening edit modal
   const handleEditClick = (product: Product) => {
-    setCurrentProduct(product);
+    // Ensure currentProduct has numeric productId for local state consistency
+    const normalized = {
+      ...product,
+      productId:
+        typeof product.productId === 'string' ? parseInt(product.productId) : product.productId,
+    } as Product;
+    setCurrentProduct(normalized);
     setIsModalOpen(true);
   };
 
@@ -191,7 +219,8 @@ export const ProductManagement = () => {
   };
 
   return (
-    <div className="min-h-screen mx-6">
+    <div className="min-h-screen mx-6 relative">
+      <BackgroundIcons type="product" />
       <ToastContainer
         position="top-right"
         autoClose={5000}
@@ -203,7 +232,7 @@ export const ProductManagement = () => {
         draggable
         pauseOnHover
       />
-      
+
       <Header
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
@@ -221,7 +250,7 @@ export const ProductManagement = () => {
         )}
 
         {/* Authentication Check */}
-        {!authUtils.isAuthenticated() && (
+        {!isAuthenticated() && (
           <div className="mb-4 p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded">
             Please log in to manage products. Some features may not work without authentication.
           </div>
@@ -236,12 +265,18 @@ export const ProductManagement = () => {
 
         {/* Pagination Controls */}
         <div className="flex items-center justify-between mt-4">
-          <p className="text-sm text-gray-500">Showing {paginatedProducts.length} of {filteredProducts.length} entries</p>
+          <p className="text-sm text-gray-500">
+            Showing {paginatedProducts.length} of {filteredProducts.length} entries
+          </p>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className={`px-3 py-1 rounded border ${currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+              className={`px-3 py-1 rounded border ${
+                currentPage === 1
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-white text-gray-700 hover:bg-gray-50'
+              }`}
             >
               Prev
             </button>
@@ -251,7 +286,11 @@ export const ProductManagement = () => {
             <button
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
-              className={`px-3 py-1 rounded border ${currentPage === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+              className={`px-3 py-1 rounded border ${
+                currentPage === totalPages
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-white text-gray-700 hover:bg-gray-50'
+              }`}
             >
               Next
             </button>

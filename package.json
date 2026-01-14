@@ -12,6 +12,7 @@
   "dependencies": {
     "@headlessui/react": "^2.2.4",
     "@reduxjs/toolkit": "^2.8.2",
+    "@types/xlsx": "^0.0.35",
     "axios": "^1.10.0",
     "lucide-react": "^0.441.0",
     "magic-patterns-vite-template": "file:",
@@ -20,7 +21,8 @@
     "react-hook-form": "^7.56.4",
     "react-redux": "^9.2.0",
     "react-router-dom": "^6.26.2",
-    "react-toastify": "^11.0.5"
+    "react-toastify": "^11.0.5",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/axios": "^0.9.36",

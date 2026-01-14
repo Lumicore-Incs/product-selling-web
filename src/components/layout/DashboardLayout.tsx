@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
-import { Sidebar } from './Sidebar';
-import { Header } from './Header';
 import { Settings } from '../../pages/Settings';
+import { Header } from './Header';
+import { Sidebar } from './Sidebar';
 
 export const DashboardLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -51,9 +51,7 @@ export const DashboardLayout = () => {
       </div>
 
       {/* Main Content Area */}
-      <div
-        className={`flex-1 flex flex-col transition-all duration-300 md:ml-64`}
-      >
+      <div className={`flex-1 flex flex-col transition-all duration-300 md:ml-64`}>
         <Header onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} />
         <main className="flex-1 py-6 overflow-auto">
           <div className="max-w-full">
