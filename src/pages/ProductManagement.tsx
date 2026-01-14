@@ -75,6 +75,7 @@ export const ProductManagement = () => {
       const transformedProducts: Product[] = backendProducts.map((product) => ({
         productId: product.productId || 0,
         name: product.name,
+        shortName: product.shortName || '',
         price: product.price,
         serialPrefix: product.serialPrefix,
         status: product.status || 'active',
@@ -98,11 +99,12 @@ export const ProductManagement = () => {
   };
 
   // Handler for adding a new product
-  const handleAddProduct = async (name: string, price: number, serialPrefix: string) => {
+  const handleAddProduct = async (name: string, shortName: string, price: number, serialPrefix: string) => {
     setLoading(true);
     try {
       const newProductData: Omit<ProductDto, 'productId'> = {
         name,
+        shortName,
         price,
         serialPrefix,
         status: 'active',
@@ -113,6 +115,7 @@ export const ProductManagement = () => {
       const newProduct: Product = {
         productId: savedProduct.productId || 0,
         name: savedProduct.name,
+        shortName: savedProduct.shortName || shortName,
         price: savedProduct.price,
         serialPrefix: savedProduct.serialPrefix,
         status: savedProduct.status || 'active',
@@ -136,6 +139,7 @@ export const ProductManagement = () => {
       const validStatus = updatedProduct.status === 'inactive' ? 'inactive' : 'active';
       const updateData: Omit<ProductDto, 'productId'> = {
         name: updatedProduct.name,
+        shortName: updatedProduct.shortName,
         price: updatedProduct.price,
         serialPrefix: updatedProduct.serialPrefix,
         status: validStatus,
@@ -153,6 +157,7 @@ export const ProductManagement = () => {
             ? {
                 productId: savedProduct.productId ?? id,
                 name: savedProduct.name,
+                shortName: savedProduct.shortName || updatedProduct.shortName,
                 price: savedProduct.price,
                 serialPrefix: savedProduct.serialPrefix,
                 status: savedProduct.status ?? 'active',

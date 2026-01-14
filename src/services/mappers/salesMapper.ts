@@ -31,8 +31,10 @@ export function mapOrderItemDtoToSaleItem(detail: unknown): FrontSaleItem {
   const productIdRaw = get(d, ['productId', 'productId']) ?? 0;
   const productName = get(d, ['productId', 'name']) ?? '';
   const qty = Number(d['qty'] ?? 0);
-  const price = Number(d['price'] ?? get(d, ['productId', 'price']) ?? 0);
-  const total = Number(get(d, ['productId', 'price']) ?? qty * price);
+  // Use the total from orderDetails, not the product's current price
+  const total = Number(d['total'] ?? 0);
+  // Calculate price as total / qty
+  const price = qty > 0 ? total / qty : 0;
 
   return {
     productId: toStringId(productIdRaw),

@@ -2,17 +2,19 @@ import React, { useEffect, useState } from 'react';
 import { Product } from '../../models/product';
 interface ProductFormProps {
   product: Product | null;
-  onAdd: (name: string, price: number, serialPrefix: string) => void;
+  onAdd: (name: string, shortName: string, price: number, serialPrefix: string) => void;
   onUpdate: (product: Product) => void;
   loading?: boolean;
 }
 export function ProductForm({ product, onAdd, onUpdate, loading }: Readonly<ProductFormProps>) {
   const [name, setName] = useState('');
+  const [shortName, setShortName] = useState('');
   const [serialPrefix, setSerialPrefix] = useState('');
   const [price, setPrice] = useState('');
   const [status, setStatus] = useState<'active' | 'inactive' | 'remove'>('active');
   const [errors, setErrors] = useState({
     name: '',
+    shortName: '',
     price: '',
     serialPrefix: '',
   });
@@ -20,18 +22,21 @@ export function ProductForm({ product, onAdd, onUpdate, loading }: Readonly<Prod
   useEffect(() => {
     if (product) {
       setName(product.name);
+      setShortName(product.shortName || '');
       setSerialPrefix(product.serialPrefix);
       setPrice(product.price.toString());
       setStatus((product.status as 'active' | 'inactive' | 'remove') ?? 'active');
     } else {
       // Reset form for new product
       setName('');
+      setShortName('');
       setPrice('');
       setSerialPrefix('');
       setStatus('active');
     }
     setErrors({
       name: '',
+      shortName: '',
       price: '',
       serialPrefix: '',
     });
@@ -39,12 +44,17 @@ export function ProductForm({ product, onAdd, onUpdate, loading }: Readonly<Prod
   const validate = () => {
     const newErrors = {
       name: '',
+      shortName: '',
       price: '',
       serialPrefix: '',
     };
     let isValid = true;
     if (!name.trim()) {
       newErrors.name = 'Product name is required';
+      isValid = false;
+    }
+    if (!shortName.trim()) {
+      newErrors.shortName = 'Short name is required';
       isValid = false;
     }
     const priceValue = parseFloat(price);
@@ -68,13 +78,14 @@ export function ProductForm({ product, onAdd, onUpdate, loading }: Readonly<Prod
       onUpdate({
         ...product,
         name,
+        shortName,
         serialPrefix,
         price: priceValue,
         status,
       });
     } else {
       // Add new product
-      onAdd(name, priceValue, serialPrefix);
+      onAdd(name, shortName, priceValue, serialPrefix);
     }
   };
   return (
@@ -94,6 +105,21 @@ export function ProductForm({ product, onAdd, onUpdate, loading }: Readonly<Prod
             } rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
           />
           {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
+        </div>
+        <div>
+          <label htmlFor="shortName" className="block text-sm font-medium text-gray-700">
+            Short Name
+          </label>
+          <input
+            type="text"
+            id="shortName"
+            value={shortName}
+            onChange={(e) => setShortName(e.target.value)}
+            className={`mt-1 block w-full px-3 py-2 border ${
+              errors.shortName ? 'border-red-500' : 'border-gray-300'
+            } rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
+          />
+          {errors.shortName && <p className="mt-1 text-sm text-red-600">{errors.shortName}</p>}
         </div>
         <div>
           <label htmlFor="serialPrefix" className="block text-sm font-medium text-gray-700">
