@@ -241,17 +241,17 @@ export const ProductManagement = () => {
         loading={loading}
       />
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-2 sm:px-4 py-6 sm:py-8">
         {/* Loading State */}
         {loading && (
-          <div className="mb-4 p-4 bg-blue-100 border border-blue-400 text-blue-700 rounded">
+          <div className="mb-4 p-3 sm:p-4 bg-blue-100 border border-blue-400 text-blue-700 text-sm sm:text-base rounded">
             Loading products...
           </div>
         )}
 
         {/* Authentication Check */}
         {!isAuthenticated() && (
-          <div className="mb-4 p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded">
+          <div className="mb-4 p-3 sm:p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 text-sm sm:text-base rounded">
             Please log in to manage products. Some features may not work without authentication.
           </div>
         )}
@@ -264,32 +264,32 @@ export const ProductManagement = () => {
         />
 
         {/* Pagination Controls */}
-        <div className="flex items-center justify-between mt-4">
-          <p className="text-sm text-gray-500">
+        <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-xs sm:text-sm text-gray-500 order-2 sm:order-1">
             Showing {paginatedProducts.length} of {filteredProducts.length} entries
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 order-1 sm:order-2 flex-wrap justify-center">
             <button
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className={`px-3 py-1 rounded border ${
+              className={`px-2 sm:px-3 py-1 sm:py-2 rounded border text-xs sm:text-sm font-medium transition-colors ${
                 currentPage === 1
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
+                  : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'
               }`}
             >
               Prev
             </button>
-            <span className="text-sm text-gray-700">
-              Page {currentPage} of {totalPages}
+            <span className="text-xs sm:text-sm text-gray-700 px-2 sm:px-3 py-1 sm:py-2 bg-gray-50 border border-gray-200 rounded">
+              {currentPage}/{totalPages}
             </span>
             <button
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
-              className={`px-3 py-1 rounded border ${
+              className={`px-2 sm:px-3 py-1 sm:py-2 rounded border text-xs sm:text-sm font-medium transition-colors ${
                 currentPage === totalPages
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
+                  : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'
               }`}
             >
               Next

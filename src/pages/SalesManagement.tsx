@@ -192,7 +192,7 @@ export const SalesManagement: React.FC = () => {
 
   if (isLoading && sales.length === 0) {
     return (
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl ">
         <div className="flex justify-center items-center h-64">
           <div className="text-lg text-gray-600">Loading orders...</div>
         </div>
@@ -201,8 +201,22 @@ export const SalesManagement: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl w-full mx-auto p-6 rounded-lg relative">
-      <BackgroundIcons type="sales" />
+<div
+  className="
+    w-full
+    max-w-full
+    sm:max-w-full
+    md:max-w-7xl
+    lg:max-w-screen-2xl
+    mx-auto
+    px-3
+    sm:px-4
+    md:px-6
+    relative
+    overflow-x-hidden
+  "
+> 
+     <BackgroundIcons type="sales" />
       <AlertSnackbar
         message={snackbar.message}
         type={snackbar.type}
@@ -210,40 +224,41 @@ export const SalesManagement: React.FC = () => {
         onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
       />
       {showExportPopup && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg relative">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg relative max-w-sm w-full">
             <button
               onClick={() => setShowExportPopup(false)}
-              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 transition-colors"
+              aria-label="Close"
             >
               ✕
             </button>
-            <h3 className="text-lg font-semibold mb-4">Export Item</h3>
-            <div className="flex space-x-3">
+            <h3 className="text-lg sm:text-xl font-semibold mb-4">Export Item</h3>
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <button
                 onClick={() => {
                   setShowExportPopup(false);
-                  exportSales('sugar'); // Call your existing export function
+                  exportSales('sugar');
                 }}
-                className="px-4 py-2 bg-pink-500 text-white rounded-md hover:bg-green-700"
+                className="flex-1 px-3 sm:px-4 py-2 bg-pink-500 text-white text-sm sm:text-base rounded-md hover:bg-pink-600 transition-colors"
               >
                 Sugar End
               </button>
               <button
                 onClick={() => {
                   setShowExportPopup(false);
-                  exportSales('vac'); // Call your existing export function
+                  exportSales('vac');
                 }}
-                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-blue-700"
+                className="flex-1 px-3 sm:px-4 py-2 bg-green-600 text-white text-sm sm:text-base rounded-md hover:bg-green-700 transition-colors"
               >
                 Vac
               </button>
               <button
                 onClick={() => {
                   setShowExportPopup(false);
-                  exportSales('others'); // Call your existing export function
+                  exportSales('others');
                 }}
-                className="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700"
+                className="flex-1 px-3 sm:px-4 py-2 bg-yellow-600 text-white text-sm sm:text-base rounded-md hover:bg-yellow-700 transition-colors"
               >
                 Others
               </button>
@@ -251,17 +266,17 @@ export const SalesManagement: React.FC = () => {
           </div>
         </div>
       )}
-      <header className="mb-8">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-800">{salesTitle}</h1>
-            <p className="text-gray-600 mt-2">Add, edit, and manage your sales entries</p>
+      <header className="mb-6 sm:mb-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+          <div className="w-full sm:w-auto">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">{salesTitle}</h1>
+            <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">Add, edit, and manage your sales entries</p>
           </div>
-          <div className="flex space-x-3">
+          <div className="flex flex-wrap gap-2 w-full sm:w-auto">
             <button
               onClick={refreshData}
               disabled={isLoading}
-              className={`px-4 py-2 rounded-md text-white ${
+              className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-md text-white text-sm sm:text-base transition-colors ${
                 isLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'
               }`}
             >
@@ -271,11 +286,11 @@ export const SalesManagement: React.FC = () => {
               <button
                 onClick={() => setShowExportPopup(true)}
                 disabled={isExporting}
-                className={`px-4 py-2 rounded-md text-white ${
+                className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-md text-white text-sm sm:text-base transition-colors ${
                   isExporting ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
                 }`}
               >
-                {isExporting ? 'Exporting...' : 'Export Sales'}
+                {isExporting ? 'Exporting...' : 'Export'}
               </button>
             )}
           </div>

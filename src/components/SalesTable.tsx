@@ -9,13 +9,29 @@ import {
   PencilIcon,
   Trash2Icon
 } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Sale, SaleItem } from '../models/sales';
 import { ConfirmDialog } from './ConfirmDialog';
 import Spinner from './Spinner';
 import { SalesViewModal } from './SalesViewModal';
 
+
+const DEFAULT_COLUMN_WIDTHS = {
+  serial: 100,
+  customer: 200,
+  orderDate: 150,
+  address: 220,
+  contact1: 160,
+  contact2: 160,
+  status: 150,
+  qty: 90,
+  products: 260,
+  total: 160,
+  actions: 140
+} as const;
+
+type ColumnKey = keyof typeof DEFAULT_COLUMN_WIDTHS;
 
 interface SalesTableProps {
   sales: Sale[];
@@ -41,6 +57,50 @@ export const SalesTable: React.FC<SalesTableProps> = ({
     'TEMPORARY',
     'PENDING'
   ];
+  const [columnWidths, setColumnWidths] = useState(DEFAULT_COLUMN_WIDTHS);
+  const resizingRef = useRef<null | { key: ColumnKey; startX: number; startWidth: number }>(null);
+
+  const handleColumnMouseMove = useCallback((event: MouseEvent) => {
+    const resizing = resizingRef.current;
+    if (!resizing) return;
+    event.preventDefault();
+    const delta = event.clientX - resizing.startX;
+    const nextWidth = Math.max(70, resizing.startWidth + delta);
+    setColumnWidths((prev) => ({
+      ...prev,
+      [resizing.key]: nextWidth,
+    }));
+  }, []);
+
+  const handleColumnMouseUp = useCallback(() => {
+    if (resizingRef.current) {
+      resizingRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener('mousemove', handleColumnMouseMove);
+    window.addEventListener('mouseup', handleColumnMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleColumnMouseMove);
+      window.removeEventListener('mouseup', handleColumnMouseUp);
+    };
+  }, [handleColumnMouseMove, handleColumnMouseUp]);
+
+  const startColumnResize = (key: ColumnKey, event: React.MouseEvent) => {
+    event.preventDefault();
+    resizingRef.current = {
+      key,
+      startX: event.clientX,
+      startWidth: columnWidths[key] ?? DEFAULT_COLUMN_WIDTHS[key],
+    };
+  };
+
+  const columnWidth = (key: ColumnKey) => columnWidths[key] ?? DEFAULT_COLUMN_WIDTHS[key];
+  const widthStyle = (key: ColumnKey) => ({
+    width: columnWidth(key),
+    minWidth: columnWidth(key),
+  });
   const [currentPage, setCurrentPage] = useState(1);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
@@ -57,6 +117,21 @@ export const SalesTable: React.FC<SalesTableProps> = ({
     }
     setExpandedRows(newExpanded);
   };
+
+  const formatDate = (dateString?: string) => {
+  if (!dateString) return '-';
+
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+};
+
+
+
+
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -160,62 +235,177 @@ export const SalesTable: React.FC<SalesTableProps> = ({
       </div>
 
       {/* Desktop Table View */}
-      <div className="hidden lg:block">
-        <div className="overflow-x-auto min-w-full">
+      <div className="hidden lg:block overflow-x-auto">
+        <div className="inline-block min-w-full">
           <table className="w-full table-fixed">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-4 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                <th
+                  className="px-4 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider relative"
+                  style={widthStyle('serial')}
+                >
                   Serial
+                  <div
+                    className="absolute top-0 right-0 h-full w-1 -mr-0.5 cursor-col-resize"
+                    onMouseDown={(event) => startColumnResize('serial', event)}
+                    role="presentation"
+                  />
                 </th>
-                <th className="px-4 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                <th
+                  className="px-4 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider relative"
+                  style={widthStyle('customer')}
+                >
                   Customer
+                  <div
+                    className="absolute top-0 right-0 h-full w-1 -mr-0.5 cursor-col-resize"
+                    onMouseDown={(event) => startColumnResize('customer', event)}
+                    role="presentation"
+                  />
                 </th>
-                <th className="px-4 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                <th
+                  className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider relative"
+                  style={widthStyle('orderDate')}
+                >
+                  Order Date
+                  <div
+                    className="absolute top-0 right-0 h-full w-1 -mr-0.5 cursor-col-resize"
+                    onMouseDown={(event) => startColumnResize('orderDate', event)}
+                    role="presentation"
+                  />
+                </th>
+                <th
+                  className="px-4 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider relative"
+                  style={widthStyle('address')}
+                >
                   Address
+                  <div
+                    className="absolute top-0 right-0 h-full w-1 -mr-0.5 cursor-col-resize"
+                    onMouseDown={(event) => startColumnResize('address', event)}
+                    role="presentation"
+                  />
                 </th>
-                <th className="px-4 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                <th
+                  className="px-4 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider relative"
+                  style={widthStyle('contact1')}
+                >
                   Contact 1
+                  <div
+                    className="absolute top-0 right-0 h-full w-1 -mr-0.5 cursor-col-resize"
+                    onMouseDown={(event) => startColumnResize('contact1', event)}
+                    role="presentation"
+                  />
                 </th>
-                <th className="px-4 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                <th
+                  className="px-4 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider relative"
+                  style={widthStyle('contact2')}
+                >
                   Contact 2
+                  <div
+                    className="absolute top-0 right-0 h-full w-1 -mr-0.5 cursor-col-resize"
+                    onMouseDown={(event) => startColumnResize('contact2', event)}
+                    role="presentation"
+                  />
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                <th
+                  className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider relative"
+                  style={widthStyle('status')}
+                >
                   Status
+                  <div
+                    className="absolute top-0 right-0 h-full w-1 -mr-0.5 cursor-col-resize"
+                    onMouseDown={(event) => startColumnResize('status', event)}
+                    role="presentation"
+                  />
                 </th>
-                <th className="pl-12 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                <th
+                  className="pl-12 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider relative"
+                  style={widthStyle('qty')}
+                >
                   Qty
+                  <div
+                    className="absolute top-0 right-0 h-full w-1 -mr-0.5 cursor-col-resize"
+                    onMouseDown={(event) => startColumnResize('qty', event)}
+                    role="presentation"
+                  />
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                <th
+                  className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider relative"
+                  style={widthStyle('products')}
+                >
                   Products
+                  <div
+                    className="absolute top-0 right-0 h-full w-1 -mr-0.5 cursor-col-resize"
+                    onMouseDown={(event) => startColumnResize('products', event)}
+                    role="presentation"
+                  />
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                <th
+                  className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider relative"
+                  style={widthStyle('total')}
+                >
                   Total Amount
+                  <div
+                    className="absolute top-0 right-0 h-full w-1 -mr-0.5 cursor-col-resize"
+                    onMouseDown={(event) => startColumnResize('total', event)}
+                    role="presentation"
+                  />
                 </th>
-                <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                <th
+                  className="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider relative"
+                  style={widthStyle('actions')}
+                >
                   Actions
+                  <div
+                    className="absolute top-0 right-0 h-full w-1 -mr-0.5 cursor-col-resize"
+                    onMouseDown={(event) => startColumnResize('actions', event)}
+                    role="presentation"
+                  />
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {paginatedSales.map((sale) => (
                 <tr key={sale.id} className="hover:bg-gray-50 transition-colors duration-150">
-                  <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-700">
+                  <td
+                    className="px-2 py-4 whitespace-nowrap text-sm text-gray-700"
+                    style={widthStyle('serial')}
+                  >
                     {sale.serialNo}
                   </td>
-                  <td className="py-4 whitespace-nowrap">
-                    <div className="font-medium text-gray-900">{sale.name}</div>
+                  <td
+                    className="py-4 whitespace-nowrap"
+                    style={widthStyle('customer')}
+                  >
+                    <div className="font-medium text-gray-900">{sale.customerName}</div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td
+                    className="px-6 py-4 whitespace-nowrap text-sm text-gray-600"
+                    style={widthStyle('orderDate')}
+                  >
+                    {formatDate(sale.date)}
+                  </td>
+                  <td
+                    className="px-6 py-4"
+                    style={widthStyle('address')}
+                  >
                     <div className="text-sm text-gray-600 max-w-xs truncate">{sale.address}</div>
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
+                  <td
+                    className="px-4 py-4 whitespace-nowrap text-sm text-gray-600"
+                    style={widthStyle('contact1')}
+                  >
                     {sale.contact01}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                  <td
+                    className="px-6 py-4 whitespace-nowrap text-sm text-gray-600"
+                    style={widthStyle('contact2')}
+                  >
                     {sale.contact02 || '-'}
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
+                  <td
+                    className="px-4 py-4 whitespace-nowrap"
+                    style={widthStyle('status')}
+                  >
                     {onStatusChange && sale.status === 'TEMPORARY' ? (
                       <select
                         className={`px-2 py-1 rounded-full text-xs font-medium border focus:outline-none ${getStatusColor(
@@ -240,8 +430,16 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                       </span>
                     )}
                   </td>
-                  <td className="pl-12 py-4 whitespace-nowrap text-sm text-gray-600">{sale.qty}</td>
-                  <td className="px-6 py-4">
+                  <td
+                    className="pl-12 py-4 whitespace-nowrap text-sm text-gray-600"
+                    style={widthStyle('qty')}
+                  >
+                    {sale.qty}
+                  </td>
+                  <td
+                    className="px-6 py-4"
+                    style={widthStyle('products')}
+                  >
                     <div className="max-w-xs">
                       {sale.items && sale.items.length > 0 ? (
                         <div className="space-y-1">
@@ -267,12 +465,18 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                       )}
                     </div>
                   </td>
-                  <td className="px-1 py-4 whitespace-nowrap">
+                  <td
+                    className="px-1 py-4 whitespace-nowrap"
+                    style={widthStyle('total')}
+                  >
                     <div className="text-lg font-semibold text-green-600">
                       LKR {sale.totalPrice ? sale.totalPrice.toFixed(2) : '0.00'}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right">
+                  <td
+                    className="px-6 py-4 whitespace-nowrap text-right"
+                    style={widthStyle('actions')}
+                  >
                     <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() => setSelectedSale(sale)}
@@ -335,6 +539,10 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                           {sale.contact02 && <span className="ml-2">• {sale.contact02}</span>}
                         </div>
                       </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        Order Date: {formatDate(sale.date)}
+                      </div>
+
                     </div>
                     <div className="ml-3 flex items-center gap-2">
                       {onStatusChange && sale.status === 'TEMPORARY' ? (
@@ -545,9 +753,9 @@ export const SalesTable: React.FC<SalesTableProps> = ({
       />
 
       {/* View Modal */}
-      <SalesViewModal 
-        sale={selectedSale} 
-        onClose={() => setSelectedSale(null)} 
+      <SalesViewModal
+        sale={selectedSale}
+        onClose={() => setSelectedSale(null)}
       />
     </div>
   );

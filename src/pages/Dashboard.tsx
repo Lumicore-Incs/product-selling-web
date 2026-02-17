@@ -17,7 +17,7 @@ type StatCardProps = {
 };
 
 const StatCard = ({ icon: Icon, label, value, trend }: StatCardProps) => (
-  <div className="bg-blue-200 bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl p-6 shadow-sm">
+  <div className="bg-blue-200 bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl p-6 md:mb-8 shadow-sm">
     <div className="flex items-center justify-between">
       <div>
         <p className="text-sm text-gray-600">{label}</p>
@@ -27,7 +27,7 @@ const StatCard = ({ icon: Icon, label, value, trend }: StatCardProps) => (
         <Icon size={24} className="text-blue-500" />
       </div>
     </div>
-    <div className="flex items-center mt-4">
+    <div className="flex items-center mt-4 ">
       <TrendingUpIcon size={16} className="text-green-500 mr-1" />
       <span className="text-sm text-green-500">{trend}</span>
     </div>
@@ -190,7 +190,21 @@ export const Dashboard = () => {
   };
 
   return (
-    <div className="px-4 space-y-6 relative max-w-full">
+    <div
+  className="
+    w-full
+    max-w-full
+    sm:max-w-full
+    md:max-w-7xl
+    lg:max-w-screen-2xl
+    mx-auto
+    px-3
+    sm:px-4
+    md:px-6
+    relative
+    overflow-x-hidden
+  "
+> 
       <BackgroundIcons type="dashboard" />
       <AlertSnackbar
         message={snackbar.message}

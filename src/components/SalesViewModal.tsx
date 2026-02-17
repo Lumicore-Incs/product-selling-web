@@ -33,6 +33,10 @@ export const SalesViewModal: React.FC<SalesViewModalProps> = ({ sale, onClose })
   if (!sale) return null;
 
   const getTotalAmount = (sale: Sale) => {
+    // Use the saved totalPrice if available, otherwise calculate from items
+    if (sale.totalPrice !== undefined && sale.totalPrice !== null) {
+      return sale.totalPrice;
+    }
     return sale.items ? sale.items.reduce((sum, item) => sum + item.qty * item.price, 0) : 0;
   };
 
@@ -72,7 +76,7 @@ export const SalesViewModal: React.FC<SalesViewModalProps> = ({ sale, onClose })
           <div className="bg-white/50 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-blue-50">
             <div className="flex justify-between items-start">
               <div>
-                <h3 className="text-xl font-bold text-gray-900 tracking-tight">{sale.name}</h3>
+                <h3 className="text-xl font-bold text-gray-900 tracking-tight">{sale.customerName}</h3>
                 <p className="text-sm text-gray-500 mt-1">Serial No: {sale.serialNo}</p>
               </div>
               <span

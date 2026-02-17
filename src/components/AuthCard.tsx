@@ -312,8 +312,7 @@ export const AuthCard = () => {
 
           <InputField
             id="email"
-            type="email"
-            label="Email Address"
+            label="User Name"
             icon={<MailIcon size={18} className="text-gray-400" />}
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}

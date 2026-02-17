@@ -24,6 +24,7 @@ export interface OrderItem {
 }
 
 export interface CustomerRequestDTO {
+  customerName: string;
   name: string;
   address: string;
   contact01: string;
@@ -37,6 +38,7 @@ export interface CustomerRequestDTO {
 export interface CustomerDtoGet {
   customerId: number;
   name: string;
+  customerName: string;
   address: string;
   contact01: string;
   contact02?: string;
@@ -50,6 +52,7 @@ export interface OrderDtoGet {
   orderId: number;
   customerId: number;
   name: string;
+  customerName: string;
   address: string;
   contact01: string;
   contact02?: string;

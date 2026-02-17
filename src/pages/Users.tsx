@@ -3,6 +3,9 @@ import {
   CheckCircle,
   Clock,
   Edit,
+  Eye,
+  EyeOff,
+  Key,
   Lock,
   Mail,
   Package,
@@ -23,10 +26,280 @@ import { BackgroundIcons } from '../components/BackgroundIcons';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { InputField } from '../components/InputField';
 import { productApi } from '../services/api';
-import type { User as ServiceUser } from '../services/users/userService';
 import { userService } from '../services/users/userService';
 
 type User = ServiceUser & { productName?: string };
+
+// Password Strength Indicator Component
+const PasswordStrengthIndicator = ({ password }: { password: string }) => {
+  const getStrength = (pass: string) => {
+    let score = 0;
+    if (pass.length >= 8) score++;
+    if (/[A-Z]/.test(pass)) score++;
+    if (/[a-z]/.test(pass)) score++;
+    if (/[0-9]/.test(pass)) score++;
+    if (/[^A-Za-z0-9]/.test(pass)) score++;
+    return score;
+  };
+
+  const strength = getStrength(password);
+  const width = `${(strength / 5) * 100}%`;
+
+  const getColor = () => {
+    if (strength <= 1) return 'bg-red-500';
+    if (strength <= 3) return 'bg-yellow-500';
+    return 'bg-green-500';
+  };
+
+  const getText = () => {
+    if (password.length === 0) return '';
+    if (strength <= 1) return 'Very Weak';
+    if (strength <= 2) return 'Weak';
+    if (strength <= 3) return 'Fair';
+    if (strength <= 4) return 'Good';
+    return 'Strong';
+  };
+
+  return (
+    <div className="mt-2">
+      <div className="flex justify-between text-xs mb-1">
+        <span className="text-gray-600">Password Strength:</span>
+        <span className={`font-medium ${
+          strength <= 1 ? 'text-red-600' :
+          strength <= 3 ? 'text-yellow-600' :
+          'text-green-600'
+        }`}>
+          {getText()}
+        </span>
+      </div>
+      <div className="h-1 w-full bg-gray-200 rounded-full overflow-hidden">
+        <div
+          className={`h-full transition-all duration-300 ${getColor()}`}
+          style={{ width }}
+        />
+      </div>
+      {password.length > 0 && (
+        <ul className="mt-2 text-xs text-gray-500 space-y-1">
+          <li className={`flex items-center ${password.length >= 8 ? 'text-green-600' : ''}`}>
+            <CheckCircle className={`w-3 h-3 mr-1 ${password.length >= 8 ? 'text-green-600' : 'text-gray-300'}`} />
+            At least 8 characters
+          </li>
+          <li className={`flex items-center ${/[A-Z]/.test(password) ? 'text-green-600' : ''}`}>
+            <CheckCircle className={`w-3 h-3 mr-1 ${/[A-Z]/.test(password) ? 'text-green-600' : 'text-gray-300'}`} />
+            Uppercase letter
+          </li>
+          <li className={`flex items-center ${/[0-9]/.test(password) ? 'text-green-600' : ''}`}>
+            <CheckCircle className={`w-3 h-3 mr-1 ${/[0-9]/.test(password) ? 'text-green-600' : 'text-gray-300'}`} />
+            Number
+          </li>
+        </ul>
+      )}
+    </div>
+  );
+};
+
+
+// Password Reset Dialog Component (for admin)
+const PasswordResetDialog = ({
+  open,
+  onClose,
+  userId,
+  userName,
+  onResetPassword,
+}: {
+  open: boolean;
+  onClose: () => void;
+  userId: string;
+  userName: string;
+  onResetPassword: (userId: string, password: string) => Promise<void>;
+}) => {
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [passwordGenerated, setPasswordGenerated] = useState(false);
+
+  const generatePassword = () => {
+    const length = 12;
+    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+    let password = "";
+    for (let i = 0; i < length; i++) {
+      password += charset.charAt(Math.floor(Math.random() * charset.length));
+    }
+    setNewPassword(password);
+    setConfirmPassword(password);
+    setPasswordGenerated(true);
+  };
+
+  const handleSubmit = async () => {
+    if (!newPassword) {
+      setError('Password is required');
+      return;
+    }
+    if (newPassword.length < 8) {
+      setError('Password must be at least 8 characters long');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      // Call the password reset function passed from parent
+      await onResetPassword(userId, newPassword);
+      handleClose();
+    } catch (err) {
+      setError('Failed to reset password. Please try again.');
+      console.error('Password reset error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleClose = () => {
+    setNewPassword('');
+    setConfirmPassword('');
+    setError('');
+    setPasswordGenerated(false);
+    onClose();
+  };
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-xl max-w-md w-full transform transition-all">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <Key className="w-6 h-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800">Reset Password</h3>
+                <p className="text-sm text-gray-500">Admin action for: {userName}</p>
+              </div>
+            </div>
+            <button
+              onClick={handleClose}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+              <p className="text-sm text-yellow-800">
+                <span className="font-semibold">Note:</span> This will immediately change the user's password.
+                The new password should be shared securely with the user.
+              </p>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={generatePassword}
+                className="flex items-center gap-2 px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm"
+              >
+                <Key className="w-4 h-4" />
+                Generate Secure Password
+              </button>
+              {passwordGenerated && (
+                <span className="text-sm text-green-600 flex items-center">
+                  <CheckCircle className="w-4 h-4 mr-1" />
+                  Password generated
+                </span>
+              )}
+            </div>
+
+            {/* New Password */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                New Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-10"
+                  placeholder="Enter new password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
+              <PasswordStrengthIndicator password={newPassword} />
+            </div>
+
+            {/* Confirm Password */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Confirm Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-10"
+                  placeholder="Confirm new password"
+                />
+              </div>
+              {confirmPassword && newPassword !== confirmPassword && (
+                <p className="mt-1 text-sm text-red-600">Passwords do not match</p>
+              )}
+            </div>
+
+            {/* Error Message */}
+            {error && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-600">{error}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Dialog Actions */}
+          <div className="flex gap-3 mt-6">
+            <button
+              onClick={handleClose}
+              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={isLoading || !newPassword || newPassword !== confirmPassword}
+              className={`flex-1 px-4 py-2 rounded-lg transition-colors ${
+                isLoading || !newPassword || newPassword !== confirmPassword
+                  ? 'bg-red-300 text-white cursor-not-allowed'
+                  : 'bg-red-600 text-white hover:bg-red-700'
+              }`}
+            >
+              {isLoading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Resetting...
+                </span>
+              ) : (
+                'Reset Password'
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export const Users = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -36,6 +309,12 @@ export const Users = () => {
   const [products, setProducts] = useState<{ productId: number; name: string }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [passwordResetDialog, setPasswordResetDialog] = useState<{ open: boolean; userId: string; userName: string }>({
+    open: false,
+    userId: '',
+    userName: '',
+  });
+
   const [newUser, setNewUser] = useState<User>({
     id: Date.now().toString(),
     email: '',
@@ -48,6 +327,7 @@ export const Users = () => {
     productId: 0,
     productName: '',
     password: '',
+    serialPrefix: '',
   });
 
   // Filter users based on search term
@@ -57,7 +337,8 @@ export const Users = () => {
       user.name.toLowerCase().includes(searchTermLower) ||
       user.email.toLowerCase().includes(searchTermLower) ||
       user.role.toLowerCase().includes(searchTermLower) ||
-      user.contact.toLowerCase().includes(searchTermLower)
+      user.contact.toLowerCase().includes(searchTermLower) ||
+      (user.serialPrefix || '').toLowerCase().includes(searchTermLower)
     );
   });
 
@@ -74,8 +355,6 @@ export const Users = () => {
 
   // Handle user deletion
   const handleDelete = (id: string) => {
-    // Open a confirmation snackbar instead of native confirm
-    // trigger ConfirmDialog by setting pendingDeleteId
     setPendingDeleteId(id);
   };
 
@@ -98,7 +377,6 @@ export const Users = () => {
     setEditingUser({ ...user });
   };
 
-  // Handle save edit
   // Show toast notification
   const showToast = (message: string, type: 'success' | 'error' | 'info' | 'warning') => {
     toast[type](message, {
@@ -120,16 +398,16 @@ export const Users = () => {
           email: editingUser.email,
           contact: editingUser.contact,
           role: editingUser.role,
+          status: editingUser.status,
+          serialPrefix: editingUser.serialPrefix,
+          password: null as any, // Don't update password when editing user
         });
 
-        // Update the local state with the updated user data
         setUsers(
           users.map((user) =>
             user.id === updatedUser.id
               ? {
                 ...updatedUser,
-                productId: editingUser.productId,
-                productName: editingUser.productName,
               }
               : user
           )
@@ -140,6 +418,36 @@ export const Users = () => {
         console.error('Failed to update user:', error);
         showToast('Failed to update user. Please try again.', 'error');
       }
+    }
+  };
+
+  // Handle password reset
+  const handleResetPassword = async (userId: string, password: string) => {
+    const userToUpdate = users.find((u) => u.id === userId);
+    if (!userToUpdate) {
+      throw new Error('User not found');
+    }
+
+    try {
+      const updatedUser = await userService.updateUser(userId, {
+        name: userToUpdate.name,
+        email: userToUpdate.email,
+        contact: userToUpdate.contact,
+        role: userToUpdate.role,
+        status: userToUpdate.status,
+        password: password, // Send the new password from text field
+      });
+
+      setUsers(
+        users.map((user) =>
+          user.id === updatedUser.id ? { ...user, ...updatedUser } : user
+        )
+      );
+      showToast(`Password reset successfully for ${userToUpdate.name}`, 'success');
+    } catch (error) {
+      console.error('Failed to reset password:', error);
+      showToast('Failed to reset password. Please try again.', 'error');
+      throw error;
     }
   };
 
@@ -159,7 +467,7 @@ export const Users = () => {
     } catch (err) {
       console.error('Failed to create user:', err);
       showToast('Failed to create user. Please try again.', 'error');
-      return; // do not modify local list when backend fails
+      return;
     } finally {
       setIsLoading(false);
       setNewUser({
@@ -174,6 +482,7 @@ export const Users = () => {
         productId: 0,
         productName: '',
         password: '',
+        serialPrefix: '',
       });
       setShowAddForm(false);
     }
@@ -229,6 +538,13 @@ export const Users = () => {
         onCancel={() => {
           setPendingDeleteId(null);
         }}
+      />
+      <PasswordResetDialog
+        open={passwordResetDialog.open}
+        onClose={() => setPasswordResetDialog({ open: false, userId: '', userName: '' })}
+        userId={passwordResetDialog.userId}
+        userName={passwordResetDialog.userName}
+        onResetPassword={handleResetPassword}
       />
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">Users Management</h1>
@@ -306,30 +622,13 @@ export const Users = () => {
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
             </select>
-            <div>
-              <select
-                id="product"
-                value={newUser.productId || ''}
-                onChange={(e) => {
-                  const selectedProduct = products.find(
-                    (p) => p.productId === Number(e.target.value)
-                  );
-                  setNewUser({
-                    ...newUser,
-                    productId: Number(e.target.value),
-                    productName: selectedProduct?.name,
-                  });
-                }}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
-              >
-                <option value="">Select a product</option>
-                {products.map((product) => (
-                  <option key={product.productId} value={product.productId}>
-                    {product.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <input
+              type="text"
+              placeholder="Serial Prefix"
+              value={newUser.serialPrefix || ''}
+              onChange={(e) => setNewUser({ ...newUser, serialPrefix: e.target.value })}
+              className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
+            />
             <InputField
               id="password"
               type="password"
@@ -353,8 +652,7 @@ export const Users = () => {
                   role: 'User',
                   type: '',
                   status: 'pending',
-                  productId: firstProduct ? firstProduct.productId : 0,
-                  productName: firstProduct ? firstProduct.name : '',
+                  serialPrefix: 'SAMPLE',
                 }));
               }}
               disabled={isLoading}
@@ -383,8 +681,8 @@ export const Users = () => {
         </div>
       )}
 
-      {/* Users Table */}
-      <div className="bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl shadow-sm">
+      {/* Users Table - Desktop View */}
+      <div className="bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl shadow-sm hidden md:block">
         <div className="overflow-x-auto">
           <table className="w-full table-fixed divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -416,16 +714,13 @@ export const Users = () => {
                 <th className="w-[10%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
+                <th className="w-[8%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Serial Prefix
+                </th>
                 <th className="w-[12%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4" />
                     Date
-                  </div>
-                </th>
-                <th className="w-[15%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <div className="flex items-center gap-2">
-                    <Package className="w-4 h-4" />
-                    Product
                   </div>
                 </th>
                 <th className="w-[11%] px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -494,49 +789,46 @@ export const Users = () => {
                       )}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <div className="flex items-center gap-1">
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusDisplay(user.status).color
-                            }`}
+                      {editingUser?.id === user.id ? (
+                        <select
+                          value={editingUser.status}
+                          onChange={(e) => setEditingUser({ ...editingUser, status: e.target.value as User['status'] })}
+                          className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
                         >
-                          {user.status}
-                        </span>
-                        {getStatusDisplay(user.status).icon}
-                      </div>
+                          <option value="pending">Pending</option>
+                          <option value="active">Active</option>
+                          <option value="inactive">Inactive</option>
+                        </select>
+                      ) : (
+                        <div className="flex items-center gap-1">
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusDisplay(user.status).color
+                              }`}
+                          >
+                            {user.status}
+                          </span>
+                          {getStatusDisplay(user.status).icon}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      {editingUser?.id === user.id ? (
+                        <input
+                          type="text"
+                          value={editingUser.serialPrefix || ''}
+                          onChange={(e) =>
+                            setEditingUser({ ...editingUser, serialPrefix: e.target.value })
+                          }
+                          className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
+                        />
+                      ) : (
+                        <div className="text-sm text-gray-500 truncate">{user.serialPrefix || '-'}</div>
+                      )}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <div className="text-sm text-gray-500">
                         {new Date(user.registration_date).toLocaleDateString()}
                       </div>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      {editingUser?.id === user.id ? (
-                        <select
-                          value={editingUser.productId || ''}
-                          onChange={(e) => {
-                            const selectedProduct = products.find(
-                              (p) => p.productId === Number(e.target.value)
-                            );
-                            setEditingUser({
-                              ...editingUser,
-                              productId: Number(e.target.value),
-                              productName: selectedProduct?.name,
-                            });
-                          }}
-                          className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
-                        >
-                          <option value="">Select a product</option>
-                          {products.map((product) => (
-                            <option key={product.productId} value={product.productId}>
-                              {product.name}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        <div className="text-sm text-gray-500 truncate">
-                          {user.productName || 'No product assigned'}
-                        </div>
-                      )}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                       {editingUser?.id === user.id ? (
@@ -557,20 +849,40 @@ export const Users = () => {
                           </button>
                         </div>
                       ) : (
-                        <div className="flex gap-2 justify-end">
+                        <div className="flex gap-3 justify-end">
+                          <button
+                            onClick={() => setPasswordResetDialog({
+                              open: true,
+                              userId: user.id,
+                              userName: user.name,
+                            })}
+                            className="text-purple-600 hover:text-purple-900 group relative"
+                            title="Reset Password (Admin)"
+                          >
+                            <Key className="w-5 h-5" />
+                            <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                              Reset Password
+                            </span>
+                          </button>
                           <button
                             onClick={() => handleEdit(user)}
-                            className="text-blue-600 hover:text-blue-900"
+                            className="text-yellow-600 hover:text-yellow-900 group relative"
                             title="Edit"
                           >
                             <Edit className="w-5 h-5" />
+                            <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                              Edit
+                            </span>
                           </button>
                           <button
                             onClick={() => handleDelete(user.id)}
-                            className="text-red-600 hover:text-red-900"
+                            className="text-red-600 hover:text-red-900 group relative"
                             title="Delete"
                           >
                             <Trash2 className="w-5 h-5" />
+                            <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                              Delete
+                            </span>
                           </button>
                         </div>
                       )}
@@ -615,6 +927,245 @@ export const Users = () => {
                 Next
               </button>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Users Card View - Mobile View */}
+      <div className="md:hidden space-y-4">
+        {paginatedUsers.length > 0 ? (
+          paginatedUsers.map((user) => (
+            <div
+              key={user.id}
+              className="bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl shadow-sm p-4 border border-gray-200"
+            >
+              {/* User Card Header */}
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex-1">
+                  {editingUser?.id === user.id ? (
+                    <input
+                      type="text"
+                      value={editingUser.name}
+                      onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
+                      className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 font-semibold text-gray-900"
+                    />
+                  ) : (
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                      <User className="w-5 h-5 text-blue-500" />
+                      {user.name}
+                    </h3>
+                  )}
+                </div>
+                <div className="flex items-center gap-1">
+                  {editingUser?.id === user.id ? (
+                    <select
+                      value={editingUser.status}
+                      onChange={(e) => setEditingUser({ ...editingUser, status: e.target.value as User['status'] })}
+                      className="px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 text-xs font-medium"
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="active">Active</option>
+                      <option value="inactive">Inactive</option>
+                    </select>
+                  ) : (
+                    <>
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusDisplay(user.status).color
+                          }`}
+                      >
+                        {user.status}
+                      </span>
+                      {getStatusDisplay(user.status).icon}
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* User Card Body */}
+              <div className="space-y-3 mb-4">
+                {/* Email */}
+                <div className="flex items-start gap-3">
+                  <Mail className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-gray-500 uppercase tracking-wider">Email</p>
+                    {editingUser?.id === user.id ? (
+                      <input
+                        type="email"
+                        value={editingUser.email}
+                        onChange={(e) =>
+                          setEditingUser({ ...editingUser, email: e.target.value })
+                        }
+                        className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 text-sm text-gray-700"
+                      />
+                    ) : (
+                      <p className="text-sm text-gray-700 truncate">{user.email}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Contact */}
+                <div className="flex items-start gap-3">
+                  <Phone className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-gray-500 uppercase tracking-wider">Contact</p>
+                    {editingUser?.id === user.id ? (
+                      <input
+                        type="tel"
+                        value={editingUser.contact}
+                        onChange={(e) =>
+                          setEditingUser({ ...editingUser, contact: e.target.value })
+                        }
+                        className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 text-sm text-gray-700"
+                      />
+                    ) : (
+                      <p className="text-sm text-gray-700">{user.contact}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Role */}
+                <div className="flex items-start gap-3">
+                  <Shield className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-gray-500 uppercase tracking-wider">Role</p>
+                    {editingUser?.id === user.id ? (
+                      <select
+                        value={editingUser.role}
+                        onChange={(e) => setEditingUser({ ...editingUser, role: e.target.value })}
+                        className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 text-sm"
+                      >
+                        <option value="USER">USER</option>
+                        <option value="SUPER USER">SUPER USER</option>
+                      </select>
+                    ) : (
+                      <p className="text-sm text-gray-700">{user.role}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Serial Prefix */}
+                <div className="flex items-start gap-3">
+                  <Package className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-gray-500 uppercase tracking-wider">Serial Prefix</p>
+                    {editingUser?.id === user.id ? (
+                      <input
+                        type="text"
+                        value={editingUser.serialPrefix || ''}
+                        onChange={(e) =>
+                          setEditingUser({ ...editingUser, serialPrefix: e.target.value })
+                        }
+                        className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 text-sm text-gray-700"
+                      />
+                    ) : (
+                      <p className="text-sm text-gray-700">{user.serialPrefix || '-'}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Date */}
+                <div className="flex items-start gap-3">
+                  <Calendar className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-xs text-gray-500 uppercase tracking-wider">Registration Date</p>
+                    <p className="text-sm text-gray-700">
+                      {new Date(user.registration_date).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2 pt-4 border-t border-gray-200">
+                {editingUser?.id === user.id ? (
+                  <>
+                    <button
+                      onClick={handleSaveEdit}
+                      className="flex-1 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium"
+                      title="Save"
+                    >
+                      <Save className="w-4 h-4" />
+                      Save
+                    </button>
+                    <button
+                      onClick={handleCancelEdit}
+                      className="flex-1 flex items-center justify-center gap-2 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium"
+                      title="Cancel"
+                    >
+                      <X className="w-4 h-4" />
+                      Cancel
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => setPasswordResetDialog({
+                        open: true,
+                        userId: user.id,
+                        userName: user.name,
+                      })}
+                      className="flex-1 flex items-center justify-center gap-2 bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium"
+                      title="Reset Password"
+                    >
+                      <Key className="w-4 h-4" />
+                      Reset
+                    </button>
+                    <button
+                      onClick={() => handleEdit(user)}
+                      className="flex-1 flex items-center justify-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium"
+                      title="Edit"
+                    >
+                      <Edit className="w-4 h-4" />
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(user.id)}
+                      className="flex-1 flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Delete
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl shadow-sm p-6 text-center text-gray-500">
+            No users found
+          </div>
+        )}
+
+        {/* Mobile Pagination */}
+        <div className="flex flex-col gap-3 items-center pt-2">
+          <p className="text-sm text-gray-500">
+            Showing {paginatedUsers.length} of {filteredUsers.length} entries
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handlePrev}
+              disabled={currentPage === 1}
+              className={`px-3 py-1 rounded border text-sm ${currentPage === 1
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+            >
+              Prev
+            </button>
+            <span className="text-sm text-gray-700">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              onClick={handleNext}
+              disabled={currentPage === totalPages}
+              className={`px-3 py-1 rounded border text-sm ${currentPage === totalPages
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+            >
+              Next
+            </button>
           </div>
         </div>
       </div>
