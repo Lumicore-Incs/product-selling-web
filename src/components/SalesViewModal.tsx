@@ -78,6 +78,7 @@ export const SalesViewModal: React.FC<SalesViewModalProps> = ({ sale, onClose })
               <div>
                 <h3 className="text-xl font-bold text-gray-900 tracking-tight">{sale.customerName}</h3>
                 <p className="text-sm text-gray-500 mt-1">Serial No: {sale.serialNo}</p>
+                <p className="text-sm text-gray-500 mt-1">Waybill Id: {sale.waybillId ?? '-'}</p>
               </div>
               <span
                 className={`px-4 py-1.5 rounded-full text-sm font-medium flex items-center gap-2 transition-all duration-200 ${

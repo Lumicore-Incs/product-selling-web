@@ -19,6 +19,7 @@ import { SalesViewModal } from './SalesViewModal';
 
 const DEFAULT_COLUMN_WIDTHS = {
   serial: 100,
+  waybill: 140,
   customer: 200,
   orderDate: 150,
   address: 220,
@@ -26,7 +27,7 @@ const DEFAULT_COLUMN_WIDTHS = {
   contact2: 160,
   status: 150,
   qty: 90,
-  products: 260,
+  products: 160,
   total: 160,
   actions: 140
 } as const;
@@ -119,15 +120,15 @@ export const SalesTable: React.FC<SalesTableProps> = ({
   };
 
   const formatDate = (dateString?: string) => {
-  if (!dateString) return '-';
+    if (!dateString) return '-';
 
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-GB', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
-};
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+  };
 
 
 
@@ -135,24 +136,30 @@ export const SalesTable: React.FC<SalesTableProps> = ({
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'PROCESSING':
+      case 'TEMPORARY':
+        return 'bg-red-600 text-white border-red-700';
+      case 'Processing':
         return 'bg-blue-500 text-white border-blue-600';
-      case 'COLLECTED AT SORTING CENTER':
-        return 'bg-blue-200 text-white border-blue-300';
-      case 'COLLECTED FROM WAREHOUSE':
-        return 'bg-green-300 text-white border-green-400';
-      case 'DISPATCHED TO DESTINATION':
-        return 'bg-blue-800 text-white border-yellow-200';
-      case 'RECEIVED AT DESTINATION':
+      case 'Collected At Sorting Center':
+        return 'bg-blue-500 text-white border-blue-600'
+      case 'Collected from Warehouse':
+        return 'bg-pink-500 text-white border-pink-600';
+      case 'Dispatched To Destination':
+        return 'bg-blue-800 text-white border-yellow-900';
+      case 'Received At Destination':
         return 'bg-yellow-400 text-white border-yellow-500';
-      case 'OUT FOR DELIVERY':
-        return 'bg-gray-300 text-yellow-800 border-gray-400';
-      case 'pending':
+      case 'Out For Delivery':
+        return 'bg-gray-300 text-white border-gray-400';
+      case 'PENDING':
         return 'bg-orange-200 text-yellow-800 border-orange-300';
-      case 'FAILED TO DELIVER':
-        return 'bg-red-300 text-red-800 border-red-400';
+      case 'Failed To Deliver':
+        return 'bg-red-500 text-white border-red-400';
+      case 'Returned to Client':
+        return 'bg-red-500 text-white border-red-400';
+      case 'Delivered':
+        return 'bg-green-600 text-white border-green-600';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-gray-100 text-white border-gray-200';
     }
   };
 
@@ -259,6 +266,17 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                   <div
                     className="absolute top-0 right-0 h-full w-1 -mr-0.5 cursor-col-resize"
                     onMouseDown={(event) => startColumnResize('customer', event)}
+                    role="presentation"
+                  />
+                </th>
+                <th
+                  className="px-4 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider relative"
+                  style={widthStyle('waybill')}
+                >
+                  Waybill Id
+                  <div
+                    className="absolute top-0 right-0 h-full w-1 -mr-0.5 cursor-col-resize"
+                    onMouseDown={(event) => startColumnResize('waybill', event)}
                     role="presentation"
                   />
                 </th>
@@ -377,6 +395,12 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                     style={widthStyle('customer')}
                   >
                     <div className="font-medium text-gray-900">{sale.customerName}</div>
+                  </td>
+                  <td
+                    className="px-4 py-4 whitespace-nowrap text-sm text-gray-600"
+                    style={widthStyle('waybill')}
+                  >
+                    {sale.waybillId ?? '-'}
                   </td>
                   <td
                     className="px-6 py-4 whitespace-nowrap text-sm text-gray-600"
@@ -542,6 +566,9 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                       <div className="text-xs text-gray-500 mt-1">
                         Order Date: {formatDate(sale.date)}
                       </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        Waybill Id: {sale.waybillId ?? '-'}
+                      </div>
 
                     </div>
                     <div className="ml-3 flex items-center gap-2">
@@ -637,6 +664,12 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                         <div className="flex justify-between items-center">
                           <span className="text-sm text-gray-600">Quantity:</span>
                           <span className="text-sm font-medium text-gray-900">{sale.qty}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">Waybill Id:</span>
+                          <span className="text-sm font-medium text-gray-900">
+                            {sale.waybillId ?? '-'}
+                          </span>
                         </div>
                       </div>
                     </div>

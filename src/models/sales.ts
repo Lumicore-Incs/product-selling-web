@@ -15,6 +15,7 @@ export interface SaleItem {
 export interface Sale {
   id: string;
   customerId?: string;
+  waybillId?: string;
   name: string;
   customerName: string;
   address: string;

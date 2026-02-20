@@ -225,3 +225,28 @@ export const dashboardApi = {
     }
   },
 };
+
+export const dashboardApiReturnData = {
+  exportSalesExcel: async (productName: string): Promise<Blob> => {
+    try {
+      const encodedName = encodeURIComponent(productName);
+      const response = await api.get<Blob>(`/dashboard/exportData/${encodedName}`, {
+        responseType: 'blob',
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error exporting sales as Excel:', error);
+      throw error;
+    }
+  },
+
+  conformExport: async (serialNumbers: string[]): Promise<string> => {
+    try {
+      const response = await api.put<string>('/dashboard/conform', serialNumbers);
+      return response.data;
+    } catch (error) {
+      console.error('Error confirming export:', error);
+      throw error;
+    }
+  },
+};

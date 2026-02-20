@@ -62,6 +62,7 @@ export const Dashboard = () => {
   const [userLoading, setUserLoading] = useState(true);
 
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [salesSearch, setSalesSearch] = useState('');
 
   // Add product-related state
   const [products, setProducts] = useState<any[]>([]);
@@ -72,8 +73,9 @@ export const Dashboard = () => {
     { value: 'all', label: 'ALL STATUS' },
     { value: 'PENDING', label: 'PENDING' },
     { value: 'TEMPORARY', label: 'DUPLICATE' },
-    { value: 'PROCESSING', label: 'PROCESSING' },
-    { value: 'FAILED TO DELIVERY', label: 'CANCELLED' },
+    { value: 'Processing', label: 'PROCESSING' },
+    { value: 'Returned to Client', label: 'RETURNED TO CLIENT' },
+    { value: 'Delivered', label: 'DELIVERED' }
   ];
 
   useEffect(() => {
@@ -162,6 +164,24 @@ export const Dashboard = () => {
       : filteredSales.filter((sale) =>
           sale.items.some((item) => item.productId === selectedProduct)
         );
+
+  const normalizedSearch = salesSearch.trim().toLowerCase();
+  const searchedSales =
+    normalizedSearch === ''
+      ? productFilteredSales
+      : productFilteredSales.filter((sale) => {
+          const name = (sale.customerName || sale.name || '').toLowerCase();
+          const contact1 = (sale.contact01 || '').toLowerCase();
+          const contact2 = (sale.contact02 || '').toLowerCase();
+          const waybill = (sale.waybillId || '').toLowerCase();
+
+          return (
+            name.includes(normalizedSearch) ||
+            contact1.includes(normalizedSearch) ||
+            contact2.includes(normalizedSearch) ||
+            waybill.includes(normalizedSearch)
+          );
+        });
 
   const handleEdit = (sale: any) => {
     console.log('Editing:', sale);
@@ -267,25 +287,25 @@ export const Dashboard = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-2">
         <StatCard
           icon={ScaleIcon}
-          label="Total Order"
+          label="Total Monthly Packs"
           value={loading ? 'Loading...' : stats.total_order}
           trend={stats.totalOrdersTrend}
         />
         <StatCard
           icon={CreditCardIcon}
-          label="Today Order"
+          label="Today Packs"
           value={loading ? 'Loading...' : stats.todayOrders}
           trend={stats.todayOrdersTrend}
         />
         <StatCard
           icon={TrendingUpIcon}
-          label="Conform Order"
+          label="Delivered Packs"
           value={loading ? 'Loading...' : stats.confirmedOrders}
           trend={stats.confirmedOrdersTrend}
         />
         <StatCard
           icon={TrendingDownIcon}
-          label="Cancel Order"
+          label="Cancelled/ Returned Packs"
           value={loading ? 'Loading...' : stats.cancelledOrders}
           trend={stats.cancelledOrdersTrend}
         />
@@ -295,6 +315,15 @@ export const Dashboard = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
           <h2 className="text-xl font-semibold text-gray-800">Sales</h2>
           <div className="flex flex-wrap items-center gap-4 w-full sm:w-auto">
+            <div className="w-full sm:w-[260px]">
+              <input
+                type="text"
+                value={salesSearch}
+                onChange={(e) => setSalesSearch(e.target.value)}
+                placeholder="Search name, contact, waybill"
+                className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
             <div className="relative min-w-[150px]">
               <select
                 value={statusFilter}
@@ -352,7 +381,7 @@ export const Dashboard = () => {
           {salesError && <p className="text-red-500">{salesError}</p>}
           {!salesLoading && !salesError && (
             <SalesTable
-              sales={productFilteredSales}
+              sales={searchedSales}
               onEdit={handleEdit}
               onDelete={handleDelete}
               userRole={user?.role}

@@ -73,6 +73,7 @@ export function mapOrderDtoToSale(order: unknown): FrontSale {
   return {
     id: toStringId(ord['orderId'] ?? ord['id'] ?? ord['customerId'] ?? ''),
     customerId: ord['customerId'] ? toStringId(ord['customerId']) : undefined,
+    waybillId: ord['weyBillId'] ? String(ord['weyBillId']) : (ord['wayBillId'] ? String(ord['wayBillId']) : undefined),
     serialNo: ord['serialNo'] !== undefined ? String(ord['serialNo']) : undefined,
     name: String((customer['name'] ?? ord['name'] ?? '') as string),
     customerName: String((customer['customerName'] ?? ord['customerName'] ?? '') as string),

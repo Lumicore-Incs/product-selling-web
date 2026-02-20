@@ -35,7 +35,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
   const [products, setProducts] = useState<ProductDto[]>([]);
   const [showProductSelector, setShowProductSelector] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState('');
-  const [selectedProductQuantity, setSelectedProductQuantity] = useState(1);
+  const [selectedProductQuantity, setSelectedProductQuantity] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState<{
@@ -272,9 +272,12 @@ export const SalesForm: React.FC<SalesFormProps> = ({
 
   // Load selected customer into form
   const handleSelectCustomerFromSearch = (customer: CustomerDtoGet) => {
+    const selectedCustomerName = customer.customerName || customer.name || '';
+
     setFormData((prev) => ({
       ...prev,
-      name: customer.customerName || prev.customerName,
+      name: selectedCustomerName || prev.name,
+      customerName: selectedCustomerName || prev.customerName,
       address: customer.address || prev.address,
       contact01: ensureLeadingZero(customer.contact01) || prev.contact01,
       contact02: ensureLeadingZero(customer.contact02) || prev.contact02,
@@ -287,7 +290,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
     
     setSnackbar({
       open: true,
-      message: `Customer "${customer.name}" loaded successfully!`,
+      message: `Customer "${selectedCustomerName}" loaded successfully!`,
       type: 'success',
     });
   };
@@ -437,7 +440,9 @@ export const SalesForm: React.FC<SalesFormProps> = ({
   };
 
   const handleAddProduct = () => {
-    if (selectedProductId && selectedProductQuantity > 0) {
+    const quantity = parseInt(selectedProductQuantity, 10);
+
+    if (selectedProductId && Number.isFinite(quantity) && quantity > 0) {
       const product = products.find(
         (p) => (p.productId == null ? '' : String(p.productId)) === selectedProductId
       );
@@ -446,16 +451,16 @@ export const SalesForm: React.FC<SalesFormProps> = ({
         const newItem: SaleItem = {
           productId: pid,
           productName: product.name,
-          qty: selectedProductQuantity,
+          qty: quantity,
           price: product.price,
-          total: selectedProductQuantity * product.price,
+          total: quantity * product.price,
         };
 
         // Check if product already exists, update quantity if it does
         const existingItemIndex = formData.items.findIndex((item) => item.productId === pid);
         if (existingItemIndex >= 0) {
           const updatedItems = [...formData.items];
-          updatedItems[existingItemIndex].qty += selectedProductQuantity;
+          updatedItems[existingItemIndex].qty += quantity;
           setFormData({
             ...formData,
             items: updatedItems,
@@ -469,7 +474,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
 
         // Reset selection
         setSelectedProductId('');
-        setSelectedProductQuantity(1);
+        setSelectedProductQuantity('');
         setShowProductSelector(false);
       }
     }
@@ -723,7 +728,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
     setCustomerInfoText('');
     setShowProductSelector(false);
     setSelectedProductId('');
-    setSelectedProductQuantity(1);
+    setSelectedProductQuantity('');
     setError(null);
     setManualTotalAmount('');
     setSearchQuery('');
@@ -1088,26 +1093,12 @@ export const SalesForm: React.FC<SalesFormProps> = ({
 
             {/* Default Product Quantity */}
             <div className="mb-4">
-              <label htmlFor="qty" className="block text-sm font-medium text-gray-700 mb-2">
-                Quantity
-              </label>
               <div className="flex flex-col sm:flex-row gap-3">
-                <input
-                  id="qty"
-                  name="qty"
-                  type="text"
-                  value={formData.qty}
-                  onChange={handleChange}
-                  disabled={!defaultProduct}
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-base"
-                  placeholder="Enter quantity"
-                />
                 <button
                   type="button"
                   onClick={() => setShowProductSelector(!showProductSelector)}
                   className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 flex items-center justify-center gap-2 font-medium"
-                >
-                  <PlusIcon className="w-5 h-5" />
+                >Add Product
                   <span className="hidden sm:inline">Add Product</span>
                 </button>
               </div>
@@ -1167,7 +1158,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
                       type="number"
                       min="1"
                       value={selectedProductQuantity}
-                      onChange={(e) => setSelectedProductQuantity(parseInt(e.target.value) || 1)}
+                      onChange={(e) => setSelectedProductQuantity(e.target.value)}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
                     />
                   </div>
@@ -1291,30 +1282,29 @@ export const SalesForm: React.FC<SalesFormProps> = ({
                   {/* Total Amount */}
                   <div className="pt-4 border-t border-gray-300">
                     <div className="flex flex-col gap-2">
-                      <div className="flex justify-between items-center">
+                      <div className="flex flex-wrap justify-between items-center gap-2">
                         <span className="font-semibold text-gray-800 text-sm">Calculated Total:</span>
-                        <span className="font-medium text-gray-600">
+                        <span className="font-medium text-gray-600 break-all text-right">
                           ${formData.items.reduce((sum, item) => sum + item.qty * item.price, 0).toFixed(2)}
                         </span>
                       </div>
                       <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                        <label className="font-semibold text-gray-800 text-lg whitespace-nowrap">Total Amount:</label>
-                        <div className="flex items-center gap-2 flex-1">
-                          <span className="text-sm text-gray-600">$</span>
+                        <label className="font-semibold text-gray-800 text-base sm:text-lg whitespace-nowrap">Total Amount:</label>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-1 min-w-0 w-full">
                           <input
                             type="number"
                             min="0"
                             step="0.01"
                             value={manualTotalAmount !== '' ? manualTotalAmount : formData.items.reduce((sum, item) => sum + item.qty * item.price, 0).toFixed(2)}
                             onChange={(e) => setManualTotalAmount(e.target.value)}
-                            className="flex-1 px-4 py-2 border-2 border-green-300 rounded-lg text-xl font-bold text-green-700 bg-green-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            className="w-full min-w-0 sm:flex-1 py-2 border-2 border-green-300 rounded-lg text-base sm:text-xl font-bold text-green-700 bg-green-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
                             placeholder="Enter total amount"
                           />
                           {manualTotalAmount !== '' && (
                             <button
                               type="button"
                               onClick={() => setManualTotalAmount('')}
-                              className="px-3 py-2 bg-gray-500 text-white text-sm rounded-lg hover:bg-gray-600 transition-all duration-200"
+                              className="w-full sm:w-auto px-3 py-2 bg-gray-500 text-white text-sm rounded-lg hover:bg-gray-600 transition-all duration-200"
                               title="Reset to calculated total"
                             >
                               Reset

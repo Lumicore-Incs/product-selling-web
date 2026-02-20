@@ -1,4 +1,5 @@
 import {
+  DownloadIcon,
   HomeIcon,
   LogOutIcon,
   ProportionsIcon,
@@ -36,6 +37,8 @@ const getNavItems = (userRole: string) => {
   const adminItems = isSuperUser ? [
     { icon: HomeIcon, label: 'Dashboard', to: '/' },
     { icon: ScaleIcon, label: 'Duplicate Orders', to: '/sale/duplicate' },
+    { icon: DownloadIcon, label: 'Export Orders', to: '/export-order' },
+    { icon: ScaleIcon, label: 'Tracking ID', to: '/tracking-id' },
     { icon: ProportionsIcon, label: 'Product', to: '/product' },
     { icon: UsersIcon, label: 'Users', to: '/users' },
     { icon: StoreIcon, label: 'Stock', to: '/stock' },
@@ -47,7 +50,6 @@ const getNavItems = (userRole: string) => {
     { icon: HomeIcon, label: 'Dashboard', to: '/' },
     { icon: ScaleIcon, label: 'Add New Order', to: '/sale' },
     { icon: ScaleIcon, label: 'Duplicate Orders', to: '/sale/duplicate' },
-    { icon: ScaleIcon, label: 'Tracking ID', to: '/tracking-id' },
     { icon: SettingsIcon, label: 'Settings', to: '/sale/settings', isSettings: true },
   ];
 
