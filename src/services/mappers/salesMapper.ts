@@ -63,11 +63,20 @@ export function mapOrderDtoToSale(order: unknown): FrontSale {
     ord['totalPrice'] ?? ord['totalAmount'] ?? items.reduce((s, i) => s + i.total, 0)
   );
 
+  const orderDateValue =
+    ord['orderDate'] ??
+    ord['createdDate'] ??
+    ord['date'] ??
+    customer['createdDate'] ??
+    customer['orderDate'];
+
   return {
     id: toStringId(ord['orderId'] ?? ord['id'] ?? ord['customerId'] ?? ''),
     customerId: ord['customerId'] ? toStringId(ord['customerId']) : undefined,
+    waybillId: ord['weyBillId'] ? String(ord['weyBillId']) : (ord['wayBillId'] ? String(ord['wayBillId']) : undefined),
     serialNo: ord['serialNo'] !== undefined ? String(ord['serialNo']) : undefined,
     name: String((customer['name'] ?? ord['name'] ?? '') as string),
+    customerName: String((customer['customerName'] ?? ord['customerName'] ?? '') as string),
     address: String((customer['address'] ?? ord['address'] ?? '') as string),
     contact01: (customer['contact01'] ?? ord['contact01'] ?? ord['contact']) as string,
     contact02: (customer['contact02'] ?? ord['contact02']) as string,
@@ -76,6 +85,7 @@ export function mapOrderDtoToSale(order: unknown): FrontSale {
     remark: String(customer['remark'] ?? ord['remark'] ?? ''),
     items,
     totalPrice,
+    date: orderDateValue ? String(orderDateValue) : undefined,
   };
 }
 

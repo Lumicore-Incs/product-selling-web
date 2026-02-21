@@ -17,7 +17,7 @@ type StatCardProps = {
 };
 
 const StatCard = ({ icon: Icon, label, value, trend }: StatCardProps) => (
-  <div className="bg-blue-200 bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl p-6 shadow-sm">
+  <div className="bg-blue-200 bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl p-6 md:mb-8 shadow-sm">
     <div className="flex items-center justify-between">
       <div>
         <p className="text-sm text-gray-600">{label}</p>
@@ -27,7 +27,7 @@ const StatCard = ({ icon: Icon, label, value, trend }: StatCardProps) => (
         <Icon size={24} className="text-blue-500" />
       </div>
     </div>
-    <div className="flex items-center mt-4">
+    <div className="flex items-center mt-4 ">
       <TrendingUpIcon size={16} className="text-green-500 mr-1" />
       <span className="text-sm text-green-500">{trend}</span>
     </div>
@@ -62,6 +62,7 @@ export const Dashboard = () => {
   const [userLoading, setUserLoading] = useState(true);
 
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [salesSearch, setSalesSearch] = useState('');
 
   // Add product-related state
   const [products, setProducts] = useState<any[]>([]);
@@ -72,8 +73,14 @@ export const Dashboard = () => {
     { value: 'all', label: 'ALL STATUS' },
     { value: 'PENDING', label: 'PENDING' },
     { value: 'TEMPORARY', label: 'DUPLICATE' },
-    { value: 'PROCESSING', label: 'PROCESSING' },
-    { value: 'FAILED TO DELIVERY', label: 'CANCELLED' },
+    { value: 'Processing', label: 'PROCESSING' },
+    { value: 'Dispatched to Destination', label: 'DISPATCHED TO DESTINATION' },
+    { value: 'Received at Destination', label: 'RECEIVED AT DESTINATION' },
+    { value: 'Out for Delivery', label: 'OUT FOR DELIVERY' },
+    { value: 'Rescheduled', label: 'RESCHEDULED' },
+    { value: 'Failed to Deliver', label: 'FAILED TO DELIVER' },
+    { value: 'Returned to Client', label: 'RETURNED TO CLIENT' },
+    { value: 'Delivered', label: 'DELIVERED' },
   ];
 
   useEffect(() => {
@@ -163,6 +170,24 @@ export const Dashboard = () => {
           sale.items.some((item) => item.productId === selectedProduct)
         );
 
+  const normalizedSearch = salesSearch.trim().toLowerCase();
+  const searchedSales =
+    normalizedSearch === ''
+      ? productFilteredSales
+      : productFilteredSales.filter((sale) => {
+          const name = (sale.customerName || sale.name || '').toLowerCase();
+          const contact1 = (sale.contact01 || '').toLowerCase();
+          const contact2 = (sale.contact02 || '').toLowerCase();
+          const waybill = (sale.waybillId || '').toLowerCase();
+
+          return (
+            name.includes(normalizedSearch) ||
+            contact1.includes(normalizedSearch) ||
+            contact2.includes(normalizedSearch) ||
+            waybill.includes(normalizedSearch)
+          );
+        });
+
   const handleEdit = (sale: any) => {
     console.log('Editing:', sale);
   };
@@ -190,7 +215,21 @@ export const Dashboard = () => {
   };
 
   return (
-    <div className="px-4 space-y-6 relative max-w-full">
+    <div
+  className="
+    w-full
+    max-w-full
+    sm:max-w-full
+    md:max-w-7xl
+    lg:max-w-screen-2xl
+    mx-auto
+    px-3
+    sm:px-4
+    md:px-6
+    relative
+    overflow-x-hidden
+  "
+> 
       <BackgroundIcons type="dashboard" />
       <AlertSnackbar
         message={snackbar.message}
@@ -253,25 +292,25 @@ export const Dashboard = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-2">
         <StatCard
           icon={ScaleIcon}
-          label="Total Order"
+          label="Total Monthly Packs"
           value={loading ? 'Loading...' : stats.total_order}
           trend={stats.totalOrdersTrend}
         />
         <StatCard
           icon={CreditCardIcon}
-          label="Today Order"
+          label="Today Packs"
           value={loading ? 'Loading...' : stats.todayOrders}
           trend={stats.todayOrdersTrend}
         />
         <StatCard
           icon={TrendingUpIcon}
-          label="Conform Order"
+          label="Delivered Packs"
           value={loading ? 'Loading...' : stats.confirmedOrders}
           trend={stats.confirmedOrdersTrend}
         />
         <StatCard
           icon={TrendingDownIcon}
-          label="Cancel Order"
+          label="Cancelled/ Returned Packs"
           value={loading ? 'Loading...' : stats.cancelledOrders}
           trend={stats.cancelledOrdersTrend}
         />
@@ -281,6 +320,15 @@ export const Dashboard = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
           <h2 className="text-xl font-semibold text-gray-800">Sales</h2>
           <div className="flex flex-wrap items-center gap-4 w-full sm:w-auto">
+            <div className="w-full sm:w-[260px]">
+              <input
+                type="text"
+                value={salesSearch}
+                onChange={(e) => setSalesSearch(e.target.value)}
+                placeholder="Search name, contact, waybill"
+                className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
             <div className="relative min-w-[150px]">
               <select
                 value={statusFilter}
@@ -338,7 +386,7 @@ export const Dashboard = () => {
           {salesError && <p className="text-red-500">{salesError}</p>}
           {!salesLoading && !salesError && (
             <SalesTable
-              sales={productFilteredSales}
+              sales={searchedSales}
               onEdit={handleEdit}
               onDelete={handleDelete}
               userRole={user?.role}

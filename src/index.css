@@ -2,6 +2,45 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
+/* Prevent horizontal scrollbars globally */
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+/* Ensure all elements respect overflow constraints */
+* {
+  box-sizing: border-box;
+}
+
+/* Utility classes for responsive behavior */
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .truncate-lines-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .truncate-lines-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }

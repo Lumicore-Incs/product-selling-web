@@ -20,6 +20,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
   onCancelEdit,
 }) => {
   const [formData, setFormData] = useState({
+    customerName: '',
     name: '',
     customerId: '',
     address: '',
@@ -34,7 +35,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
   const [products, setProducts] = useState<ProductDto[]>([]);
   const [showProductSelector, setShowProductSelector] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState('');
-  const [selectedProductQuantity, setSelectedProductQuantity] = useState(1);
+  const [selectedProductQuantity, setSelectedProductQuantity] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState<{
@@ -46,6 +47,11 @@ export const SalesForm: React.FC<SalesFormProps> = ({
   const [allCustomers, setAllCustomers] = useState<CustomerDtoGet[] | null>(null);
   const [isLookingUpCustomer, setIsLookingUpCustomer] = useState(false);
   const [customerInfoText, setCustomerInfoText] = useState('');
+  const [manualTotalAmount, setManualTotalAmount] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [searchResults, setSearchResults] = useState<CustomerDtoGet[]>([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [priceWarnings, setPriceWarnings] = useState<Set<string>>(new Set());
 
   // Add this useEffect after the existing loadProducts useEffect
   useEffect(() => {
@@ -84,6 +90,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
     if (currentSale && isEditing) {
       setFormData({
         name: currentSale.name,
+        customerName: currentSale.customerName,
         customerId: currentSale.customerId ?? '',
         address: currentSale.address,
         contact01: currentSale.contact01 ? 0 + currentSale.contact01 : '',
@@ -93,136 +100,200 @@ export const SalesForm: React.FC<SalesFormProps> = ({
         remark: currentSale.remark ?? '',
         items: currentSale.items || [],
       });
+      
+      // Load the saved total price as manual total amount
+      if (currentSale.totalPrice) {
+        setManualTotalAmount(currentSale.totalPrice.toFixed(2));
+      } else {
+        setManualTotalAmount('');
+      }
     }
   }, [currentSale, isEditing]);
 
   // Parse customer info from text area and fill the form
-const parseCustomerInfoText = () => {
-  if (!customerInfoText.trim()) return;
+  const parseCustomerInfoText = () => {
+    if (!customerInfoText.trim()) return;
 
-  const lines = customerInfoText.split('\n');
+    const lines = customerInfoText.split('\n');
 
-  let name = '';
-  let address = '';
-  let contact01 = '';
-  let contact02 = '';
-  let totalAmount = '';
-  const itemShortNames: string[] = [];
+    let name = '';
+    let address = '';
+    let contact01 = '';
+    let contact02 = '';
+    let totalAmount = '';
+    type ParsedQuickItem = { shortName: string; quantity: number };
+    const parsedItems: ParsedQuickItem[] = [];
 
-  let isItemsSection = false;
+    let isItemsSection = false;
 
-  lines.forEach((line) => {
-    const l = line.trim();
+    lines.forEach((line) => {
+      const l = line.trim();
 
-    // Check if we're entering items section
-    if (/^items\s*[-:]/i.test(l)) {
-      isItemsSection = true;
-      return;
-    }
+      // Check if we're entering items section
+      if (/^items\s*[-:]/i.test(l)) {
+        isItemsSection = true;
+        return;
+      }
 
-    // Parse items (numbered list like "1. Fc", "2. Bl")
-    if (isItemsSection) {
-      const itemMatch = l.match(/^\d+\.\s*(.+)/);
-      if (itemMatch) {
-        const shortName = itemMatch[1].trim();
+      // Parse items (numbered list like "1. Fc - 2", "2. Bl - 3")
+      if (isItemsSection) {
+        const cleaned = l.replace(/^\d+\.\s*/, '').trim();
+        if (!cleaned) return;
+
+        const qtyMatch = cleaned.match(/^(.*?)[\s\-:]+(\d+)$/);
+        const shortName = (qtyMatch ? qtyMatch[1] : cleaned).trim();
+        const quantityValue = qtyMatch ? Number(qtyMatch[2]) : 1;
+        const quantity =
+          Number.isFinite(quantityValue) && quantityValue > 0 ? Math.trunc(quantityValue) : 1;
+
         if (shortName) {
-          itemShortNames.push(shortName);
+          parsedItems.push({ shortName, quantity });
+        }
+        return;
+      }
+
+      if (/^name\s*[-:]/i.test(l)) {
+        name = l.split(/[-:]/).slice(1).join('-').trim();
+      }
+
+      if (/^address\s*[-:]/i.test(l)) {
+        address = l.split(/[-:]/).slice(1).join('-').trim();
+      }
+
+      // Phone no 1 / WhatsApp
+      if (/phone\s*no\s*1/i.test(l) || /whatsapp/i.test(l)) {
+        const num = l.match(/\d{10}/); // 👈 EXACT 10 digits only
+        if (num) {
+          contact01 = num[0];
         }
       }
+
+      // Phone no 2 / Contact
+      if (/phone\s*no\s*2/i.test(l) || /contact/i.test(l)) {
+        const num = l.match(/\d{10}/); // 👈 EXACT 10 digits only
+        if (num) {
+          contact02 = num[0];
+        }
+      }
+
+      // Total amount
+      if (/^total\s*amount\s*[-:]/i.test(l)) {
+        const amountMatch = l.match(/[-:]\s*(\d+(?:\.\d+)?)/);
+        if (amountMatch) {
+          totalAmount = amountMatch[1];
+        }
+      }
+    });
+
+    // Match item short names with products
+    const matchedItems: SaleItem[] = [];
+    let matchedEntries = 0;
+
+    parsedItems.forEach(({ shortName, quantity }) => {
+      const product = products.find(
+        (p) => p.shortName?.toLowerCase() === shortName.toLowerCase()
+      );
+
+      if (product) {
+        const pid = product.productId == null ? '' : String(product.productId);
+        const qtyToAdd = Math.max(Math.trunc(quantity) || 0, 1);
+        const existingItem = matchedItems.find((item) => item.productId === pid);
+
+        if (existingItem) {
+          existingItem.qty += qtyToAdd;
+          existingItem.total = existingItem.qty * existingItem.price;
+        } else {
+          matchedItems.push({
+            productId: pid,
+            productName: product.name,
+            qty: qtyToAdd,
+            price: product.price,
+            total: qtyToAdd * product.price,
+          });
+        }
+        matchedEntries += 1;
+      }
+    });
+
+    setFormData((prev) => ({
+      ...prev, // keep everything else SAME
+      name: name || prev.name,
+      customerName: name || prev.customerName,
+      address: address || prev.address,
+      contact01: contact01 || prev.contact01,
+      contact02: contact02 || prev.contact02,
+      items: matchedItems.length > 0 ? matchedItems : prev.items,
+    }));
+
+    let message = 'Customer details parsed successfully!';
+    if (matchedEntries > 0) {
+      message += ` ${matchedEntries} item${matchedEntries === 1 ? '' : 's'} matched.`;
+    }
+    const unmatched = parsedItems.length - matchedEntries;
+    if (unmatched > 0) {
+      message += ` ${unmatched} item${unmatched === 1 ? '' : 's'} could not be identified.`;
+    }
+
+    setSnackbar({
+      open: true,
+      message: message,
+      type: 'success',
+    });
+  };
+
+  // Search customers by name or contact number
+  const handleSearchCustomer = async (query: string) => {
+    setSearchQuery(query);
+    
+    if (!query.trim()) {
+      setSearchResults([]);
+      setShowSearchResults(false);
       return;
     }
 
-    if (/^name\s*[-:]/i.test(l)) {
-      name = l.split(/[-:]/).slice(1).join('-').trim();
-    }
-
-    if (/^address\s*[-:]/i.test(l)) {
-      address = l.split(/[-:]/).slice(1).join('-').trim();
-    }
-
-    // Phone no 1 / WhatsApp
-    if (/phone\s*no\s*1/i.test(l) || /whatsapp/i.test(l)) {
-      const num = l.match(/\d{10}/); // 👈 EXACT 10 digits only
-      if (num) {
-        contact01 = num[0];
-      }
-    }
-
-    // Phone no 2 / Contact
-    if (/phone\s*no\s*2/i.test(l) || /contact/i.test(l)) {
-      const num = l.match(/\d{10}/); // 👈 EXACT 10 digits only
-      if (num) {
-        contact02 = num[0];
-      }
-    }
-
-    // Total amount
-    if (/^total\s*amount\s*[-:]/i.test(l)) {
-      const amountMatch = l.match(/[-:]\s*(\d+(?:\.\d+)?)/);
-      if (amountMatch) {
-        totalAmount = amountMatch[1];
-      }
-    }
-  });
-
-  // Match item short names with products
-  const matchedItems: SaleItem[] = [];
-  let matchCount = 0;
-  
-  itemShortNames.forEach((shortName) => {
-    const product = products.find(
-      (p) => p.shortName?.toLowerCase() === shortName.toLowerCase()
-    );
-    
-    if (product) {
-      const pid = product.productId == null ? '' : String(product.productId);
-      const existingItem = matchedItems.find(item => item.productId === pid);
+    try {
+      const customers = await ensureCustomersLoaded();
+      const lowerQuery = query.toLowerCase();
       
-      if (existingItem) {
-        // If product already exists, increment quantity
-        existingItem.qty += 1;
-        existingItem.total = existingItem.qty * existingItem.price;
-      } else {
-        // Add new product
-        matchedItems.push({
-          productId: pid,
-          productName: product.name,
-          qty: 1,
-          price: product.price,
-          total: product.price,
-        });
-      }
-      matchCount++;
+      const results = customers.filter(
+        (c) =>
+          (c.customerName && c.customerName.toLowerCase().includes(lowerQuery)) ||
+          (c.contact01 && c.contact01.includes(query)) ||
+          (c.contact02 && c.contact02.includes(query))
+      );
+      
+      setSearchResults(results);
+      setShowSearchResults(true);
+    } catch (e) {
+      console.error('Error searching customers:', e);
+      setSearchResults([]);
     }
-  });
+  };
 
-  setFormData((prev) => ({
-    ...prev, // keep everything else SAME
-    name: name || prev.name,
-    address: address || prev.address,
-    contact01: contact01 || prev.contact01,
-    contact02: contact02 || prev.contact02,
-    items: matchedItems.length > 0 ? matchedItems : prev.items,
-  }));
+  // Load selected customer into form
+  const handleSelectCustomerFromSearch = (customer: CustomerDtoGet) => {
+    const selectedCustomerName = customer.customerName || customer.name || '';
 
-  let message = 'Customer details parsed successfully!';
-  if (matchCount > 0) {
-   // message += ` ${matchCount} product(s) matched and added.`;
-  }
-  if (itemShortNames.length > matchCount) {
-    //message += ` ${itemShortNames.length - matchCount} item(s) not matched.`;
-  }
-
-  setSnackbar({
-    open: true,
-    message: message,
-    type: 'success',
-  });
-};
-
-
-
-
+    setFormData((prev) => ({
+      ...prev,
+      name: selectedCustomerName || prev.name,
+      customerName: selectedCustomerName || prev.customerName,
+      address: customer.address || prev.address,
+      contact01: ensureLeadingZero(customer.contact01) || prev.contact01,
+      contact02: ensureLeadingZero(customer.contact02) || prev.contact02,
+      customerId: String(customer.customerId ?? '') || prev.customerId,
+    }));
+    
+    setSearchQuery('');
+    setSearchResults([]);
+    setShowSearchResults(false);
+    
+    setSnackbar({
+      open: true,
+      message: `Customer "${selectedCustomerName}" loaded successfully!`,
+      type: 'success',
+    });
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -232,10 +303,24 @@ const parseCustomerInfoText = () => {
       return;
     }
 
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
+    // Auto-search when typing in name, contact01, or contact02 fields
+    if (name === 'name' || name === 'contact01' || name === 'contact02') {
+      handleSearchCustomer(value);
+    }
+
+    // Keep name and customerName in sync
+    if (name === 'name') {
+      setFormData((prev) => ({
+        ...prev,
+        name: value,
+        customerName: value,
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
 
   // Normalize phone comparison by removing an optional leading 0 from user input
@@ -262,7 +347,7 @@ const parseCustomerInfoText = () => {
     try {
       setIsLookingUpCustomer(true);
       const customers = await ensureCustomersLoaded();
-      const nameTrimmed = (formData.name || '').trim().toLowerCase();
+      const nameTrimmed = (formData.customerName || '').trim().toLowerCase();
       const c1 = normalizePhoneForCompare(formData.contact01 || '');
       const c2 = normalizePhoneForCompare(formData.contact02 || '');
 
@@ -286,6 +371,7 @@ const parseCustomerInfoText = () => {
         setFormData((prev) => ({
           ...prev,
           name: matched.name || prev.name,
+          customerName: matched.name || prev.customerName,
           address: matched.address || prev.address,
           contact01: ensureLeadingZero(matched.contact01) || prev.contact01,
           contact02: ensureLeadingZero(matched.contact02) || prev.contact02,
@@ -354,7 +440,9 @@ const parseCustomerInfoText = () => {
   };
 
   const handleAddProduct = () => {
-    if (selectedProductId && selectedProductQuantity > 0) {
+    const quantity = parseInt(selectedProductQuantity, 10);
+
+    if (selectedProductId && Number.isFinite(quantity) && quantity > 0) {
       const product = products.find(
         (p) => (p.productId == null ? '' : String(p.productId)) === selectedProductId
       );
@@ -363,16 +451,16 @@ const parseCustomerInfoText = () => {
         const newItem: SaleItem = {
           productId: pid,
           productName: product.name,
-          qty: selectedProductQuantity,
+          qty: quantity,
           price: product.price,
-          total: selectedProductQuantity * product.price,
+          total: quantity * product.price,
         };
 
         // Check if product already exists, update quantity if it does
         const existingItemIndex = formData.items.findIndex((item) => item.productId === pid);
         if (existingItemIndex >= 0) {
           const updatedItems = [...formData.items];
-          updatedItems[existingItemIndex].qty += selectedProductQuantity;
+          updatedItems[existingItemIndex].qty += quantity;
           setFormData({
             ...formData,
             items: updatedItems,
@@ -386,7 +474,7 @@ const parseCustomerInfoText = () => {
 
         // Reset selection
         setSelectedProductId('');
-        setSelectedProductQuantity(1);
+        setSelectedProductQuantity('');
         setShowProductSelector(false);
       }
     }
@@ -436,6 +524,18 @@ const parseCustomerInfoText = () => {
   const handleUpdateItemPrice = (productId: string, newPrice: number) => {
     if (newPrice < 0) return;
 
+    // Find the product to check if price exceeds original
+    const product = products.find((p) => String(p.productId) === productId);
+    const newWarnings = new Set(priceWarnings);
+    
+    if (product && newPrice > product.price) {
+      newWarnings.add(productId);
+    } else if (product) {
+      newWarnings.delete(productId);
+    }
+    
+    setPriceWarnings(newWarnings);
+
     const updatedItems = formData.items.map((item) =>
       item.productId === productId ? { ...item, price: newPrice, total: item.qty * newPrice } : item
     );
@@ -447,6 +547,10 @@ const parseCustomerInfoText = () => {
   };
 
   const getTotalAmount = () => {
+    if (manualTotalAmount !== '') {
+      const manual = parseFloat(manualTotalAmount);
+      return isNaN(manual) ? 0 : manual;
+    }
     return formData.items.reduce((sum, item) => sum + item.qty * item.price, 0);
   };
 
@@ -507,8 +611,8 @@ const parseCustomerInfoText = () => {
     }
 
     try {
-      // Calculate total amount
-      const totalAmount = finalItems.reduce((sum, item) => sum + item.qty * item.price, 0);
+      // Use getTotalAmount() to respect manual override
+      const totalAmount = getTotalAmount();
 
       // If editing, use the existing logic
       if (isEditing && currentSale) {
@@ -539,12 +643,15 @@ const parseCustomerInfoText = () => {
         })
         .filter((shortName) => shortName !== '')
         .join(' ');
+
+        const customerNameForBackend = formData.name;
       
       const customerNameWithProducts = productShortNames 
         ? `${formData.name}(${productShortNames})`
         : formData.name;
 
       const customerData: CustomerRequestDTO = {
+        customerName:customerNameForBackend,
         name: customerNameWithProducts,
         address: formData.address,
         contact01: contact01ForBackend,
@@ -608,6 +715,7 @@ const parseCustomerInfoText = () => {
   const resetForm = () => {
     setFormData({
       name: '',
+      customerName: '',
       customerId: '',
       address: '',
       contact01: '',
@@ -620,8 +728,13 @@ const parseCustomerInfoText = () => {
     setCustomerInfoText('');
     setShowProductSelector(false);
     setSelectedProductId('');
-    setSelectedProductQuantity(1);
+    setSelectedProductQuantity('');
     setError(null);
+    setManualTotalAmount('');
+    setSearchQuery('');
+    setSearchResults([]);
+    setShowSearchResults(false);
+    setPriceWarnings(new Set());
   };
 
   // Fill the form with sample data for faster testing
@@ -641,6 +754,7 @@ const parseCustomerInfoText = () => {
 
     setFormData({
       name: 'John Doe',
+      customerName: 'John Doe',
       customerId: '',
       address: '123 Sample Street',
       contact01: '0771234563',
@@ -686,6 +800,68 @@ const parseCustomerInfoText = () => {
         </h2>
       </div>
 
+      {/* Customer Search Bar */}
+      <div className="bg-blue-50 border-b border-blue-100 p-4 sm:p-6">
+        <div className="relative">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            🔍 Search Existing Customer
+          </label>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="flex-1 relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => handleSearchCustomer(e.target.value)}
+                placeholder="Enter customer name or contact number..."
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-base"
+              />
+              
+              {/* Search Results Dropdown */}
+              {showSearchResults && searchResults.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-64 overflow-y-auto">
+                  {searchResults.map((customer, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => handleSelectCustomerFromSearch(customer)}
+                      className="w-full text-left px-4 py-3 hover:bg-blue-50 border-b border-gray-100 last:border-b-0 transition-colors duration-150"
+                    >
+                      <div className="font-medium text-gray-900">{customer.name}</div>
+                      <div className="text-sm text-gray-500">
+                        {customer.contact01 && <span>📱 {customer.contact01}</span>}
+                        {customer.contact02 && <span> • {customer.contact02}</span>}
+                      </div>
+                      {customer.address && (
+                        <div className="text-xs text-gray-400 mt-1">📍 {customer.address}</div>
+                      )}
+                    </button>
+                  ))}</div>
+              )}
+              
+              {showSearchResults && searchResults.length === 0 && searchQuery.trim() && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg p-4 text-center text-gray-500 text-sm">
+                  No customers found matching your search
+                </div>
+              )}
+            </div>
+            
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery('');
+                  setSearchResults([]);
+                  setShowSearchResults(false);
+                }}
+                className="px-4 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 focus:ring-2 focus:ring-gray-500 transition-all duration-200 font-medium whitespace-nowrap"
+              >
+                Clear Search
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
       <div className="p-4 sm:p-6">
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 text-sm">
@@ -711,7 +887,7 @@ const parseCustomerInfoText = () => {
                   onChange={(e) => setCustomerInfoText(e.target.value)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-base min-h-[120px] resize-vertical"
                   rows={4}
-                  placeholder="Example:&#10;Name - John Doe&#10;Address - 123 Main St&#10;Phone no 1 - 0771234567&#10;Phone no 2 - 0112345678&#10;Total amount - 5000&#10;Items -&#10;1. Fc&#10;2. Bl"
+                  placeholder="Example:&#10;Name - John Doe&#10;Address - 123 Main St&#10;Phone no 1 - 0771234567&#10;Phone no 2 - 0112345678&#10;Total amount - 5000&#10;Items -&#10;1. vac - 2&#10;2. Se - 3"
                 />
                 <div className="flex flex-col sm:flex-row gap-2">
                   <button
@@ -731,7 +907,7 @@ const parseCustomerInfoText = () => {
                   </button>
                 </div>
                 <div className="text-xs text-gray-500">
-                  Tip: Copy customer details from anywhere and paste above. The system will automatically detect name, address, contact numbers, total amount, and items (by short name).
+                  Tip: Copy customer details from anywhere and paste above; include "- qty" after each item (e.g., "vac - 2") so quantities are captured.
                 </div>
               </div>
             </div>
@@ -742,17 +918,38 @@ const parseCustomerInfoText = () => {
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
                   Customer Name *
                 </label>
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={handleChange}
-                  onBlur={lookupAndPrefillCustomer}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-base"
-                  placeholder="Enter customer name"
-                />
+                <div className="relative">
+                  <input
+                    id="name"
+                    name="name"
+                    type="text"
+                    required
+                    value={formData.customerName}
+                    onChange={handleChange}
+                    onBlur={lookupAndPrefillCustomer}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-base"
+                    placeholder="Enter customer name"
+                  />
+                  {/* Search results dropdown for name */}
+                  {showSearchResults && searchResults.length > 0 && searchQuery.trim() && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-20 max-h-48 overflow-y-auto">
+                      {searchResults.map((customer, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => handleSelectCustomerFromSearch(customer)}
+                          className="w-full text-left px-4 py-2 hover:bg-blue-50 border-b border-gray-100 last:border-b-0 transition-colors duration-150 text-sm"
+                        >
+                          <div className="font-medium text-gray-900">{customer.name}</div>
+                          <div className="text-xs text-gray-500">
+                            {customer.contact01 && <span>📱 {customer.contact01}</span>}
+                            {customer.contact02 && <span> • {customer.contact02}</span>}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Address */}
@@ -777,21 +974,42 @@ const parseCustomerInfoText = () => {
                 <label htmlFor="contact01" className="block text-sm font-medium text-gray-700 mb-2">
                   WhatsApp Number
                 </label>
-                <input
-                  id="contact01"
-                  name="contact01"
-                  type="text"
-                  value={formData.contact01}
-                  onChange={handleChange}
-                  onBlur={lookupAndPrefillCustomer}
-                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-base ${
-                    formData.contact01 && !isContact01Valid
-                      ? 'border-red-500 bg-red-50'
-                      : 'border-gray-300'
-                  }`}
-                  placeholder="10 digits with 0 (e.g., 0771234567)"
-                  maxLength={10}
-                />
+                <div className="relative">
+                  <input
+                    id="contact01"
+                    name="contact01"
+                    type="text"
+                    value={formData.contact01}
+                    onChange={handleChange}
+                    onBlur={lookupAndPrefillCustomer}
+                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-base ${
+                      formData.contact01 && !isContact01Valid
+                        ? 'border-red-500 bg-red-50'
+                        : 'border-gray-300'
+                    }`}
+                    placeholder="10 digits with 0 (e.g., 0771234567)"
+                    maxLength={10}
+                  />
+                  {/* Search results dropdown for contact01 */}
+                  {showSearchResults && searchResults.length > 0 && searchQuery.trim() && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-20 max-h-48 overflow-y-auto">
+                      {searchResults.map((customer, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => handleSelectCustomerFromSearch(customer)}
+                          className="w-full text-left px-4 py-2 hover:bg-blue-50 border-b border-gray-100 last:border-b-0 transition-colors duration-150 text-sm"
+                        >
+                          <div className="font-medium text-gray-900">{customer.name}</div>
+                          <div className="text-xs text-gray-500">
+                            {customer.contact01 && <span>📱 {customer.contact01}</span>}
+                            {customer.contact02 && <span> • {customer.contact02}</span>}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 {formData.contact01 && !isContact01Valid && (
                   <div className="text-xs text-red-600 mt-1">
                     WhatsApp number must be exactly 10 digits starting with 0.
@@ -803,21 +1021,42 @@ const parseCustomerInfoText = () => {
                 <label htmlFor="contact02" className="block text-sm font-medium text-gray-700 mb-2">
                   Contact Number
                 </label>
-                <input
-                  id="contact02"
-                  name="contact02"
-                  type="text"
-                  value={formData.contact02}
-                  onChange={handleChange}
-                  onBlur={lookupAndPrefillCustomer}
-                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-base ${
-                    formData.contact02 && !isContact02Valid
-                      ? 'border-red-500 bg-red-50'
-                      : 'border-gray-300'
-                  }`}
-                  placeholder="10 digits with 0 (e.g., 0112345678)"
-                  maxLength={10}
-                />
+                <div className="relative">
+                  <input
+                    id="contact02"
+                    name="contact02"
+                    type="text"
+                    value={formData.contact02}
+                    onChange={handleChange}
+                    onBlur={lookupAndPrefillCustomer}
+                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-base ${
+                      formData.contact02 && !isContact02Valid
+                        ? 'border-red-500 bg-red-50'
+                        : 'border-gray-300'
+                    }`}
+                    placeholder="10 digits with 0 (e.g., 0112345678)"
+                    maxLength={10}
+                  />
+                  {/* Search results dropdown for contact02 */}
+                  {showSearchResults && searchResults.length > 0 && searchQuery.trim() && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-20 max-h-48 overflow-y-auto">
+                      {searchResults.map((customer, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => handleSelectCustomerFromSearch(customer)}
+                          className="w-full text-left px-4 py-2 hover:bg-blue-50 border-b border-gray-100 last:border-b-0 transition-colors duration-150 text-sm"
+                        >
+                          <div className="font-medium text-gray-900">{customer.name}</div>
+                          <div className="text-xs text-gray-500">
+                            {customer.contact01 && <span>📱 {customer.contact01}</span>}
+                            {customer.contact02 && <span> • {customer.contact02}</span>}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 {formData.contact02 && !isContact02Valid && (
                   <div className="text-xs text-red-600 mt-1">
                     Contact number must be exactly 10 digits starting with 0.
@@ -854,26 +1093,12 @@ const parseCustomerInfoText = () => {
 
             {/* Default Product Quantity */}
             <div className="mb-4">
-              <label htmlFor="qty" className="block text-sm font-medium text-gray-700 mb-2">
-                Quantity
-              </label>
               <div className="flex flex-col sm:flex-row gap-3">
-                <input
-                  id="qty"
-                  name="qty"
-                  type="text"
-                  value={formData.qty}
-                  onChange={handleChange}
-                  disabled={!defaultProduct}
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-base"
-                  placeholder="Enter quantity"
-                />
                 <button
                   type="button"
                   onClick={() => setShowProductSelector(!showProductSelector)}
                   className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 flex items-center justify-center gap-2 font-medium"
-                >
-                  <PlusIcon className="w-5 h-5" />
+                >Add Product
                   <span className="hidden sm:inline">Add Product</span>
                 </button>
               </div>
@@ -933,7 +1158,7 @@ const parseCustomerInfoText = () => {
                       type="number"
                       min="1"
                       value={selectedProductQuantity}
-                      onChange={(e) => setSelectedProductQuantity(parseInt(e.target.value) || 1)}
+                      onChange={(e) => setSelectedProductQuantity(e.target.value)}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
                     />
                   </div>
@@ -997,7 +1222,12 @@ const parseCustomerInfoText = () => {
 
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                           <div className="flex flex-col">
-                            <label className="text-xs text-gray-600 mb-1">Price ($)</label>
+                            <label className="text-xs text-gray-600 mb-1">
+                              Price ($)
+                              {priceWarnings.has(item.productId) && (
+                                <span className="ml-1 text-amber-600 font-semibold">⚠️</span>
+                              )}
+                            </label>
                             <input
                               type="number"
                               min="0"
@@ -1009,8 +1239,17 @@ const parseCustomerInfoText = () => {
                                   parseFloat(e.target.value) || 0
                                 )
                               }
-                              className="px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              className={`px-3 py-2 border rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                priceWarnings.has(item.productId)
+                                  ? 'border-amber-400 bg-amber-50'
+                                  : 'border-gray-300'
+                              }`}
                             />
+                            {priceWarnings.has(item.productId) && (
+                              <div className="text-xs text-amber-700 mt-1">
+                                ⚠️ Price is above original (${products.find((p) => String(p.productId) === item.productId)?.price.toFixed(2)})
+                              </div>
+                            )}
                           </div>
 
                           <div className="flex flex-col">
@@ -1042,11 +1281,37 @@ const parseCustomerInfoText = () => {
 
                   {/* Total Amount */}
                   <div className="pt-4 border-t border-gray-300">
-                    <div className="flex justify-between items-center text-lg">
-                      <span className="font-semibold text-gray-800">Total Amount:</span>
-                      <span className="font-bold text-green-600 text-xl">
-                        ${getTotalAmount().toFixed(2)}
-                      </span>
+                    <div className="flex flex-col gap-2">
+                      <div className="flex flex-wrap justify-between items-center gap-2">
+                        <span className="font-semibold text-gray-800 text-sm">Calculated Total:</span>
+                        <span className="font-medium text-gray-600 break-all text-right">
+                          ${formData.items.reduce((sum, item) => sum + item.qty * item.price, 0).toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                        <label className="font-semibold text-gray-800 text-base sm:text-lg whitespace-nowrap">Total Amount:</label>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-1 min-w-0 w-full">
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={manualTotalAmount !== '' ? manualTotalAmount : formData.items.reduce((sum, item) => sum + item.qty * item.price, 0).toFixed(2)}
+                            onChange={(e) => setManualTotalAmount(e.target.value)}
+                            className="w-full min-w-0 sm:flex-1 py-2 border-2 border-green-300 rounded-lg text-base sm:text-xl font-bold text-green-700 bg-green-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            placeholder="Enter total amount"
+                          />
+                          {manualTotalAmount !== '' && (
+                            <button
+                              type="button"
+                              onClick={() => setManualTotalAmount('')}
+                              className="w-full sm:w-auto px-3 py-2 bg-gray-500 text-white text-sm rounded-lg hover:bg-gray-600 transition-all duration-200"
+                              title="Reset to calculated total"
+                            >
+                              Reset
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { AlertSnackbar } from '../AlertSnackbar';
 import Spinner from '../Spinner';
+import { getAllProducts } from '../../service/product';
+import { Product } from '../../models/product';
 
 export interface StockItem {
   stock_id?: number;
@@ -9,40 +11,60 @@ export interface StockItem {
   date: string;
   quantity: number;
   totalQuantity?: number;
-  status: 'NEW' | 'RETURN';
+  status: 'NEW' | 'RETURN' | 'DAMAGE';
+  damageReason?: string;
 }
 
 interface Props {
   onSubmit: (data: StockItem) => void;
   initialValues?: StockItem | null;
-  existingItems: StockItem[];
+  mode?: 'add' | 'damage';
 }
 
 
-const StockForm: React.FC<Props> = ({ onSubmit, initialValues, existingItems }) => {
+const StockForm: React.FC<Props> = ({ onSubmit, initialValues, mode = 'add' }) => {
+  const defaultStatus = mode === 'damage' ? 'DAMAGE' : 'NEW';
   const { register, handleSubmit, reset, watch, setValue } = useForm<StockItem>({
-      defaultValues: initialValues || {
+    defaultValues: initialValues || {
       type: '',
       date: '',
       quantity: 0,
-      status: 'NEW',
+      status: defaultStatus,
+      damageReason: '',
     },
   });
 
   // Set form values when initialValues changes (edit mode)
   React.useEffect(() => {
     if (initialValues) {
-      // Reset form with initial values
       Object.entries(initialValues).forEach(([key, value]) => {
         setValue(key as keyof StockItem, value);
       });
+    } else {
+      reset({
+        type: '',
+        date: '',
+        quantity: 0,
+        status: defaultStatus,
+        damageReason: '',
+      });
     }
-  }, [initialValues, setValue]);
+  }, [initialValues, setValue, defaultStatus, reset]);
 
-  // Get unique types from existing items
-  const uniqueTypes = Array.from(new Set(existingItems.map(item => item.type)))
-    .filter(type => type) // Remove empty types
-    .sort();
+
+  // Product list for dropdown
+  const [products, setProducts] = useState<Product[]>([]);
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const data = await getAllProducts();
+        setProducts(data as Product[]);
+      } catch (err) {
+        // Optionally handle error
+      }
+    };
+    fetchProducts();
+  }, []);
 
   const selectedType = watch('type');
   const [newType, setNewType] = useState('');
@@ -85,16 +107,16 @@ const StockForm: React.FC<Props> = ({ onSubmit, initialValues, existingItems }) 
       >
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700">Type</label>
+          <label className="block text-sm font-medium text-gray-700">Product</label>
           <select
             {...register('type')}
             disabled={isSubmitting}
             className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
           >
-            <option value="">Select type</option>
-            {uniqueTypes.map((type: string) => (
-              <option key={type} value={type}>
-                {type}
+            <option value="">Select product</option>
+            {products.map((product) => (
+              <option key={product.productId} value={product.name}>
+                {product.name}
               </option>
             ))}
             <option value="Other">Other</option>
@@ -103,7 +125,7 @@ const StockForm: React.FC<Props> = ({ onSubmit, initialValues, existingItems }) 
             <input
               type="text"
               className="mt-2 block w-full border-gray-300 rounded-md shadow-sm"
-              placeholder="Enter new type"
+              placeholder="Enter new product/type"
               value={newType}
               onChange={e => setNewType(e.target.value)}
               required
@@ -132,14 +154,27 @@ const StockForm: React.FC<Props> = ({ onSubmit, initialValues, existingItems }) 
           <label className="block text-sm font-medium text-gray-700">Status</label>
           <select
             {...register('status')}
-            disabled={isSubmitting}
+            disabled={isSubmitting || mode === 'damage'}
             className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
           >
             <option value="NEW">New</option>
             <option value="RETURN">Return</option>
+            <option value="DAMAGE">Damage</option>
           </select>
         </div>
       </div>
+      {mode === 'damage' && (
+        <div className="mt-4">
+          <label className="block text-sm font-medium text-gray-700">Damage reason</label>
+          <textarea
+            {...register('damageReason')}
+            rows={2}
+            disabled={isSubmitting}
+            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+            placeholder="Optional: describe what caused the damage"
+          />
+        </div>
+      )}
       <div className="mt-4 flex space-x-2">
         {!initialValues && (
           <button

@@ -34,13 +34,13 @@ export const DashboardLayout = () => {
 
   return (
     <div
-      className="h-screen w-full flex bg-gray-100"
+      className="h-screen w-screen flex flex-col md:flex-row bg-gray-100 overflow-x-hidden"
       style={{ backgroundColor: salesBackgroundColor }}
     >
       {/* Sidebar (Fixed) */}
       <div
         className={`fixed top-0 left-0 h-full z-30 transition-transform duration-300
-        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}
+        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:relative`}
       >
         <Sidebar
           isOpen={isSidebarOpen}
@@ -51,10 +51,10 @@ export const DashboardLayout = () => {
       </div>
 
       {/* Main Content Area */}
-      <div className={`flex-1 flex flex-col transition-all duration-300 md:ml-64`}>
+      <div className={`flex-1 flex flex-col h-screen overflow-hidden transition-all duration-300`}>
         <Header onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} />
-        <main className="flex-1 py-6 overflow-auto">
-          <div className="max-w-full">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden w-full">
+          <div className="w-full px-4 sm:px-6 lg:px-8 py-6 max-w-full">
             <Outlet
               context={{
                 salesTitle,
@@ -69,7 +69,7 @@ export const DashboardLayout = () => {
 
       {/* Desktop Settings Panel */}
       {showSettings && (
-        <div className="hidden md:block w-96 bg-white border-l border-gray-200 shadow-lg overflow-y-auto z-30">
+        <div className="hidden md:block w-full md:w-96 bg-white border-l border-gray-200 shadow-lg overflow-y-auto z-30">
           <div className="p-4 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-gray-800">Settings</h2>
@@ -92,9 +92,9 @@ export const DashboardLayout = () => {
 
       {/* Mobile Popup Settings */}
       {showSettings && (
-        <div className="md:hidden fixed inset-0 z-40 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white w-11/12 max-w-md rounded-lg shadow-lg overflow-hidden animate-fadeIn">
-            <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+        <div className="md:hidden fixed inset-0 z-40 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white w-full max-w-md rounded-lg shadow-lg overflow-hidden animate-fadeIn max-h-[90vh]">
+            <div className="p-4 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white">
               <h2 className="text-lg font-semibold text-gray-800">Settings</h2>
               <button
                 onClick={() => setShowSettings(false)}
@@ -103,7 +103,7 @@ export const DashboardLayout = () => {
                 ✕
               </button>
             </div>
-            <div className="p-4 max-h-[70vh] overflow-y-auto">
+            <div className="p-4 overflow-y-auto">
               <Settings
                 onTitleChange={handleTitleChange}
                 onBackgroundColorChange={handleBackgroundColorChange}

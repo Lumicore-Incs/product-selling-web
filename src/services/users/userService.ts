@@ -12,6 +12,7 @@ export type User = {
   status: 'active' | 'inactive' | 'pending';
   password: string; // frontend stores password when creating a user
   productId: number; // required per request
+  serialPrefix?: string;
 };
 
 class UserService {
@@ -30,6 +31,7 @@ class UserService {
         status: (u.status?.toLowerCase() as 'active' | 'inactive' | 'pending') || 'pending',
         password: '',
         productId: 0,
+        serialPrefix: u.serialPrefix,
       }));
     } catch (err) {
       console.error('userService.getAllUsers failed:', err);
@@ -39,13 +41,26 @@ class UserService {
 
   async updateUser(id: string, userData: Partial<User>): Promise<User> {
     try {
-      const response = await apiClient.put(`/user/update/${id}`, {
+      const payload: any = {
         name: userData.name,
         email: userData.email,
         telephone: userData.contact,
         role: userData.role,
         type: 'USER',
-      });
+        serialPrefix: userData.serialPrefix,
+      };
+      
+      // Add status if provided
+      if (userData.status !== undefined) {
+        payload.status = userData.status;
+      }
+      
+      // Add password if provided (for password reset)
+      if (userData.password !== undefined && userData.password !== null) {
+        payload.password = userData.password;
+      }
+      
+      const response = await apiClient.put(`/user/update/${id}`, payload);
       const updatedUser = response.data as UserApiDto;
       return {
         id: updatedUser.id.toString(),
@@ -59,6 +74,7 @@ class UserService {
           (updatedUser.status?.toLowerCase() as 'active' | 'inactive' | 'pending') || 'pending',
         password: '',
         productId: 0,
+        serialPrefix: updatedUser.serialPrefix,
       };
     } catch (err) {
       console.error('userService.updateUser failed:', err);
@@ -89,6 +105,7 @@ class UserService {
         status: userData.status,
         type: userData.role.toUpperCase(),
         productId: userData.productId,
+        serialPrefix: userData.serialPrefix,
       };
 
       const resp = await apiClient.post<UserApiDto>('/user/create', payload);
@@ -104,6 +121,7 @@ class UserService {
         status: (created.status?.toLowerCase() as 'active' | 'inactive' | 'pending') || 'pending',
         password: '',
         productId: userData.productId,
+        serialPrefix: created.serialPrefix,
       };
     } catch (err) {
       console.error('userService.createUser failed:', err);

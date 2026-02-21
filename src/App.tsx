@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthCard } from './components/AuthCard';
 import { DashboardLayout } from './components/layout/DashboardLayout';
 import { Dashboard } from './pages/Dashboard';
 import { DuplicateSales } from './pages/DuplicateSales';
+import { ExportOrder } from './pages/ExportOrder';
 import { ProductManagement } from './pages/ProductManagement';
 import { SalesManagement } from './pages/SalesManagement';
 import { StockManagement } from './pages/StockManagement';
@@ -84,7 +85,7 @@ export function App() {
   }
 
   return (
-    <BrowserRouter>
+    <HashRouter>
       <BackgroundShapes />
       <div className="w-full min-h-screen" style={{ position: 'relative', zIndex: 1 }}>
         <Routes>
@@ -108,6 +109,7 @@ export function App() {
             <Route path="sale" element={<SalesManagement />} />
             <Route path="sale/duplicate" element={<DuplicateSales />} />
             <Route path="sale/settings" element={<SalesManagement />} />
+            <Route path="export-order" element={<ExportOrder />} />
             <Route path="product" element={<ProductManagement />} />
             <Route path="users" element={<Users />} />
             <Route path="profile" element={<UserProfile />} />
@@ -119,6 +121,6 @@ export function App() {
           <Route path="/dashboard" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
