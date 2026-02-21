@@ -74,8 +74,13 @@ export const Dashboard = () => {
     { value: 'PENDING', label: 'PENDING' },
     { value: 'TEMPORARY', label: 'DUPLICATE' },
     { value: 'Processing', label: 'PROCESSING' },
+    { value: 'Dispatched to Destination', label: 'DISPATCHED TO DESTINATION' },
+    { value: 'Received at Destination', label: 'RECEIVED AT DESTINATION' },
+    { value: 'Out for Delivery', label: 'OUT FOR DELIVERY' },
+    { value: 'Rescheduled', label: 'RESCHEDULED' },
+    { value: 'Failed to Deliver', label: 'FAILED TO DELIVER' },
     { value: 'Returned to Client', label: 'RETURNED TO CLIENT' },
-    { value: 'Delivered', label: 'DELIVERED' }
+    { value: 'Delivered', label: 'DELIVERED' },
   ];
 
   useEffect(() => {
