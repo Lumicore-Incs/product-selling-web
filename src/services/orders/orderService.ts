@@ -96,6 +96,25 @@ class OrderService {
       throw err;
     }
   }
+
+  async getUserDetails(id: number | string): Promise<any> {
+    try {
+      const resp = await apiClient.get(`/dashboard/getUserDetails/${id}`);
+      return resp?.data || null;
+    } catch (err) {
+      console.error('orderService.getUserDetails failed:', err);
+      throw err;
+    }
+  }
+
+  async updateTrackingStatus(): Promise<void> {
+    try {
+      await apiClient.get('dashboard/updateTrackingStatus');
+    } catch (err) {
+      console.error('orderService.updateTrackingStatus failed:', err);
+      throw err;
+    }
+  }
 }
 
 export const orderService = new OrderService();
@@ -117,8 +136,14 @@ async function uploadTrackingData(trackingList: TrackingUploadDto[]): Promise<st
   }
 }
 
+
+
+
 export const getAllDuplicateOrders = () => orderService.getAllDuplicateOrders();
 export const deleteOrder = (id: string) => orderService.deleteOrder(id);
 export const getOrders = () => orderService.getOrders();
 export const getAllCustomerOrders = () => orderService.getAllCustomerOrders();
 export const uploadTracking = (trackingList: TrackingUploadDto[]) => uploadTrackingData(trackingList);
+export const getUserDetails = (id: string | number) => orderService.getUserDetails(id);
+
+
