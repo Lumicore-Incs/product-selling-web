@@ -1,13 +1,17 @@
 import { CreditCardIcon, ScaleIcon, TrendingDownIcon, TrendingUpIcon } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertSnackbar } from '../components/AlertSnackbar';
 import { BackgroundIcons } from '../components/BackgroundIcons';
 import { SalesTable } from '../components/SalesTable';
 import { Sale } from '../models/sales';
 import { getCurrentUser } from '../service/auth';
 import { getDashboardStats } from '../service/dashboard';
-import { getAllProducts } from '../service/product'; // Add this import
-import { getAllCustomerOrders, getOrders, orderService } from '../services/orders/orderService';
+import { getAllProducts } from '../service/product';
+import {
+  getAllCustomerOrdersPaginated,
+  getOrders,
+  orderService,
+} from '../services/orders/orderService';
 
 type StatCardProps = {
   icon: React.ComponentType<any>;
@@ -63,6 +67,15 @@ export const Dashboard = () => {
 
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [salesSearch, setSalesSearch] = useState('');
+
+  // All-orders server-side pagination state
+  const [allOrdersPage, setAllOrdersPage] = useState(0);
+  const [allOrdersSize, setAllOrdersSize] = useState(5);
+  const [allOrdersTotalPages, setAllOrdersTotalPages] = useState(0);
+  const [allOrdersTotalElements, setAllOrdersTotalElements] = useState(0);
+  // Debounced search used for the server call
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Add product-related state
   const [products, setProducts] = useState<any[]>([]);
@@ -125,26 +138,47 @@ export const Dashboard = () => {
       setLoading(true);
       setSalesLoading(true);
 
-      const [statsData, salesApiData] = await Promise.all([
-        getDashboardStats(),
-        showTodayOnly ? getOrders() : getAllCustomerOrders(),
-      ]);
+      if (showTodayOnly) {
+        const [statsData, salesApiData] = await Promise.all([getDashboardStats(), getOrders()]);
+        setStats({
+          total_order: String(statsData.total_order || 0),
+          todayOrders: String(statsData.today_order || 0),
+          confirmedOrders: String(statsData.conform_order || 0),
+          cancelledOrders: String(statsData.cancel_order || 0),
+          totalOrdersTrend: statsData.totalOrdersTrend || 'upcomming',
+          todayOrdersTrend: statsData.todayOrdersTrend || 'upcomming',
+          confirmedOrdersTrend: statsData.confirmedOrdersTrend || 'upcomming',
+          cancelledOrdersTrend: statsData.cancelledOrdersTrend || 'upcomming',
+        });
+        setSales(salesApiData as Sale[]);
+        setAllOrdersTotalPages(0);
+        setAllOrdersTotalElements(0);
+      } else {
+        const [statsData, pagedData] = await Promise.all([
+          getDashboardStats(),
+          getAllCustomerOrdersPaginated({
+            page: allOrdersPage,
+            size: allOrdersSize,
+            status: statusFilter,
+            search: debouncedSearch,
+          }),
+        ]);
+        setStats({
+          total_order: String(statsData.total_order || 0),
+          todayOrders: String(statsData.today_order || 0),
+          confirmedOrders: String(statsData.conform_order || 0),
+          cancelledOrders: String(statsData.cancel_order || 0),
+          totalOrdersTrend: statsData.totalOrdersTrend || 'upcomming',
+          todayOrdersTrend: statsData.todayOrdersTrend || 'upcomming',
+          confirmedOrdersTrend: statsData.confirmedOrdersTrend || 'upcomming',
+          cancelledOrdersTrend: statsData.cancelledOrdersTrend || 'upcomming',
+        });
+        setSales(pagedData.content);
+        setAllOrdersTotalPages(pagedData.totalPages);
+        setAllOrdersTotalElements(pagedData.totalElements);
+      }
 
-      // Process stats
-      setStats({
-        total_order: String(statsData.total_order || 0),
-        todayOrders: String(statsData.today_order || 0),
-        confirmedOrders: String(statsData.conform_order || 0),
-        cancelledOrders: String(statsData.cancel_order || 0),
-        totalOrdersTrend: statsData.totalOrdersTrend || 'upcomming',
-        todayOrdersTrend: statsData.todayOrdersTrend || 'upcomming',
-        confirmedOrdersTrend: statsData.confirmedOrdersTrend || 'upcomming',
-        cancelledOrdersTrend: statsData.cancelledOrdersTrend || 'upcomming',
-      });
       setError('');
-
-      // salesApiData is expected to be the canonical Sale[] from orderService
-      setSales(salesApiData as Sale[]);
       setSalesError('');
     } catch (err) {
       console.error('Failed to fetch dashboard data:', err);
@@ -156,33 +190,54 @@ export const Dashboard = () => {
       setLoading(false);
       setSalesLoading(false);
     }
-  }, [showTodayOnly]);
+  }, [showTodayOnly, allOrdersPage, allOrdersSize, statusFilter, debouncedSearch]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  const filteredSales =
-    statusFilter === 'all' ? sales : sales.filter((sale) => sale.status === statusFilter);
+  // Debounce salesSearch for server-side queries (All Orders mode only)
+  useEffect(() => {
+    if (showTodayOnly) return;
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = setTimeout(() => {
+      setAllOrdersPage(0);
+      setDebouncedSearch(salesSearch);
+    }, 400);
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    };
+  }, [salesSearch, showTodayOnly]);
 
-  // Add product-based filtering
+  // Reset page when statusFilter changes in All Orders mode
+  useEffect(() => {
+    if (!showTodayOnly) setAllOrdersPage(0);
+  }, [statusFilter, showTodayOnly]);
+
+  // Client-side filtering (used only in Today mode)
+  const filteredSales =
+    showTodayOnly && statusFilter !== 'all'
+      ? sales.filter((sale) => sale.status === statusFilter)
+      : sales;
+
+  // Product-based filtering stays client-side for both modes
   const productFilteredSales =
     selectedProduct === 'all'
       ? filteredSales
       : filteredSales.filter((sale) =>
-          sale.items.some((item) => item.productId === selectedProduct)
+          sale.items.some((item) => item.productId === selectedProduct),
         );
 
+  // Search: client-side only in Today mode (server-side in All Orders mode)
   const normalizedSearch = salesSearch.trim().toLowerCase();
   const searchedSales =
-    normalizedSearch === ''
+    !showTodayOnly || normalizedSearch === ''
       ? productFilteredSales
       : productFilteredSales.filter((sale) => {
           const name = (sale.customerName || sale.name || '').toLowerCase();
           const contact1 = (sale.contact01 || '').toLowerCase();
           const contact2 = (sale.contact02 || '').toLowerCase();
           const waybill = (sale.waybillId || '').toLowerCase();
-
           return (
             name.includes(normalizedSearch) ||
             contact1.includes(normalizedSearch) ||
@@ -222,19 +277,19 @@ export const Dashboard = () => {
     try {
       setCheckStatusLoading(true);
       await orderService.updateTrackingStatus();
-      setSnackbar({ 
-        open: true, 
-        message: 'Tracking status updated successfully', 
-        type: 'success' 
+      setSnackbar({
+        open: true,
+        message: 'Tracking status updated successfully',
+        type: 'success',
       });
       // Refresh the data after updating tracking status
       await fetchData();
     } catch (err) {
       const message = (err as Error)?.message || 'Failed to update tracking status';
-      setSnackbar({ 
-        open: true, 
-        message, 
-        type: 'error' 
+      setSnackbar({
+        open: true,
+        message,
+        type: 'error',
       });
       console.error('Check status failed:', err);
     } finally {
@@ -244,7 +299,7 @@ export const Dashboard = () => {
 
   return (
     <div
-  className="
+      className="
     w-full
     max-w-full
     sm:max-w-full
@@ -257,7 +312,7 @@ export const Dashboard = () => {
     relative
     overflow-x-hidden
   "
-> 
+    >
       <BackgroundIcons type="dashboard" />
       <AlertSnackbar
         message={snackbar.message}
@@ -433,6 +488,23 @@ export const Dashboard = () => {
               onDelete={handleDelete}
               userRole={user?.role}
               onRefresh={fetchData}
+              hideSearch={!showTodayOnly}
+              serverSidePagination={
+                !showTodayOnly
+                  ? {
+                      page: allOrdersPage,
+                      totalPages: allOrdersTotalPages,
+                      totalElements: allOrdersTotalElements,
+                      size: allOrdersSize,
+                      sizeOptions: [5, 10, 20],
+                      onPageChange: setAllOrdersPage,
+                      onSizeChange: (s) => {
+                        setAllOrdersSize(s);
+                        setAllOrdersPage(0);
+                      },
+                    }
+                  : undefined
+              }
             />
           )}
         </div>

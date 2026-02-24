@@ -2,6 +2,23 @@ import { Sale } from '../../models/sales';
 import apiClient from '../axiosConfig';
 import { mapOrderDtoToSale } from '../mappers/salesMapper';
 
+export interface PagedResponse<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  number: number; // 0-based current page index
+  size: number;
+  first: boolean;
+  last: boolean;
+}
+
+export interface AllCustomerOrdersParams {
+  page?: number;
+  size?: number;
+  status?: string;
+  search?: string;
+}
+
 class OrderService {
   async getAllDuplicateOrders(): Promise<Sale[]> {
     try {
@@ -97,6 +114,38 @@ class OrderService {
     }
   }
 
+  async getAllCustomerOrdersPaginated(
+    params: AllCustomerOrdersParams = {},
+  ): Promise<PagedResponse<Sale>> {
+    try {
+      const { page = 0, size = 5, status = '', search = '' } = params;
+      const resp = await apiClient.get('/order/allCustomer', {
+        params: {
+          page,
+          size,
+          status: status === 'all' ? '' : status,
+          search,
+        },
+      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const data = resp?.data as any;
+      return {
+        content: Array.isArray(data?.content)
+          ? (data.content as unknown[]).map((o) => mapOrderDtoToSale(o))
+          : [],
+        totalElements: data?.totalElements ?? 0,
+        totalPages: data?.totalPages ?? 0,
+        number: data?.number ?? 0,
+        size: data?.size ?? size,
+        first: data?.first ?? true,
+        last: data?.last ?? true,
+      };
+    } catch (err) {
+      console.error('orderService.getAllCustomerOrdersPaginated failed:', err);
+      throw err;
+    }
+  }
+
   async getUserDetails(id: number | string): Promise<any> {
     try {
       const resp = await apiClient.get(`/dashboard/getUserDetails/${id}`);
@@ -136,14 +185,12 @@ async function uploadTrackingData(trackingList: TrackingUploadDto[]): Promise<st
   }
 }
 
-
-
-
 export const getAllDuplicateOrders = () => orderService.getAllDuplicateOrders();
 export const deleteOrder = (id: string) => orderService.deleteOrder(id);
 export const getOrders = () => orderService.getOrders();
 export const getAllCustomerOrders = () => orderService.getAllCustomerOrders();
-export const uploadTracking = (trackingList: TrackingUploadDto[]) => uploadTrackingData(trackingList);
+export const getAllCustomerOrdersPaginated = (params?: AllCustomerOrdersParams) =>
+  orderService.getAllCustomerOrdersPaginated(params);
+export const uploadTracking = (trackingList: TrackingUploadDto[]) =>
+  uploadTrackingData(trackingList);
 export const getUserDetails = (id: string | number) => orderService.getUserDetails(id);
-
-
