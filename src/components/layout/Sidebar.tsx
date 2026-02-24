@@ -7,6 +7,7 @@ import {
   SettingsIcon,
   StoreIcon,
   UsersIcon,
+  ShoppingBagIcon,
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
@@ -29,6 +30,7 @@ const getNavItems = (userRole: string) => {
     { icon: HomeIcon, label: 'Dashboard', to: '/' },
     { icon: ProportionsIcon, label: 'Product', to: '/product' },
     { icon: UsersIcon, label: 'Users', to: '/users' },
+    { icon: ShoppingBagIcon, label: 'User Orders', to: '/user-orders' },
     { icon: StoreIcon, label: 'Stock', to: '/stock' },
     { icon: SettingsIcon, label: 'Settings', to: '/sale/settings', isSettings: true },
   ];
@@ -41,6 +43,7 @@ const getNavItems = (userRole: string) => {
     { icon: ScaleIcon, label: 'Tracking ID', to: '/tracking-id' },
     { icon: ProportionsIcon, label: 'Product', to: '/product' },
     { icon: UsersIcon, label: 'Users', to: '/users' },
+    { icon: ShoppingBagIcon, label: 'User Orders', to: '/user-orders' },
     { icon: StoreIcon, label: 'Stock', to: '/stock' },
     { icon: SettingsIcon, label: 'Settings', to: '/sale/settings', isSettings: true },
   ] : adminBaseItems;

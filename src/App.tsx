@@ -11,6 +11,7 @@ import { StockManagement } from './pages/StockManagement';
 import { Users } from './pages/Users';
 import UserProfile from './pages/UserProfile';
 import { TrackingId } from './pages/TrackingId';
+import { UserOrders } from './pages/UserOrders';
 import { getToken } from './services/authUtils';
 
 // Simple loader component
@@ -112,6 +113,7 @@ export function App() {
             <Route path="export-order" element={<ExportOrder />} />
             <Route path="product" element={<ProductManagement />} />
             <Route path="users" element={<Users />} />
+            <Route path="user-orders" element={<UserOrders />} />
             <Route path="profile" element={<UserProfile />} />
             <Route path="stock" element={<StockManagement />} />
             <Route path="tracking-id" element={<TrackingId />} />

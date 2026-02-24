@@ -69,6 +69,9 @@ export const Dashboard = () => {
   const [productsLoading, setProductsLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState<string>('all');
 
+  // Add state for check status button
+  const [checkStatusLoading, setCheckStatusLoading] = useState(false);
+
   const statusOptions = [
     { value: 'all', label: 'ALL STATUS' },
     { value: 'PENDING', label: 'PENDING' },
@@ -214,6 +217,31 @@ export const Dashboard = () => {
     setSelectedProduct(productId);
   };
 
+  // Handle check tracking status
+  const handleCheckStatus = async () => {
+    try {
+      setCheckStatusLoading(true);
+      await orderService.updateTrackingStatus();
+      setSnackbar({ 
+        open: true, 
+        message: 'Tracking status updated successfully', 
+        type: 'success' 
+      });
+      // Refresh the data after updating tracking status
+      await fetchData();
+    } catch (err) {
+      const message = (err as Error)?.message || 'Failed to update tracking status';
+      setSnackbar({ 
+        open: true, 
+        message, 
+        type: 'error' 
+      });
+      console.error('Check status failed:', err);
+    } finally {
+      setCheckStatusLoading(false);
+    }
+  };
+
   return (
     <div
   className="
@@ -239,6 +267,20 @@ export const Dashboard = () => {
       />
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Dashboard Overview</h1>
+        <button
+          onClick={handleCheckStatus}
+          disabled={checkStatusLoading}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors duration-200 flex items-center gap-2 whitespace-nowrap"
+        >
+          {checkStatusLoading ? (
+            <>
+              <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              Checking...
+            </>
+          ) : (
+            'Check Status'
+          )}
+        </button>
         {!userLoading && user && user.role.toLowerCase() === 'admin' && (
           <div className="flex flex-wrap gap-2 max-w-full overflow-x-auto pb-2">
             <button
