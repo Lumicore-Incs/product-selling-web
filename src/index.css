@@ -2,6 +2,21 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
+/* Global Font Weight Styles */
+@layer base {
+  body {
+    @apply font-normal;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold;
+  }
+
+  p, span, div {
+    @apply font-normal;
+  }
+}
+
 /* Prevent horizontal scrollbars globally */
 html, body, #root {
   width: 100%;

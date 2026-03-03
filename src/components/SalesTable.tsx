@@ -145,21 +145,25 @@ export const SalesTable: React.FC<SalesTableProps> = ({
       case 'Collected from Warehouse':
         return 'bg-pink-500 text-white border-pink-600';
       case 'Dispatched To Destination':
-        return 'bg-blue-800 text-white border-yellow-900';
+        return 'bg-black-500 text-white border-yellow-900';
       case 'Received At Destination':
         return 'bg-yellow-400 text-white border-yellow-500';
       case 'Out For Delivery':
-        return 'bg-gray-300 text-white border-gray-400';
+        return 'bg-gray-300 text-black border-gray-400';
       case 'PENDING':
         return 'bg-orange-200 text-yellow-800 border-orange-300';
       case 'Failed To Deliver':
         return 'bg-red-500 text-white border-red-400';
+        case 'Returned to HO':
+        return 'bg-orange-500 text-white border-red-400';
+        case 'Returned to Branch':
+        return 'bg-red-300 text-white border-red-400';
       case 'Returned to Client':
         return 'bg-red-500 text-white border-red-400';
       case 'Delivered':
         return 'bg-green-600 text-white border-green-600';
       default:
-        return 'bg-gray-100 text-white border-gray-200';
+        return 'bg-gray-100 text-black border-gray-200';
     }
   };
 
