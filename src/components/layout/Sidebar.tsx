@@ -1,15 +1,15 @@
 import {
+  BarChart3Icon,
+  ChevronDownIcon,
   DownloadIcon,
   HomeIcon,
   LogOutIcon,
   ProportionsIcon,
   ScaleIcon,
   SettingsIcon,
+  ShoppingBagIcon,
   StoreIcon,
   UsersIcon,
-  ShoppingBagIcon,
-  ChevronDownIcon,
-  BarChart3Icon,
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
@@ -29,10 +29,8 @@ const getNavItems = (userRole: string): NavItem[] => {
   const normalized = (userRole || '').toUpperCase();
 
   // Check for specific roles
-  const isSuperUser = 
-    normalized === 'SUPER USER' || 
-    normalized === 'SUPER_USER' || 
-    normalized === 'SUPERUSER';
+  const isSuperUser =
+    normalized === 'SUPER USER' || normalized === 'SUPER_USER' || normalized === 'SUPERUSER';
   const isAdmin = normalized === 'ADMIN';
 
   // Admin menu items
@@ -53,24 +51,26 @@ const getNavItems = (userRole: string): NavItem[] => {
   ];
 
   // Add Duplicate Orders only for SUPER USER
-  const adminItems: NavItem[] = isSuperUser ? [
-    { icon: HomeIcon, label: 'Dashboard', to: '/' },
-    { icon: ScaleIcon, label: 'Duplicate Orders', to: '/sale/duplicate' },
-    { icon: DownloadIcon, label: 'Export Orders', to: '/export-order' },
-    { icon: ScaleIcon, label: 'Tracking ID', to: '/tracking-id' },
-    { icon: ProportionsIcon, label: 'Product', to: '/product' },
-    {
-      icon: UsersIcon,
-      label: 'Users',
-      children: [
-        { icon: UsersIcon, label: 'User List', to: '/users' },
-        { icon: ShoppingBagIcon, label: 'User Orders', to: '/user-orders' },
-        { icon: BarChart3Icon, label: 'Daily Report', to: '/daily-report' },
-      ],
-    },
-    { icon: StoreIcon, label: 'Stock', to: '/stock' },
-    { icon: SettingsIcon, label: 'Settings', to: '/sale/settings', isSettings: true },
-  ] : adminBaseItems;
+  const adminItems: NavItem[] = isSuperUser
+    ? [
+        { icon: HomeIcon, label: 'Dashboard', to: '/' },
+        { icon: ScaleIcon, label: 'Duplicate Orders', to: '/sale/duplicate' },
+        { icon: DownloadIcon, label: 'Export Orders', to: '/export-order' },
+        { icon: ScaleIcon, label: 'Tracking ID', to: '/tracking-id' },
+        { icon: ProportionsIcon, label: 'Product', to: '/product' },
+        {
+          icon: UsersIcon,
+          label: 'Users',
+          children: [
+            { icon: UsersIcon, label: 'User List', to: '/users' },
+            { icon: ShoppingBagIcon, label: 'User Orders', to: '/user-orders' },
+            { icon: BarChart3Icon, label: 'Daily Report', to: '/daily-report' },
+          ],
+        },
+        { icon: StoreIcon, label: 'Stock', to: '/stock' },
+        { icon: SettingsIcon, label: 'Settings', to: '/sale/settings', isSettings: true },
+      ]
+    : adminBaseItems;
 
   // Regular users keep the existing, broader set
   const userItems: NavItem[] = [
@@ -81,7 +81,7 @@ const getNavItems = (userRole: string): NavItem[] => {
   ];
 
   // Return admin menu if admin/superuser, otherwise return user menu
-  return (isAdmin || isSuperUser) ? adminItems : userItems;
+  return isAdmin || isSuperUser ? adminItems : userItems;
 };
 
 interface SidebarProps {
@@ -189,9 +189,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
             <ChevronDownIcon
               size={18}
-              className={`transition-transform duration-300 ${
-                isExpanded ? 'rotate-180' : ''
-              }`}
+              className={`transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}
             />
           </button>
 

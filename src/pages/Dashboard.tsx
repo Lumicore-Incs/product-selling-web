@@ -1,5 +1,5 @@
 import { CreditCardIcon, ScaleIcon, TrendingDownIcon, TrendingUpIcon } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertSnackbar } from '../components/AlertSnackbar';
 import { BackgroundIcons } from '../components/BackgroundIcons';
 import { SalesTable } from '../components/SalesTable';
@@ -7,7 +7,13 @@ import { Sale } from '../models/sales';
 import { getCurrentUser } from '../service/auth';
 import { getDashboardStats } from '../service/dashboard';
 import { getAllProducts } from '../service/product'; // Add this import
-import { getAllCustomerOrders, getOrders, orderService } from '../services/orders/orderService';
+import {
+  getAllCustomerOrdersPaginated,
+  getOrdersPaginated,
+  orderService,
+  type OrderFilterParams,
+  type PaginatedResult,
+} from '../services/orders/orderService';
 
 type StatCardProps = {
   icon: React.ComponentType<any>;
@@ -58,11 +64,28 @@ export const Dashboard = () => {
   const [salesError, setSalesError] = useState('');
   const [showTodayOnly, setShowTodayOnly] = useState(false);
 
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const PAGE_SIZE_OPTIONS = [5, 10, 20];
+
   const [user, setUser] = useState<{ role: string } | null>(null);
   const [userLoading, setUserLoading] = useState(true);
 
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [salesSearch, setSalesSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleSearchChange = (value: string) => {
+    setSalesSearch(value);
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => {
+      setDebouncedSearch(value);
+      setCurrentPage(0);
+    }, 400);
+  };
 
   // Add product-related state
   const [products, setProducts] = useState<any[]>([]);
@@ -128,9 +151,17 @@ export const Dashboard = () => {
       setLoading(true);
       setSalesLoading(true);
 
-      const [statsData, salesApiData] = await Promise.all([
+      const filters: OrderFilterParams = {
+        search: debouncedSearch,
+        status: statusFilter,
+        productId: selectedProduct,
+      };
+
+      const [statsData, salesResult] = await Promise.all([
         getDashboardStats(),
-        showTodayOnly ? getOrders() : getAllCustomerOrders(),
+        showTodayOnly
+          ? getOrdersPaginated(currentPage, pageSize, filters)
+          : getAllCustomerOrdersPaginated(currentPage, pageSize, filters),
       ]);
 
       // Process stats
@@ -146,8 +177,9 @@ export const Dashboard = () => {
       });
       setError('');
 
-      // salesApiData is expected to be the canonical Sale[] from orderService
-      setSales(salesApiData as Sale[]);
+      setSales((salesResult as PaginatedResult<Sale>).data);
+      setTotalCount((salesResult as PaginatedResult<Sale>).total);
+      setTotalPages((salesResult as PaginatedResult<Sale>).totalPages);
       setSalesError('');
     } catch (err) {
       console.error('Failed to fetch dashboard data:', err);
@@ -159,40 +191,13 @@ export const Dashboard = () => {
       setLoading(false);
       setSalesLoading(false);
     }
-  }, [showTodayOnly]);
+  }, [showTodayOnly, currentPage, pageSize, debouncedSearch, statusFilter, selectedProduct]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  const filteredSales =
-    statusFilter === 'all' ? sales : sales.filter((sale) => sale.status === statusFilter);
-
-  // Add product-based filtering
-  const productFilteredSales =
-    selectedProduct === 'all'
-      ? filteredSales
-      : filteredSales.filter((sale) =>
-          sale.items.some((item) => item.productId === selectedProduct)
-        );
-
-  const normalizedSearch = salesSearch.trim().toLowerCase();
-  const searchedSales =
-    normalizedSearch === ''
-      ? productFilteredSales
-      : productFilteredSales.filter((sale) => {
-          const name = (sale.customerName || sale.name || '').toLowerCase();
-          const contact1 = (sale.contact01 || '').toLowerCase();
-          const contact2 = (sale.contact02 || '').toLowerCase();
-          const waybill = (sale.waybillId || '').toLowerCase();
-
-          return (
-            name.includes(normalizedSearch) ||
-            contact1.includes(normalizedSearch) ||
-            contact2.includes(normalizedSearch) ||
-            waybill.includes(normalizedSearch)
-          );
-        });
+  const filteredSales = sales;
 
   const handleEdit = (sale: any) => {
     console.log('Editing:', sale);
@@ -218,6 +223,7 @@ export const Dashboard = () => {
   // Add product filter handler
   const handleProductFilter = (productId: string) => {
     setSelectedProduct(productId);
+    setCurrentPage(0);
   };
 
   // Handle check tracking status
@@ -225,19 +231,19 @@ export const Dashboard = () => {
     try {
       setCheckStatusLoading(true);
       await orderService.updateTrackingStatus();
-      setSnackbar({ 
-        open: true, 
-        message: 'Tracking status updated successfully', 
-        type: 'success' 
+      setSnackbar({
+        open: true,
+        message: 'Tracking status updated successfully',
+        type: 'success',
       });
       // Refresh the data after updating tracking status
       await fetchData();
     } catch (err) {
       const message = (err as Error)?.message || 'Failed to update tracking status';
-      setSnackbar({ 
-        open: true, 
-        message, 
-        type: 'error' 
+      setSnackbar({
+        open: true,
+        message,
+        type: 'error',
       });
       console.error('Check status failed:', err);
     } finally {
@@ -247,7 +253,7 @@ export const Dashboard = () => {
 
   return (
     <div
-  className="
+      className="
     w-full
     max-w-full
     sm:max-w-full
@@ -260,7 +266,7 @@ export const Dashboard = () => {
     relative
     overflow-x-hidden
   "
-> 
+    >
       <BackgroundIcons type="dashboard" />
       <AlertSnackbar
         message={snackbar.message}
@@ -369,7 +375,7 @@ export const Dashboard = () => {
               <input
                 type="text"
                 value={salesSearch}
-                onChange={(e) => setSalesSearch(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 placeholder="Search name, contact, waybill"
                 className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
@@ -377,7 +383,10 @@ export const Dashboard = () => {
             <div className="relative min-w-[150px]">
               <select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setCurrentPage(0);
+                }}
                 className="w-full appearance-none bg-white border border-gray-300 rounded-md pl-3 pr-6 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 {statusOptions.map((option) => (
@@ -409,7 +418,10 @@ export const Dashboard = () => {
               px-3 py-1 text-sm z-10 transition-colors duration-300
               ${showTodayOnly ? 'text-blue-600 font-medium' : 'text-gray-500'}
             `}
-                  onClick={() => setShowTodayOnly(true)}
+                  onClick={() => {
+                    setShowTodayOnly(true);
+                    setCurrentPage(0);
+                  }}
                 >
                   Today
                 </div>
@@ -418,7 +430,10 @@ export const Dashboard = () => {
               px-3 py-1 text-sm z-10 transition-colors duration-300
               ${!showTodayOnly ? 'text-blue-600 font-medium' : 'text-gray-500'}
             `}
-                  onClick={() => setShowTodayOnly(false)}
+                  onClick={() => {
+                    setShowTodayOnly(false);
+                    setCurrentPage(0);
+                  }}
                 >
                   All
                 </div>
@@ -431,11 +446,26 @@ export const Dashboard = () => {
           {salesError && <p className="text-red-500">{salesError}</p>}
           {!salesLoading && !salesError && (
             <SalesTable
-              sales={searchedSales}
+              sales={filteredSales}
               onEdit={handleEdit}
               onDelete={handleDelete}
               userRole={user?.role}
               onRefresh={fetchData}
+              searchTerm={salesSearch}
+              onSearchChange={handleSearchChange}
+              serverPagination={{
+                page: currentPage,
+                pageSize,
+                total: totalCount,
+                totalPages,
+                pageSizeOptions: PAGE_SIZE_OPTIONS,
+                onPrev: () => setCurrentPage((p) => Math.max(0, p - 1)),
+                onNext: () => setCurrentPage((p) => Math.min(totalPages - 1, p + 1)),
+                onPageSizeChange: (size) => {
+                  setPageSize(size);
+                  setCurrentPage(0);
+                },
+              }}
             />
           )}
         </div>

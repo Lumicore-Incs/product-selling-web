@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { AlertSnackbar } from '../components/AlertSnackbar';
 import { BackgroundIcons } from '../components/BackgroundIcons';
@@ -8,7 +8,7 @@ import { Sale as TableSale } from '../models/sales';
 
 import { getCurrentUser } from '../service/auth';
 import { dashboardApi } from '../services/api';
-import { orderService } from '../services/orders/orderService';
+import { orderService, type PaginatedResult } from '../services/orders/orderService';
 
 type Sale = TableSale;
 
@@ -34,11 +34,34 @@ export const SalesManagement: React.FC = () => {
     type: 'success' | 'error';
   }>({ open: false, message: '', type: 'error' });
   const [showExportPopup, setShowExportPopup] = useState(false);
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => {
+      setDebouncedSearch(value);
+      setPage(0);
+    }, 400);
+  };
 
   // Load existing orders from backend on component mount
   useEffect(() => {
     loadOrders();
   }, []);
+
+  // Reload orders when page, pageSize, or search changes
+  useEffect(() => {
+    if (page >= 0) {
+      loadOrders();
+    }
+  }, [page, pageSize, debouncedSearch]);
 
   // Load user data for role-based permissions
   useEffect(() => {
@@ -59,19 +82,25 @@ export const SalesManagement: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      // Load all orders from backend via orderService
-      console.log('Calling orderService.getAllCustomerOrders()...');
-      const responseOrder = await orderService.getAllCustomerOrders();
+      // Load orders using pagination from orderService with search filter
+      console.log(
+        `Calling orderService.getAllCustomerOrdersPaginated(page=${page}, size=${pageSize}, search=${debouncedSearch})...`,
+      );
+      const result = await orderService.getAllCustomerOrdersPaginated(page, pageSize, {
+        search: debouncedSearch,
+      });
 
-      // Check if response exists and is an array
-      if (!responseOrder || !Array.isArray(responseOrder)) {
-        console.error('Invalid response format:', responseOrder);
+      // Check if response exists
+      if (!result) {
+        console.error('Invalid response format:', result);
         throw new Error('Invalid data format received from server');
       }
 
-      console.log('Number of orders received:', responseOrder.length);
+      // Update pagination state
+      setTotal(result.total);
+      setTotalPages(result.totalPages);
 
-      const canonicalSales = responseOrder as Sale[];
+      const canonicalSales = result.data as Sale[];
       setSales(canonicalSales);
     } catch (error: any) {
       console.error('Error loading orders:', error);
@@ -99,6 +128,8 @@ export const SalesManagement: React.FC = () => {
   };
 
   const addSale = () => {
+    // Reset to first page when adding a new sale
+    setPage(0);
     loadOrders();
   };
 
@@ -201,8 +232,8 @@ export const SalesManagement: React.FC = () => {
   }
 
   return (
-<div
-  className="
+    <div
+      className="
     w-full
     max-w-full
     sm:max-w-full
@@ -215,8 +246,8 @@ export const SalesManagement: React.FC = () => {
     relative
     overflow-x-hidden
   "
-> 
-     <BackgroundIcons type="sales" />
+    >
+      <BackgroundIcons type="sales" />
       <AlertSnackbar
         message={snackbar.message}
         type={snackbar.type}
@@ -270,7 +301,9 @@ export const SalesManagement: React.FC = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
           <div className="w-full sm:w-auto">
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">{salesTitle}</h1>
-            <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">Add, edit, and manage your sales entries</p>
+            <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">
+              Add, edit, and manage your sales entries
+            </p>
           </div>
           <div className="flex flex-wrap gap-2 w-full sm:w-auto">
             <button
@@ -320,11 +353,26 @@ export const SalesManagement: React.FC = () => {
             isLoading={isLoading}
             userRole={user?.role}
             onRefresh={refreshData}
+            searchTerm={search}
+            onSearchChange={handleSearchChange}
             onStatusChange={async (saleId, newStatus) => {
-              const sale = sales.find(s => s.id === saleId);
+              const sale = sales.find((s) => s.id === saleId);
               if (!sale) return;
               const updatedSale = { ...sale, status: newStatus };
               await updateSale(updatedSale);
+            }}
+            serverPagination={{
+              page,
+              pageSize,
+              total,
+              totalPages,
+              pageSizeOptions: [10, 20, 50],
+              onPrev: () => setPage((p) => Math.max(0, p - 1)),
+              onNext: () => setPage((p) => Math.min(totalPages - 1, p + 1)),
+              onPageSizeChange: (newSize) => {
+                setPageSize(newSize);
+                setPage(0);
+              },
             }}
           />
         </div>

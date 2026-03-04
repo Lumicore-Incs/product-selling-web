@@ -2,6 +2,70 @@ import { Sale } from '../../models/sales';
 import apiClient from '../axiosConfig';
 import { mapOrderDtoToSale } from '../mappers/salesMapper';
 
+export interface PaginatedResult<T> {
+  data: T[];
+  total: number;
+  totalPages: number;
+  page: number;
+  size: number;
+}
+
+export interface OrderFilterParams {
+  search?: string;
+  status?: string; // omit or pass empty string to mean "all"
+  productId?: string; // omit or pass empty string to mean "all"
+}
+
+function parsePaginatedResponse(raw: unknown, page: number, size: number): PaginatedResult<Sale> {
+  if (!raw) return { data: [], total: 0, totalPages: 0, page, size };
+
+  if (typeof raw === 'object' && raw !== null) {
+    const r = raw as Record<string, unknown>;
+
+    // Spring Boot Pageable: { content: [], totalElements: N, totalPages: N, number: N }
+    if (Array.isArray(r['content'])) {
+      const data = (r['content'] as unknown[]).map((o) => mapOrderDtoToSale(o));
+      const total = Number(r['totalElements'] ?? data.length);
+      const totalPages = Number(r['totalPages'] ?? Math.ceil(total / size));
+      return { data, total, totalPages, page, size };
+    }
+
+    // Custom wrapper: { data: [], total: N, totalPages: N }
+    if (Array.isArray(r['data'])) {
+      const data = (r['data'] as unknown[]).map((o) => mapOrderDtoToSale(o));
+      const total = Number(r['total'] ?? r['totalElements'] ?? data.length);
+      const totalPages = Number(r['totalPages'] ?? r['pages'] ?? Math.ceil(total / size));
+      return { data, total, totalPages, page, size };
+    }
+  }
+
+  // Plain array fallback (backend not yet paginated)
+  if (Array.isArray(raw)) {
+    const data = (raw as unknown[]).map((o) => mapOrderDtoToSale(o));
+    return { data, total: data.length, totalPages: 1, page, size };
+  }
+
+  return { data: [], total: 0, totalPages: 0, page, size };
+}
+
+/**
+ * Builds the query-param object sent to the backend.
+ * Backend is expected to support:
+ *   GET /order?page=0&size=10&search=john&status=PENDING&productId=3
+ * Omit a param to disable that filter.
+ */
+function buildFilterParams(
+  page: number,
+  size: number,
+  { search, status, productId }: OrderFilterParams,
+): Record<string, string | number> {
+  const params: Record<string, string | number> = { page, size };
+  if (search && search.trim()) params['search'] = search.trim();
+  if (status && status !== 'all') params['status'] = status;
+  if (productId && productId !== 'all') params['productId'] = productId;
+  return params;
+}
+
 class OrderService {
   async getAllDuplicateOrders(): Promise<Sale[]> {
     try {
@@ -97,6 +161,36 @@ class OrderService {
     }
   }
 
+  async getOrdersPaginated(
+    page = 0,
+    size = 10,
+    filters: OrderFilterParams = {},
+  ): Promise<PaginatedResult<Sale>> {
+    try {
+      const params = buildFilterParams(page, size, filters);
+      const resp = await apiClient.get('/order', { params });
+      return parsePaginatedResponse(resp?.data, page, size);
+    } catch (err) {
+      console.error('orderService.getOrdersPaginated failed:', err);
+      throw err;
+    }
+  }
+
+  async getAllCustomerOrdersPaginated(
+    page = 0,
+    size = 10,
+    filters: OrderFilterParams = {},
+  ): Promise<PaginatedResult<Sale>> {
+    try {
+      const params = buildFilterParams(page, size, filters);
+      const resp = await apiClient.get('/order/allCustomer', { params });
+      return parsePaginatedResponse(resp?.data, page, size);
+    } catch (err) {
+      console.error('orderService.getAllCustomerOrdersPaginated failed:', err);
+      throw err;
+    }
+  }
+
   async getUserDetails(id: number | string): Promise<any> {
     try {
       const resp = await apiClient.get(`/dashboard/getUserDetails/${id}`);
@@ -107,9 +201,11 @@ class OrderService {
     }
   }
 
-  async updateTrackingStatus(): Promise<void> {
+  async updateTrackingStatus(page = 0, size = 10): Promise<PaginatedResult<Sale>> {
     try {
-      await apiClient.get('dashboard/updateTrackingStatus');
+      const params = { page, size };
+      const resp = await apiClient.get('dashboard/updateTrackingStatus', { params });
+      return parsePaginatedResponse(resp?.data, page, size);
     } catch (err) {
       console.error('orderService.updateTrackingStatus failed:', err);
       throw err;
@@ -136,14 +232,19 @@ async function uploadTrackingData(trackingList: TrackingUploadDto[]): Promise<st
   }
 }
 
-
-
-
 export const getAllDuplicateOrders = () => orderService.getAllDuplicateOrders();
 export const deleteOrder = (id: string) => orderService.deleteOrder(id);
 export const getOrders = () => orderService.getOrders();
 export const getAllCustomerOrders = () => orderService.getAllCustomerOrders();
-export const uploadTracking = (trackingList: TrackingUploadDto[]) => uploadTrackingData(trackingList);
+export const getOrdersPaginated = (page: number, size: number, filters?: OrderFilterParams) =>
+  orderService.getOrdersPaginated(page, size, filters);
+export const getAllCustomerOrdersPaginated = (
+  page: number,
+  size: number,
+  filters?: OrderFilterParams,
+) => orderService.getAllCustomerOrdersPaginated(page, size, filters);
+export const updateTrackingStatus = (page?: number, size?: number) =>
+  orderService.updateTrackingStatus(page, size);
+export const uploadTracking = (trackingList: TrackingUploadDto[]) =>
+  uploadTrackingData(trackingList);
 export const getUserDetails = (id: string | number) => orderService.getUserDetails(id);
-
-

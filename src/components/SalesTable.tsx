@@ -4,20 +4,19 @@ import {
   EyeIcon,
   MapPinIcon,
   PackageIcon,
+  PencilIcon,
   PhoneIcon,
   RefreshCwIcon,
-  PencilIcon,
-  Trash2Icon,
   SearchIcon,
-  XIcon
+  Trash2Icon,
+  XIcon,
 } from 'lucide-react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Sale, SaleItem } from '../models/sales';
 import { ConfirmDialog } from './ConfirmDialog';
-import Spinner from './Spinner';
 import { SalesViewModal } from './SalesViewModal';
-
+import Spinner from './Spinner';
 
 const DEFAULT_COLUMN_WIDTHS = {
   serial: 100,
@@ -31,7 +30,7 @@ const DEFAULT_COLUMN_WIDTHS = {
   qty: 90,
   products: 160,
   total: 160,
-  actions: 140
+  actions: 140,
 } as const;
 
 type ColumnKey = keyof typeof DEFAULT_COLUMN_WIDTHS;
@@ -44,6 +43,21 @@ interface SalesTableProps {
   userRole?: string;
   onRefresh?: () => void;
   onStatusChange?: (saleId: string, newStatus: string) => void;
+  /** Search term value (for controlled input) */
+  searchTerm?: string;
+  /** Callback when search term changes */
+  onSearchChange?: (term: string) => void;
+  /** When provided the table uses server-side pagination instead of internal client-side pagination */
+  serverPagination?: {
+    page: number; // 0-based
+    pageSize: number;
+    total: number;
+    totalPages: number;
+    pageSizeOptions: number[];
+    onPrev: () => void;
+    onNext: () => void;
+    onPageSizeChange: (size: number) => void;
+  };
 }
 
 export const SalesTable: React.FC<SalesTableProps> = ({
@@ -53,13 +67,13 @@ export const SalesTable: React.FC<SalesTableProps> = ({
   onDelete,
   userRole,
   onRefresh,
-  onStatusChange
+  onStatusChange,
+  searchTerm: externalSearchTerm,
+  onSearchChange,
+  serverPagination,
 }) => {
   // Status options
-  const statusOptions = [
-    'TEMPORARY',
-    'PENDING'
-  ];
+  const statusOptions = ['TEMPORARY', 'PENDING'];
   const [columnWidths, setColumnWidths] = useState(DEFAULT_COLUMN_WIDTHS);
   const resizingRef = useRef<null | { key: ColumnKey; startX: number; startWidth: number }>(null);
 
@@ -109,8 +123,11 @@ export const SalesTable: React.FC<SalesTableProps> = ({
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [showBlockDialog, setShowBlockDialog] = useState(false);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [internalSearchTerm, setInternalSearchTerm] = useState('');
   const rowsPerPage = 5;
+
+  // Use external search term if provided via props, otherwise use internal state
+  const searchTerm = onSearchChange ? externalSearchTerm || '' : internalSearchTerm;
 
   const toggleRowExpansion = (id: string) => {
     const newExpanded = new Set(expandedRows);
@@ -133,7 +150,6 @@ export const SalesTable: React.FC<SalesTableProps> = ({
     });
   };
 
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'TEMPORARY':
@@ -141,7 +157,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
       case 'Processing':
         return 'bg-blue-500 text-white border-blue-600';
       case 'Collected At Sorting Center':
-        return 'bg-blue-500 text-white border-blue-600'
+        return 'bg-blue-500 text-white border-blue-600';
       case 'Collected from Warehouse':
         return 'bg-pink-500 text-white border-pink-600';
       case 'Dispatched To Destination':
@@ -154,9 +170,9 @@ export const SalesTable: React.FC<SalesTableProps> = ({
         return 'bg-orange-200 text-yellow-800 border-orange-300';
       case 'Failed To Deliver':
         return 'bg-red-500 text-white border-red-400';
-        case 'Returned to HO':
+      case 'Returned to HO':
         return 'bg-orange-500 text-white border-red-400';
-        case 'Returned to Branch':
+      case 'Returned to Branch':
         return 'bg-red-300 text-white border-red-400';
       case 'Returned to Client':
         return 'bg-red-500 text-white border-red-400';
@@ -171,19 +187,21 @@ export const SalesTable: React.FC<SalesTableProps> = ({
     return items.reduce((sum, item) => sum + item.qty * item.price, 0);
   };
 
-  // Filter sales based on search term
-  const filteredSales = sales.filter((sale) => {
-    if (!searchTerm.trim()) return true;
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      sale.serialNo?.toLowerCase().includes(searchLower) ||
-      sale.customerName?.toLowerCase().includes(searchLower) ||
-      sale.waybillId?.toLowerCase().includes(searchLower) ||
-      sale.address?.toLowerCase().includes(searchLower) ||
-      sale.contact01?.toLowerCase().includes(searchLower) ||
-      sale.contact02?.toLowerCase().includes(searchLower)
-    );
-  });
+  // Filter sales based on search term (bypassed when server-side pagination is active)
+  const filteredSales = serverPagination
+    ? sales
+    : sales.filter((sale) => {
+        if (!searchTerm.trim()) return true;
+        const searchLower = searchTerm.toLowerCase();
+        return (
+          sale.serialNo?.toLowerCase().includes(searchLower) ||
+          sale.customerName?.toLowerCase().includes(searchLower) ||
+          sale.waybillId?.toLowerCase().includes(searchLower) ||
+          sale.address?.toLowerCase().includes(searchLower) ||
+          sale.contact01?.toLowerCase().includes(searchLower) ||
+          sale.contact02?.toLowerCase().includes(searchLower)
+        );
+      });
 
   // Pagination logic
   const sortedSales = [...filteredSales].sort((a, b) => {
@@ -194,13 +212,43 @@ export const SalesTable: React.FC<SalesTableProps> = ({
     return 0;
   });
 
-  const totalPages = Math.ceil(sortedSales.length / rowsPerPage);
-  const paginatedSales = sortedSales.slice(
-    (currentPage - 1) * rowsPerPage,
-    currentPage * rowsPerPage
-  );
-  const handlePrev = () => setCurrentPage((p) => Math.max(1, p - 1));
-  const handleNext = () => setCurrentPage((p) => Math.min(totalPages, p + 1));
+  const totalPages = serverPagination
+    ? serverPagination.totalPages
+    : Math.ceil(sortedSales.length / rowsPerPage);
+
+  // When server pagination is active, all records in `sales` belong to the current page — no slicing needed
+  const paginatedSales = serverPagination
+    ? sortedSales
+    : sortedSales.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+
+  const handlePrev = () => {
+    if (serverPagination) {
+      serverPagination.onPrev();
+    } else {
+      setCurrentPage((p) => Math.max(1, p - 1));
+    }
+  };
+  const handleNext = () => {
+    if (serverPagination) {
+      serverPagination.onNext();
+    } else {
+      setCurrentPage((p) => Math.min(totalPages, p + 1));
+    }
+  };
+
+  // Derived display values for pagination footer
+  const displayPage = serverPagination ? serverPagination.page + 1 : currentPage;
+  const displayFrom = serverPagination
+    ? serverPagination.page * serverPagination.pageSize + 1
+    : (currentPage - 1) * rowsPerPage + 1;
+  const displayTo = serverPagination
+    ? Math.min((serverPagination.page + 1) * serverPagination.pageSize, serverPagination.total)
+    : Math.min(currentPage * rowsPerPage, filteredSales.length);
+  const displayTotal = serverPagination ? serverPagination.total : filteredSales.length;
+  const isPrevDisabled = serverPagination ? serverPagination.page === 0 : currentPage === 1;
+  const isNextDisabled = serverPagination
+    ? serverPagination.page >= serverPagination.totalPages - 1
+    : currentPage === totalPages;
 
   // Show skeleton loader when data is loading
   if (isLoading) {
@@ -245,47 +293,57 @@ export const SalesTable: React.FC<SalesTableProps> = ({
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 sm:p-6">
         <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <h2 className="text-xl sm:text-2xl font-bold text-white">Sales Entries</h2>
               <p className="text-blue-100 text-sm mt-1">
-                {filteredSales.length} of {sales.length} entries
+                {serverPagination
+                  ? `${serverPagination.total} entries`
+                  : `${filteredSales.length} of ${sales.length} entries`}
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="relative flex-1 sm:flex-none sm:w-64">
+                <SearchIcon className="absolute left-3 top-2.5 w-4 h-4 text-white text-opacity-70" />
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  value={searchTerm}
+                  onChange={(e) => {
+                    if (onSearchChange) {
+                      onSearchChange(e.target.value);
+                    } else {
+                      setInternalSearchTerm(e.target.value);
+                      setCurrentPage(1);
+                    }
+                  }}
+                  className="w-full pl-10 pr-8 py-2 bg-white bg-opacity-10 text-white placeholder-gray-100 text-sm rounded-lg border border-white border-opacity-20 focus:outline-none focus:bg-opacity-20 focus:border-opacity-40"
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => {
+                      if (onSearchChange) {
+                        onSearchChange('');
+                      } else {
+                        setInternalSearchTerm('');
+                        setCurrentPage(1);
+                      }
+                    }}
+                    className="absolute right-2 top-2.5 text-white text-opacity-70 hover:text-opacity-100"
+                    title="Clear search"
+                  >
+                    <XIcon className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
               <button
                 onClick={() => onRefresh && onRefresh()}
                 title="Refresh"
-                className="p-2 bg-white bg-opacity-10 hover:bg-opacity-20 rounded text-white"
+                className="p-2 bg-white bg-opacity-10 hover:bg-opacity-20 rounded text-white flex-shrink-0"
               >
                 <RefreshCwIcon className="w-4 h-4" />
               </button>
             </div>
-          </div>
-          {/* Search Input */}
-          <div className="relative">
-            <SearchIcon className="absolute left-3 top-3 w-4 h-4 text-white text-opacity-70" />
-            <input
-              type="text"
-              placeholder="Search by customer, serial, waybill, address, or contact..."
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="w-full pl-10 pr-10 py-2 bg-white bg-opacity-10 text-white placeholder-gray-100 rounded-lg border border-white border-opacity-20 focus:outline-none focus:bg-opacity-20 focus:border-opacity-40"
-            />
-            {searchTerm && (
-              <button
-                onClick={() => {
-                  setSearchTerm('');
-                  setCurrentPage(1);
-                }}
-                className="absolute right-3 top-3 text-white text-opacity-70 hover:text-opacity-100"
-              >
-                <XIcon className="w-4 h-4" />
-              </button>
-            )}
           </div>
         </div>
       </div>
@@ -462,10 +520,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                       >
                         {sale.serialNo}
                       </td>
-                      <td
-                        className="py-4 whitespace-nowrap"
-                        style={widthStyle('customer')}
-                      >
+                      <td className="py-4 whitespace-nowrap" style={widthStyle('customer')}>
                         <div className="font-medium text-gray-900">{sale.customerName}</div>
                       </td>
                       <td
@@ -480,11 +535,10 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                       >
                         {formatDate(sale.date)}
                       </td>
-                      <td
-                        className="px-6 py-4"
-                        style={widthStyle('address')}
-                      >
-                        <div className="text-sm text-gray-600 max-w-xs truncate">{sale.address}</div>
+                      <td className="px-6 py-4" style={widthStyle('address')}>
+                        <div className="text-sm text-gray-600 max-w-xs truncate">
+                          {sale.address}
+                        </div>
                       </td>
                       <td
                         className="px-4 py-4 whitespace-nowrap text-sm text-gray-600"
@@ -498,19 +552,16 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                       >
                         {sale.contact02 || '-'}
                       </td>
-                      <td
-                        className="px-4 py-4 whitespace-nowrap"
-                        style={widthStyle('status')}
-                      >
+                      <td className="px-4 py-4 whitespace-nowrap" style={widthStyle('status')}>
                         {onStatusChange && sale.status === 'TEMPORARY' ? (
                           <select
                             className={`px-2 py-1 rounded-full text-xs font-medium border focus:outline-none ${getStatusColor(
-                              sale.status ?? '-'
+                              sale.status ?? '-',
                             )}`}
                             value={sale.status}
-                            onChange={e => onStatusChange(sale.id, e.target.value)}
+                            onChange={(e) => onStatusChange(sale.id, e.target.value)}
                           >
-                            {statusOptions.map(option => (
+                            {statusOptions.map((option) => (
                               <option key={option} value={option}>
                                 {option}
                               </option>
@@ -519,7 +570,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                         ) : (
                           <span
                             className={`inline-flex px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-                              sale.status ?? '-'
+                              sale.status ?? '-',
                             )}`}
                           >
                             {sale.status ?? '-'}
@@ -532,10 +583,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                       >
                         {sale.qty}
                       </td>
-                      <td
-                        className="px-6 py-4"
-                        style={widthStyle('products')}
-                      >
+                      <td className="px-6 py-4" style={widthStyle('products')}>
                         <div className="max-w-xs">
                           {sale.items && sale.items.length > 0 ? (
                             <div className="space-y-1">
@@ -561,10 +609,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                           )}
                         </div>
                       </td>
-                      <td
-                        className="px-1 py-4 whitespace-nowrap"
-                        style={widthStyle('total')}
-                      >
+                      <td className="px-1 py-4 whitespace-nowrap" style={widthStyle('total')}>
                         <div className="text-lg font-semibold text-green-600">
                           LKR {sale.totalPrice ? sale.totalPrice.toFixed(2) : '0.00'}
                         </div>
@@ -641,18 +686,17 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                           <div className="text-xs text-gray-500 mt-1">
                             Waybill Id: {sale.waybillId ?? '-'}
                           </div>
-
                         </div>
                         <div className="ml-3 flex items-center gap-2">
                           {onStatusChange && sale.status === 'TEMPORARY' ? (
                             <select
                               className={`px-2 py-1 rounded-full text-xs font-medium border focus:outline-none ${getStatusColor(
-                                sale.status ?? '-'
+                                sale.status ?? '-',
                               )}`}
                               value={sale.status}
-                              onChange={e => onStatusChange(sale.id, e.target.value)}
+                              onChange={(e) => onStatusChange(sale.id, e.target.value)}
                             >
-                              {statusOptions.map(option => (
+                              {statusOptions.map((option) => (
                                 <option key={option} value={option}>
                                   {option}
                                 </option>
@@ -661,7 +705,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                           ) : (
                             <span
                               className={`inline-flex px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-                                sale.status ?? '-'
+                                sale.status ?? '-',
                               )}`}
                             >
                               {sale.status}
@@ -763,10 +807,14 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                                     <div className="text-sm font-medium text-gray-900">
                                       {item.productName}
                                     </div>
-                                    <div className="text-xs text-gray-600">LKR {item.price} each</div>
+                                    <div className="text-xs text-gray-600">
+                                      LKR {item.price} each
+                                    </div>
                                   </div>
                                   <div className="text-right">
-                                    <div className="text-sm font-medium text-gray-900">x{item.qty}</div>
+                                    <div className="text-sm font-medium text-gray-900">
+                                      x{item.qty}
+                                    </div>
                                     <div className="text-xs text-green-600">
                                       LKR {(item.qty * item.price).toFixed(2)}
                                     </div>
@@ -797,39 +845,61 @@ export const SalesTable: React.FC<SalesTableProps> = ({
       )}
 
       {/* Pagination */}
-      {filteredSales.length > 0 && (
+      {displayTotal > 0 && (
         <div className="border-t border-gray-200 bg-gray-50 px-4 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="text-sm text-gray-600 text-center sm:text-left">
-              Showing <span className="font-medium">{(currentPage - 1) * rowsPerPage + 1}</span> to{' '}
-              <span className="font-medium">{Math.min(currentPage * rowsPerPage, filteredSales.length)}</span>{' '}
-              of <span className="font-medium">{filteredSales.length}</span> entries
-              {searchTerm && <span className="text-gray-500"> (filtered from {sales.length} total)</span>}
+            <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600 text-center sm:text-left">
+              <span>
+                Showing <span className="font-medium">{displayFrom}</span> to{' '}
+                <span className="font-medium">{displayTo}</span> of{' '}
+                <span className="font-medium">{displayTotal}</span> entries
+                {!serverPagination && searchTerm && (
+                  <span className="text-gray-500"> (filtered from {sales.length} total)</span>
+                )}
+              </span>
+              {serverPagination && (
+                <label className="flex items-center gap-1">
+                  <span className="text-gray-500">Rows:</span>
+                  <select
+                    value={serverPagination.pageSize}
+                    onChange={(e) => serverPagination.onPageSizeChange(Number(e.target.value))}
+                    className="border border-gray-300 rounded px-2 py-0.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {serverPagination.pageSizeOptions.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
             </div>
 
             <div className="flex items-center justify-center gap-2">
               <button
                 onClick={handlePrev}
-                disabled={currentPage === 1}
-                className={`px-4 py-2 rounded-lg border font-medium transition-all duration-200 ${currentPage === 1
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
-                  : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300 hover:border-gray-400'
-                  }`}
+                disabled={isPrevDisabled}
+                className={`px-4 py-2 rounded-lg border font-medium transition-all duration-200 ${
+                  isPrevDisabled
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
+                    : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300 hover:border-gray-400'
+                }`}
               >
                 Previous
               </button>
 
               <div className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg">
-                Page {currentPage} of {totalPages}
+                Page {displayPage} of {totalPages}
               </div>
 
               <button
                 onClick={handleNext}
-                disabled={currentPage === totalPages}
-                className={`px-4 py-2 rounded-lg border font-medium transition-all duration-200 ${currentPage === totalPages
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
-                  : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300 hover:border-gray-400'
-                  }`}
+                disabled={isNextDisabled}
+                className={`px-4 py-2 rounded-lg border font-medium transition-all duration-200 ${
+                  isNextDisabled
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
+                    : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300 hover:border-gray-400'
+                }`}
               >
                 Next
               </button>
@@ -863,10 +933,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
       />
 
       {/* View Modal */}
-      <SalesViewModal
-        sale={selectedSale}
-        onClose={() => setSelectedSale(null)}
-      />
+      <SalesViewModal sale={selectedSale} onClose={() => setSelectedSale(null)} />
     </div>
   );
 };

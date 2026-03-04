@@ -57,10 +57,10 @@ export function mapOrderDtoToSale(order: unknown): FrontSale {
   const items: FrontSaleItem[] = rawItems.map((r) => mapOrderItemDtoToSaleItem(r));
   const qty = items.reduce(
     (sum: number, it: FrontSaleItem) => sum + (it.qty || it.quantity || 0),
-    0
+    0,
   );
   const totalPrice = Number(
-    ord['totalPrice'] ?? ord['totalAmount'] ?? items.reduce((s, i) => s + i.total, 0)
+    ord['totalPrice'] ?? ord['totalAmount'] ?? items.reduce((s, i) => s + i.total, 0),
   );
 
   const orderDateValue =
@@ -73,7 +73,11 @@ export function mapOrderDtoToSale(order: unknown): FrontSale {
   return {
     id: toStringId(ord['orderId'] ?? ord['id'] ?? ord['customerId'] ?? ''),
     customerId: ord['customerId'] ? toStringId(ord['customerId']) : undefined,
-    waybillId: ord['weyBillId'] ? String(ord['weyBillId']) : (ord['wayBillId'] ? String(ord['wayBillId']) : undefined),
+    waybillId: ord['weyBillId']
+      ? String(ord['weyBillId'])
+      : ord['wayBillId']
+        ? String(ord['wayBillId'])
+        : undefined,
     serialNo: ord['serialNo'] !== undefined ? String(ord['serialNo']) : undefined,
     name: String((customer['name'] ?? ord['name'] ?? '') as string),
     customerName: String((customer['customerName'] ?? ord['customerName'] ?? '') as string),

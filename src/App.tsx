@@ -2,17 +2,17 @@ import { useEffect, useState } from 'react';
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthCard } from './components/AuthCard';
 import { DashboardLayout } from './components/layout/DashboardLayout';
+import { DailyReport } from './pages/DailyReport';
 import { Dashboard } from './pages/Dashboard';
 import { DuplicateSales } from './pages/DuplicateSales';
 import { ExportOrder } from './pages/ExportOrder';
 import { ProductManagement } from './pages/ProductManagement';
 import { SalesManagement } from './pages/SalesManagement';
 import { StockManagement } from './pages/StockManagement';
-import { Users } from './pages/Users';
-import UserProfile from './pages/UserProfile';
 import { TrackingId } from './pages/TrackingId';
 import { UserOrders } from './pages/UserOrders';
-import { DailyReport } from './pages/DailyReport';
+import UserProfile from './pages/UserProfile';
+import { Users } from './pages/Users';
 import { getToken } from './services/authUtils';
 
 // Simple loader component
