@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { AlertSnackbar } from '../components/AlertSnackbar';
 import { BackgroundIcons } from '../components/BackgroundIcons';
@@ -8,7 +8,7 @@ import { Sale as TableSale } from '../models/sales';
 
 import { getCurrentUser } from '../service/auth';
 import { dashboardApi } from '../services/api';
-import { orderService, type PaginatedResult } from '../services/orders/orderService';
+import { orderService } from '../services/orders/orderService';
 
 type Sale = TableSale;
 
