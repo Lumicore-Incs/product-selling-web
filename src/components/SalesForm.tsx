@@ -343,52 +343,52 @@ export const SalesForm: React.FC<SalesFormProps> = ({
   };
 
   // Try to lookup an existing customer by name or contact and prefill form
-  const lookupAndPrefillCustomer = async () => {
-    try {
-      setIsLookingUpCustomer(true);
-      const customers = await ensureCustomersLoaded();
-      const nameTrimmed = (formData.customerName || '').trim().toLowerCase();
-      const c1 = normalizePhoneForCompare(formData.contact01 || '');
-      const c2 = normalizePhoneForCompare(formData.contact02 || '');
+  // const lookupAndPrefillCustomer = async () => {
+  //   try {
+  //     setIsLookingUpCustomer(true);
+  //     const customers = await ensureCustomersLoaded();
+  //     const nameTrimmed = (formData.customerName || '').trim().toLowerCase();
+  //     const c1 = normalizePhoneForCompare(formData.contact01 || '');
+  //     const c2 = normalizePhoneForCompare(formData.contact02 || '');
 
-      let matched: CustomerDtoGet | undefined;
+  //     let matched: CustomerDtoGet | undefined;
 
-      // Priority: contact match, otherwise exact name match
-      if (c1 || c2) {
-        matched = customers.find(
-          (c) =>
-            (c.contact01 && c.contact01 === c1) ||
-            (c.contact02 && c.contact02 === c1) ||
-            (c.contact01 && c.contact01 === c2) ||
-            (c.contact02 && c.contact02 === c2)
-        );
-      }
-      if (!matched && nameTrimmed) {
-        matched = customers.find((c) => (c.name || '').trim().toLowerCase() === nameTrimmed);
-      }
+  //     // Priority: contact match, otherwise exact name match
+  //     if (c1 || c2) {
+  //       matched = customers.find(
+  //         (c) =>
+  //           (c.contact01 && c.contact01 === c1) ||
+  //           (c.contact02 && c.contact02 === c1) ||
+  //           (c.contact01 && c.contact01 === c2) ||
+  //           (c.contact02 && c.contact02 === c2)
+  //       );
+  //     }
+  //     if (!matched && nameTrimmed) {
+  //       matched = customers.find((c) => (c.name || '').trim().toLowerCase() === nameTrimmed);
+  //     }
 
-      if (matched) {
-        setFormData((prev) => ({
-          ...prev,
-          name: matched.name || prev.name,
-          customerName: matched.name || prev.customerName,
-          address: matched.address || prev.address,
-          contact01: ensureLeadingZero(matched.contact01) || prev.contact01,
-          contact02: ensureLeadingZero(matched.contact02) || prev.contact02,
-          customerId: String(matched.customerId ?? '') || prev.customerId,
-        }));
-        setSnackbar({
-          open: true,
-          message: 'Existing customer found. Details filled.',
-          type: 'success',
-        });
-      }
-    } catch (e) {
-      // Silent fail; no blocking if lookup fails
-    } finally {
-      setIsLookingUpCustomer(false);
-    }
-  };
+  //     if (matched) {
+  //       setFormData((prev) => ({
+  //         ...prev,
+  //         name: matched.name || prev.name,
+  //         customerName: matched.name || prev.customerName,
+  //         address: matched.address || prev.address,
+  //         contact01: ensureLeadingZero(matched.contact01) || prev.contact01,
+  //         contact02: ensureLeadingZero(matched.contact02) || prev.contact02,
+  //         customerId: String(matched.customerId ?? '') || prev.customerId,
+  //       }));
+  //       setSnackbar({
+  //         open: true,
+  //         message: 'Existing customer found. Details filled.',
+  //         type: 'success',
+  //       });
+  //     }
+  //   } catch (e) {
+  //     // Silent fail; no blocking if lookup fails
+  //   } finally {
+  //     setIsLookingUpCustomer(false);
+  //   }
+  // };
 
   // Helper: sync the default product in items with the qty input value
   const syncDefaultProductWithQty = (qtyValue: string) => {
@@ -926,7 +926,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
                     required
                     value={formData.customerName}
                     onChange={handleChange}
-                    onBlur={lookupAndPrefillCustomer}
+                    // onBlur={lookupAndPrefillCustomer}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-base"
                     placeholder="Enter customer name"
                   />
@@ -981,7 +981,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
                     type="text"
                     value={formData.contact01}
                     onChange={handleChange}
-                    onBlur={lookupAndPrefillCustomer}
+                    // onBlur={lookupAndPrefillCustomer}
                     className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-base ${
                       formData.contact01 && !isContact01Valid
                         ? 'border-red-500 bg-red-50'
@@ -1028,7 +1028,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
                     type="text"
                     value={formData.contact02}
                     onChange={handleChange}
-                    onBlur={lookupAndPrefillCustomer}
+                    // onBlur={lookupAndPrefillCustomer}
                     className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-base ${
                       formData.contact02 && !isContact02Valid
                         ? 'border-red-500 bg-red-50'

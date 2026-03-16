@@ -36,7 +36,7 @@ const http = axios.create({
 
 // Allow the app to provide a custom unauthorized handler (SPA-friendly)
 let onUnauthorized: () => void = () => {
-  window.location.href = '/auth';
+  window.location.href = '/';
 };
 export const setUnauthorizedHandler = (fn: () => void) => {
   onUnauthorized = fn;

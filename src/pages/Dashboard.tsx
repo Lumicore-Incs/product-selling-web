@@ -6,11 +6,13 @@ import { SalesTable } from '../components/SalesTable';
 import { Sale } from '../models/sales';
 import { getCurrentUser } from '../service/auth';
 import { getDashboardStats } from '../service/dashboard';
-import { getAllProducts } from '../service/product';
+import { getAllProducts } from '../service/product'; // Add this import
 import {
   getAllCustomerOrdersPaginated,
-  getOrders,
+  getOrdersPaginated,
   orderService,
+  type OrderFilterParams,
+  type PaginatedResult,
 } from '../services/orders/orderService';
 
 type StatCardProps = {
@@ -62,20 +64,28 @@ export const Dashboard = () => {
   const [salesError, setSalesError] = useState('');
   const [showTodayOnly, setShowTodayOnly] = useState(false);
 
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const PAGE_SIZE_OPTIONS = [5, 10, 20];
+
   const [user, setUser] = useState<{ role: string } | null>(null);
   const [userLoading, setUserLoading] = useState(true);
 
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [salesSearch, setSalesSearch] = useState('');
-
-  // All-orders server-side pagination state
-  const [allOrdersPage, setAllOrdersPage] = useState(0);
-  const [allOrdersSize, setAllOrdersSize] = useState(5);
-  const [allOrdersTotalPages, setAllOrdersTotalPages] = useState(0);
-  const [allOrdersTotalElements, setAllOrdersTotalElements] = useState(0);
-  // Debounced search used for the server call
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleSearchChange = (value: string) => {
+    setSalesSearch(value);
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => {
+      setDebouncedSearch(value);
+      setCurrentPage(0);
+    }, 400);
+  };
 
   // Add product-related state
   const [products, setProducts] = useState<any[]>([]);
@@ -93,7 +103,12 @@ export const Dashboard = () => {
     { value: 'Dispatched to Destination', label: 'DISPATCHED TO DESTINATION' },
     { value: 'Received at Destination', label: 'RECEIVED AT DESTINATION' },
     { value: 'Out for Delivery', label: 'OUT FOR DELIVERY' },
+    { value: 'Returned to Branch Rescheduled', label: 'RETURNED TO BRANCH RESCHEDULED' },
+    { value: 'Returned to Branch Failed', label: 'RETURNED TO BRANCH FAILED' },
+    { value: 'Returned to Branch', label: 'RETURNED TO BRANCH' },
     { value: 'Rescheduled', label: 'RESCHEDULED' },
+    { value: 'Collected from Warehouse', label: 'COLLECTED FROM WAREHOUSE' },
+    { value: 'Returned to HO', label: 'RETURNED TO HO' },
     { value: 'Failed to Deliver', label: 'FAILED TO DELIVER' },
     { value: 'Returned to Client', label: 'RETURNED TO CLIENT' },
     { value: 'Delivered', label: 'DELIVERED' },
@@ -138,47 +153,35 @@ export const Dashboard = () => {
       setLoading(true);
       setSalesLoading(true);
 
-      if (showTodayOnly) {
-        const [statsData, salesApiData] = await Promise.all([getDashboardStats(), getOrders()]);
-        setStats({
-          total_order: String(statsData.total_order || 0),
-          todayOrders: String(statsData.today_order || 0),
-          confirmedOrders: String(statsData.conform_order || 0),
-          cancelledOrders: String(statsData.cancel_order || 0),
-          totalOrdersTrend: statsData.totalOrdersTrend || 'upcomming',
-          todayOrdersTrend: statsData.todayOrdersTrend || 'upcomming',
-          confirmedOrdersTrend: statsData.confirmedOrdersTrend || 'upcomming',
-          cancelledOrdersTrend: statsData.cancelledOrdersTrend || 'upcomming',
-        });
-        setSales(salesApiData as Sale[]);
-        setAllOrdersTotalPages(0);
-        setAllOrdersTotalElements(0);
-      } else {
-        const [statsData, pagedData] = await Promise.all([
-          getDashboardStats(),
-          getAllCustomerOrdersPaginated({
-            page: allOrdersPage,
-            size: allOrdersSize,
-            status: statusFilter,
-            search: debouncedSearch,
-          }),
-        ]);
-        setStats({
-          total_order: String(statsData.total_order || 0),
-          todayOrders: String(statsData.today_order || 0),
-          confirmedOrders: String(statsData.conform_order || 0),
-          cancelledOrders: String(statsData.cancel_order || 0),
-          totalOrdersTrend: statsData.totalOrdersTrend || 'upcomming',
-          todayOrdersTrend: statsData.todayOrdersTrend || 'upcomming',
-          confirmedOrdersTrend: statsData.confirmedOrdersTrend || 'upcomming',
-          cancelledOrdersTrend: statsData.cancelledOrdersTrend || 'upcomming',
-        });
-        setSales(pagedData.content);
-        setAllOrdersTotalPages(pagedData.totalPages);
-        setAllOrdersTotalElements(pagedData.totalElements);
-      }
+      const filters: OrderFilterParams = {
+        search: debouncedSearch,
+        status: statusFilter,
+        productId: selectedProduct,
+      };
 
+      const [statsData, salesResult] = await Promise.all([
+        getDashboardStats(),
+        showTodayOnly
+          ? getOrdersPaginated(currentPage, pageSize, filters)
+          : getAllCustomerOrdersPaginated(currentPage, pageSize, filters),
+      ]);
+
+      // Process stats
+      setStats({
+        total_order: String(statsData.total_order || 0),
+        todayOrders: String(statsData.today_order || 0),
+        confirmedOrders: String(statsData.conform_order || 0),
+        cancelledOrders: String(statsData.cancel_order || 0),
+        totalOrdersTrend: statsData.totalOrdersTrend || 'upcomming',
+        todayOrdersTrend: statsData.todayOrdersTrend || 'upcomming',
+        confirmedOrdersTrend: statsData.confirmedOrdersTrend || 'upcomming',
+        cancelledOrdersTrend: statsData.cancelledOrdersTrend || 'upcomming',
+      });
       setError('');
+
+      setSales((salesResult as PaginatedResult<Sale>).data);
+      setTotalCount((salesResult as PaginatedResult<Sale>).total);
+      setTotalPages((salesResult as PaginatedResult<Sale>).totalPages);
       setSalesError('');
     } catch (err) {
       console.error('Failed to fetch dashboard data:', err);
@@ -190,61 +193,13 @@ export const Dashboard = () => {
       setLoading(false);
       setSalesLoading(false);
     }
-  }, [showTodayOnly, allOrdersPage, allOrdersSize, statusFilter, debouncedSearch]);
+  }, [showTodayOnly, currentPage, pageSize, debouncedSearch, statusFilter, selectedProduct]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  // Debounce salesSearch for server-side queries (All Orders mode only)
-  useEffect(() => {
-    if (showTodayOnly) return;
-    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
-    searchDebounceRef.current = setTimeout(() => {
-      setAllOrdersPage(0);
-      setDebouncedSearch(salesSearch);
-    }, 400);
-    return () => {
-      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
-    };
-  }, [salesSearch, showTodayOnly]);
-
-  // Reset page when statusFilter changes in All Orders mode
-  useEffect(() => {
-    if (!showTodayOnly) setAllOrdersPage(0);
-  }, [statusFilter, showTodayOnly]);
-
-  // Client-side filtering (used only in Today mode)
-  const filteredSales =
-    showTodayOnly && statusFilter !== 'all'
-      ? sales.filter((sale) => sale.status === statusFilter)
-      : sales;
-
-  // Product-based filtering stays client-side for both modes
-  const productFilteredSales =
-    selectedProduct === 'all'
-      ? filteredSales
-      : filteredSales.filter((sale) =>
-          sale.items.some((item) => item.productId === selectedProduct),
-        );
-
-  // Search: client-side only in Today mode (server-side in All Orders mode)
-  const normalizedSearch = salesSearch.trim().toLowerCase();
-  const searchedSales =
-    !showTodayOnly || normalizedSearch === ''
-      ? productFilteredSales
-      : productFilteredSales.filter((sale) => {
-          const name = (sale.customerName || sale.name || '').toLowerCase();
-          const contact1 = (sale.contact01 || '').toLowerCase();
-          const contact2 = (sale.contact02 || '').toLowerCase();
-          const waybill = (sale.waybillId || '').toLowerCase();
-          return (
-            name.includes(normalizedSearch) ||
-            contact1.includes(normalizedSearch) ||
-            contact2.includes(normalizedSearch) ||
-            waybill.includes(normalizedSearch)
-          );
-        });
+  const filteredSales = sales;
 
   const handleEdit = (sale: any) => {
     console.log('Editing:', sale);
@@ -270,6 +225,7 @@ export const Dashboard = () => {
   // Add product filter handler
   const handleProductFilter = (productId: string) => {
     setSelectedProduct(productId);
+    setCurrentPage(0);
   };
 
   // Handle check tracking status
@@ -421,7 +377,7 @@ export const Dashboard = () => {
               <input
                 type="text"
                 value={salesSearch}
-                onChange={(e) => setSalesSearch(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 placeholder="Search name, contact, waybill"
                 className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
@@ -429,7 +385,10 @@ export const Dashboard = () => {
             <div className="relative min-w-[150px]">
               <select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setCurrentPage(0);
+                }}
                 className="w-full appearance-none bg-white border border-gray-300 rounded-md pl-3 pr-6 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 {statusOptions.map((option) => (
@@ -461,7 +420,10 @@ export const Dashboard = () => {
               px-3 py-1 text-sm z-10 transition-colors duration-300
               ${showTodayOnly ? 'text-blue-600 font-medium' : 'text-gray-500'}
             `}
-                  onClick={() => setShowTodayOnly(true)}
+                  onClick={() => {
+                    setShowTodayOnly(true);
+                    setCurrentPage(0);
+                  }}
                 >
                   Today
                 </div>
@@ -470,7 +432,10 @@ export const Dashboard = () => {
               px-3 py-1 text-sm z-10 transition-colors duration-300
               ${!showTodayOnly ? 'text-blue-600 font-medium' : 'text-gray-500'}
             `}
-                  onClick={() => setShowTodayOnly(false)}
+                  onClick={() => {
+                    setShowTodayOnly(false);
+                    setCurrentPage(0);
+                  }}
                 >
                   All
                 </div>
@@ -483,28 +448,26 @@ export const Dashboard = () => {
           {salesError && <p className="text-red-500">{salesError}</p>}
           {!salesLoading && !salesError && (
             <SalesTable
-              sales={searchedSales}
+              sales={filteredSales}
               onEdit={handleEdit}
               onDelete={handleDelete}
               userRole={user?.role}
               onRefresh={fetchData}
-              hideSearch={!showTodayOnly}
-              serverSidePagination={
-                !showTodayOnly
-                  ? {
-                      page: allOrdersPage,
-                      totalPages: allOrdersTotalPages,
-                      totalElements: allOrdersTotalElements,
-                      size: allOrdersSize,
-                      sizeOptions: [5, 10, 20],
-                      onPageChange: setAllOrdersPage,
-                      onSizeChange: (s) => {
-                        setAllOrdersSize(s);
-                        setAllOrdersPage(0);
-                      },
-                    }
-                  : undefined
-              }
+              searchTerm={salesSearch}
+              onSearchChange={handleSearchChange}
+              serverPagination={{
+                page: currentPage,
+                pageSize,
+                total: totalCount,
+                totalPages,
+                pageSizeOptions: PAGE_SIZE_OPTIONS,
+                onPrev: () => setCurrentPage((p) => Math.max(0, p - 1)),
+                onNext: () => setCurrentPage((p) => Math.min(totalPages - 1, p + 1)),
+                onPageSizeChange: (size) => {
+                  setPageSize(size);
+                  setCurrentPage(0);
+                },
+              }}
             />
           )}
         </div>

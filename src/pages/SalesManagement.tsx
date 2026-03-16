@@ -8,7 +8,7 @@ import { Sale as TableSale } from '../models/sales';
 
 import { getCurrentUser } from '../service/auth';
 import { dashboardApi } from '../services/api';
-import { getAllCustomerOrdersPaginated, orderService } from '../services/orders/orderService';
+import { orderService } from '../services/orders/orderService';
 
 type Sale = TableSale;
 
@@ -34,45 +34,34 @@ export const SalesManagement: React.FC = () => {
     type: 'success' | 'error';
   }>({ open: false, message: '', type: 'error' });
   const [showExportPopup, setShowExportPopup] = useState(false);
-
-  // Pagination + server-side filter state
   const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(5);
+  const [pageSize, setPageSize] = useState(10);
+  const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-  const [totalElements, setTotalElements] = useState(0);
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [searchInput, setSearchInput] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const statusOptions = [
-    { value: 'all', label: 'ALL STATUS' },
-    { value: 'PENDING', label: 'PENDING' },
-    { value: 'TEMPORARY', label: 'DUPLICATE' },
-    { value: 'Processing', label: 'PROCESSING' },
-    { value: 'Dispatched to Destination', label: 'DISPATCHED TO DESTINATION' },
-    { value: 'Received at Destination', label: 'RECEIVED AT DESTINATION' },
-    { value: 'Out for Delivery', label: 'OUT FOR DELIVERY' },
-    { value: 'Rescheduled', label: 'RESCHEDULED' },
-    { value: 'Failed to Deliver', label: 'FAILED TO DELIVER' },
-    { value: 'Returned to Client', label: 'RETURNED TO CLIENT' },
-    { value: 'Delivered', label: 'DELIVERED' },
-  ];
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => {
+      setDebouncedSearch(value);
+      setPage(0);
+    }, 400);
+  };
 
   // Load existing orders from backend on component mount
   useEffect(() => {
     loadOrders();
-  }, [page, pageSize, statusFilter, searchQuery]);
+  }, []);
 
-  // Debounce search input -> searchQuery
-  const handleSearchChange = (value: string) => {
-    setSearchInput(value);
-    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
-    searchDebounceRef.current = setTimeout(() => {
-      setPage(0);
-      setSearchQuery(value);
-    }, 400);
-  };
+  // Reload orders when page, pageSize, or search changes
+  useEffect(() => {
+    if (page >= 0) {
+      loadOrders();
+    }
+  }, [page, pageSize, debouncedSearch]);
 
   // Load user data for role-based permissions
   useEffect(() => {
@@ -93,20 +82,35 @@ export const SalesManagement: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await getAllCustomerOrdersPaginated({
-        page,
-        size: pageSize,
-        status: statusFilter,
-        search: searchQuery,
+      // Load orders using pagination from orderService with search filter
+      console.log(
+        `Calling orderService.getAllCustomerOrdersPaginated(page=${page}, size=${pageSize}, search=${debouncedSearch})...`,
+      );
+      const result = await orderService.getAllCustomerOrdersPaginated(page, pageSize, {
+        search: debouncedSearch,
       });
-      setSales(response.content);
-      setTotalPages(response.totalPages);
-      setTotalElements(response.totalElements);
+
+      // Check if response exists
+      if (!result) {
+        console.error('Invalid response format:', result);
+        throw new Error('Invalid data format received from server');
+      }
+
+      // Update pagination state
+      setTotal(result.total);
+      setTotalPages(result.totalPages);
+
+      const canonicalSales = result.data as Sale[];
+      setSales(canonicalSales);
     } catch (error: any) {
       console.error('Error loading orders:', error);
+      console.error('Error stack:', error.stack);
+
       let errorMessage = 'Failed to load orders. ';
+
       if (error.response?.status === 404) {
-        errorMessage += 'Endpoint not found. Please check if your backend server is running.';
+        errorMessage +=
+          'Endpoint not found. Please check if your backend server is running and the endpoint exists.';
       } else if (error.response?.status === 401) {
         errorMessage += 'Authentication failed. Please login again.';
       } else if (error.message) {
@@ -114,6 +118,7 @@ export const SalesManagement: React.FC = () => {
       } else {
         errorMessage += 'Please try again.';
       }
+
       setError(errorMessage);
       setSnackbar({ open: true, message: errorMessage, type: 'error' });
       setSales([]);
@@ -123,6 +128,8 @@ export const SalesManagement: React.FC = () => {
   };
 
   const addSale = () => {
+    // Reset to first page when adding a new sale
+    setPage(0);
     loadOrders();
   };
 
@@ -338,43 +345,6 @@ export const SalesManagement: React.FC = () => {
             }}
           />
         </div>
-
-        {/* Search + Filter controls */}
-        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-          <input
-            type="text"
-            value={searchInput}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            placeholder="Search by customer, serial, waybill, or contact..."
-            className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <div className="relative min-w-[200px]">
-            <select
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
-                setPage(0);
-              }}
-              className="w-full appearance-none bg-white border border-gray-300 rounded-md pl-3 pr-8 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {statusOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-              <svg
-                className="fill-current h-4 w-4"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-              >
-                <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-              </svg>
-            </div>
-          </div>
-        </div>
-
         <div>
           <SalesTable
             sales={sales}
@@ -383,24 +353,26 @@ export const SalesManagement: React.FC = () => {
             isLoading={isLoading}
             userRole={user?.role}
             onRefresh={refreshData}
-            hideSearch
-            serverSidePagination={{
-              page,
-              totalPages,
-              totalElements,
-              size: pageSize,
-              sizeOptions: [5, 10, 20],
-              onPageChange: setPage,
-              onSizeChange: (s) => {
-                setPageSize(s);
-                setPage(0);
-              },
-            }}
+            searchTerm={search}
+            onSearchChange={handleSearchChange}
             onStatusChange={async (saleId, newStatus) => {
               const sale = sales.find((s) => s.id === saleId);
               if (!sale) return;
               const updatedSale = { ...sale, status: newStatus };
               await updateSale(updatedSale);
+            }}
+            serverPagination={{
+              page,
+              pageSize,
+              total,
+              totalPages,
+              pageSizeOptions: [10, 20, 50],
+              onPrev: () => setPage((p) => Math.max(0, p - 1)),
+              onNext: () => setPage((p) => Math.min(totalPages - 1, p + 1)),
+              onPageSizeChange: (newSize) => {
+                setPageSize(newSize);
+                setPage(0);
+              },
             }}
           />
         </div>

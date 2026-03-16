@@ -58,7 +58,7 @@ export const Header: React.FC<HeaderProps> = ({
             <div
               onClick={() => navigate('/profile')}
               title="View profile"
-              className="hidden sm:block text-sm font-medium text-gray-700 cursor-pointer whitespace-nowrap overflow-hidden text-ellipsis"
+              className="hidden sm:block text-sm font-bold text-gray-700 cursor-pointer whitespace-nowrap overflow-hidden text-ellipsis"
             >
               {userLoading ? 'Loading...' : user ? user.name : 'User'}
             </div>

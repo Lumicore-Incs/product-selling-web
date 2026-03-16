@@ -43,7 +43,7 @@ export function logout(): void {
   } catch (err) {
     console.warn('Failed to remove auth token during logout', err);
   }
-  window.location.href = '/auth';
+  window.location.href = '/';
 }
 
 export default {

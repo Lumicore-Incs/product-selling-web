@@ -35,16 +35,6 @@ const DEFAULT_COLUMN_WIDTHS = {
 
 type ColumnKey = keyof typeof DEFAULT_COLUMN_WIDTHS;
 
-interface ServerSidePagination {
-  page: number; // 0-based
-  totalPages: number;
-  totalElements: number;
-  size: number;
-  sizeOptions?: number[];
-  onPageChange: (page: number) => void;
-  onSizeChange: (size: number) => void;
-}
-
 interface SalesTableProps {
   sales: Sale[];
   isLoading?: boolean;
@@ -53,8 +43,21 @@ interface SalesTableProps {
   userRole?: string;
   onRefresh?: () => void;
   onStatusChange?: (saleId: string, newStatus: string) => void;
-  hideSearch?: boolean;
-  serverSidePagination?: ServerSidePagination;
+  /** Search term value (for controlled input) */
+  searchTerm?: string;
+  /** Callback when search term changes */
+  onSearchChange?: (term: string) => void;
+  /** When provided the table uses server-side pagination instead of internal client-side pagination */
+  serverPagination?: {
+    page: number; // 0-based
+    pageSize: number;
+    total: number;
+    totalPages: number;
+    pageSizeOptions: number[];
+    onPrev: () => void;
+    onNext: () => void;
+    onPageSizeChange: (size: number) => void;
+  };
 }
 
 export const SalesTable: React.FC<SalesTableProps> = ({
@@ -65,8 +68,9 @@ export const SalesTable: React.FC<SalesTableProps> = ({
   userRole,
   onRefresh,
   onStatusChange,
-  hideSearch,
-  serverSidePagination,
+  searchTerm: externalSearchTerm,
+  onSearchChange,
+  serverPagination,
 }) => {
   // Status options
   const statusOptions = ['TEMPORARY', 'PENDING'];
@@ -119,13 +123,11 @@ export const SalesTable: React.FC<SalesTableProps> = ({
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [showBlockDialog, setShowBlockDialog] = useState(false);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [internalSearchTerm, setInternalSearchTerm] = useState('');
   const rowsPerPage = 5;
 
-  // Reset internal page when sales change (server-side mode page changes)
-  useEffect(() => {
-    if (!serverSidePagination) setCurrentPage(1);
-  }, [sales, serverSidePagination]);
+  // Use external search term if provided via props, otherwise use internal state
+  const searchTerm = onSearchChange ? externalSearchTerm || '' : internalSearchTerm;
 
   const toggleRowExpansion = (id: string) => {
     const newExpanded = new Set(expandedRows);
@@ -159,21 +161,29 @@ export const SalesTable: React.FC<SalesTableProps> = ({
       case 'Collected from Warehouse':
         return 'bg-pink-500 text-white border-pink-600';
       case 'Dispatched To Destination':
-        return 'bg-blue-800 text-white border-yellow-900';
+        return 'bg-black-500 text-white border-yellow-900';
       case 'Received At Destination':
         return 'bg-yellow-400 text-white border-yellow-500';
       case 'Out For Delivery':
-        return 'bg-gray-300 text-white border-gray-400';
+        return 'bg-gray-300 text-black border-gray-400';
       case 'PENDING':
         return 'bg-orange-200 text-yellow-800 border-orange-300';
       case 'Failed To Deliver':
         return 'bg-red-500 text-white border-red-400';
+      case 'Returned to HO':
+        return 'bg-orange-300 text-white border-red-400';
+      case 'Returned to Branch Rescheduled':
+        return 'bg-orange-600 text-white border-red-400';
+        case 'Returned to Branch Failed':
+      return 'bg-red-500 text-white border-red-400';
+      case 'Returned to Branch':
+        return 'bg-red-300 text-white border-red-400';
       case 'Returned to Client':
         return 'bg-red-500 text-white border-red-400';
       case 'Delivered':
         return 'bg-green-600 text-white border-green-600';
       default:
-        return 'bg-gray-100 text-white border-gray-200';
+        return 'bg-gray-100 text-black border-gray-200';
     }
   };
 
@@ -181,8 +191,8 @@ export const SalesTable: React.FC<SalesTableProps> = ({
     return items.reduce((sum, item) => sum + item.qty * item.price, 0);
   };
 
-  // Filter sales based on search term (skip when server-side mode)
-  const filteredSales = serverSidePagination
+  // Filter sales based on search term (bypassed when server-side pagination is active)
+  const filteredSales = serverPagination
     ? sales
     : sales.filter((sale) => {
         if (!searchTerm.trim()) return true;
@@ -197,44 +207,51 @@ export const SalesTable: React.FC<SalesTableProps> = ({
         );
       });
 
-  // Pagination logic (skip when server-side pagination provided)
-  const sortedSales = serverSidePagination
-    ? filteredSales
-    : [...filteredSales].sort((a, b) => {
-        const aId = isNaN(Number(a.id)) ? a.id : Number(a.id);
-        const bId = isNaN(Number(b.id)) ? b.id : Number(b.id);
-        if (aId < bId) return 1;
-        if (aId > bId) return -1;
-        return 0;
-      });
+  // Pagination logic
+  const sortedSales = [...filteredSales].sort((a, b) => {
+    const aId = isNaN(Number(a.id)) ? a.id : Number(a.id);
+    const bId = isNaN(Number(b.id)) ? b.id : Number(b.id);
+    if (aId < bId) return 1;
+    if (aId > bId) return -1;
+    return 0;
+  });
 
-  const totalPages = serverSidePagination
-    ? serverSidePagination.totalPages
+  const totalPages = serverPagination
+    ? serverPagination.totalPages
     : Math.ceil(sortedSales.length / rowsPerPage);
-  const paginatedSales = serverSidePagination
+
+  // When server pagination is active, all records in `sales` belong to the current page — no slicing needed
+  const paginatedSales = serverPagination
     ? sortedSales
     : sortedSales.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+
   const handlePrev = () => {
-    if (serverSidePagination) {
-      serverSidePagination.onPageChange(Math.max(0, serverSidePagination.page - 1));
+    if (serverPagination) {
+      serverPagination.onPrev();
     } else {
       setCurrentPage((p) => Math.max(1, p - 1));
     }
   };
   const handleNext = () => {
-    if (serverSidePagination) {
-      serverSidePagination.onPageChange(
-        Math.min(serverSidePagination.totalPages - 1, serverSidePagination.page + 1),
-      );
+    if (serverPagination) {
+      serverPagination.onNext();
     } else {
       setCurrentPage((p) => Math.min(totalPages, p + 1));
     }
   };
-  // Displayed page number (1-based)
-  const displayPage = serverSidePagination ? serverSidePagination.page + 1 : currentPage;
-  const isFirstPage = serverSidePagination ? serverSidePagination.page === 0 : currentPage === 1;
-  const isLastPage = serverSidePagination
-    ? serverSidePagination.page >= serverSidePagination.totalPages - 1
+
+  // Derived display values for pagination footer
+  const displayPage = serverPagination ? serverPagination.page + 1 : currentPage;
+  const displayFrom = serverPagination
+    ? serverPagination.page * serverPagination.pageSize + 1
+    : (currentPage - 1) * rowsPerPage + 1;
+  const displayTo = serverPagination
+    ? Math.min((serverPagination.page + 1) * serverPagination.pageSize, serverPagination.total)
+    : Math.min(currentPage * rowsPerPage, filteredSales.length);
+  const displayTotal = serverPagination ? serverPagination.total : filteredSales.length;
+  const isPrevDisabled = serverPagination ? serverPagination.page === 0 : currentPage === 1;
+  const isNextDisabled = serverPagination
+    ? serverPagination.page >= serverPagination.totalPages - 1
     : currentPage === totalPages;
 
   // Show skeleton loader when data is loading
@@ -280,52 +297,58 @@ export const SalesTable: React.FC<SalesTableProps> = ({
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 sm:p-6">
         <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <h2 className="text-xl sm:text-2xl font-bold text-white">Sales Entries</h2>
               <p className="text-blue-100 text-sm mt-1">
-                {serverSidePagination
-                  ? `${serverSidePagination.totalElements} total records`
+                {serverPagination
+                  ? `${serverPagination.total} entries`
                   : `${filteredSales.length} of ${sales.length} entries`}
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="relative flex-1 sm:flex-none sm:w-64">
+                <SearchIcon className="absolute left-3 top-2.5 w-4 h-4 text-white text-opacity-70" />
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  value={searchTerm}
+                  onChange={(e) => {
+                    if (onSearchChange) {
+                      onSearchChange(e.target.value);
+                    } else {
+                      setInternalSearchTerm(e.target.value);
+                      setCurrentPage(1);
+                    }
+                  }}
+                  className="w-full pl-10 pr-8 py-2 bg-white bg-opacity-10 text-white placeholder-gray-100 text-sm rounded-lg border border-white border-opacity-20 focus:outline-none focus:bg-opacity-20 focus:border-opacity-40"
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => {
+                      if (onSearchChange) {
+                        onSearchChange('');
+                      } else {
+                        setInternalSearchTerm('');
+                        setCurrentPage(1);
+                      }
+                    }}
+                    className="absolute right-2 top-2.5 text-white text-opacity-70 hover:text-opacity-100"
+                    title="Clear search"
+                  >
+                    <XIcon className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
               <button
                 onClick={() => onRefresh && onRefresh()}
                 title="Refresh"
-                className="p-2 bg-white bg-opacity-10 hover:bg-opacity-20 rounded text-white"
+                className="p-2 bg-white bg-opacity-10 hover:bg-opacity-20 rounded text-white flex-shrink-0"
               >
                 <RefreshCwIcon className="w-4 h-4" />
               </button>
             </div>
           </div>
-          {/* Search Input — hidden in server-side pagination mode */}
-          {!hideSearch && !serverSidePagination && (
-            <div className="relative">
-              <SearchIcon className="absolute left-3 top-3 w-4 h-4 text-white text-opacity-70" />
-              <input
-                type="text"
-                placeholder="Search by customer, serial, waybill, address, or contact..."
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="w-full pl-10 pr-10 py-2 bg-white bg-opacity-10 text-white placeholder-gray-100 rounded-lg border border-white border-opacity-20 focus:outline-none focus:bg-opacity-20 focus:border-opacity-40"
-              />
-              {searchTerm && (
-                <button
-                  onClick={() => {
-                    setSearchTerm('');
-                    setCurrentPage(1);
-                  }}
-                  className="absolute right-3 top-3 text-white text-opacity-70 hover:text-opacity-100"
-                >
-                  <XIcon className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          )}
         </div>
       </div>
 
@@ -826,54 +849,42 @@ export const SalesTable: React.FC<SalesTableProps> = ({
       )}
 
       {/* Pagination */}
-      {(serverSidePagination
-        ? serverSidePagination.totalElements > 0
-        : filteredSales.length > 0) && (
+      {displayTotal > 0 && (
         <div className="border-t border-gray-200 bg-gray-50 px-4 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="text-sm text-gray-600 text-center sm:text-left">
-              {serverSidePagination ? (
-                <>
-                  Showing page <span className="font-medium">{serverSidePagination.page + 1}</span>{' '}
-                  of <span className="font-medium">{serverSidePagination.totalPages}</span>
-                  {' — '}
-                  <span className="font-medium">{serverSidePagination.totalElements}</span> records
-                  found
-                  {serverSidePagination.sizeOptions && (
-                    <select
-                      value={serverSidePagination.size}
-                      onChange={(e) => serverSidePagination.onSizeChange(Number(e.target.value))}
-                      className="ml-3 border border-gray-300 rounded px-2 py-0.5 text-sm bg-white"
-                    >
-                      {serverSidePagination.sizeOptions.map((s) => (
-                        <option key={s} value={s}>
-                          {s} / page
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                </>
-              ) : (
-                <>
-                  Showing <span className="font-medium">{(currentPage - 1) * rowsPerPage + 1}</span>{' '}
-                  to{' '}
-                  <span className="font-medium">
-                    {Math.min(currentPage * rowsPerPage, filteredSales.length)}
-                  </span>{' '}
-                  of <span className="font-medium">{filteredSales.length}</span> entries
-                  {searchTerm && (
-                    <span className="text-gray-500"> (filtered from {sales.length} total)</span>
-                  )}
-                </>
+            <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600 text-center sm:text-left">
+              <span>
+                Showing <span className="font-medium">{displayFrom}</span> to{' '}
+                <span className="font-medium">{displayTo}</span> of{' '}
+                <span className="font-medium">{displayTotal}</span> entries
+                {!serverPagination && searchTerm && (
+                  <span className="text-gray-500"> (filtered from {sales.length} total)</span>
+                )}
+              </span>
+              {serverPagination && (
+                <label className="flex items-center gap-1">
+                  <span className="text-gray-500">Rows:</span>
+                  <select
+                    value={serverPagination.pageSize}
+                    onChange={(e) => serverPagination.onPageSizeChange(Number(e.target.value))}
+                    className="border border-gray-300 rounded px-2 py-0.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {serverPagination.pageSizeOptions.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                </label>
               )}
             </div>
 
             <div className="flex items-center justify-center gap-2">
               <button
                 onClick={handlePrev}
-                disabled={isFirstPage}
+                disabled={isPrevDisabled}
                 className={`px-4 py-2 rounded-lg border font-medium transition-all duration-200 ${
-                  isFirstPage
+                  isPrevDisabled
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
                     : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300 hover:border-gray-400'
                 }`}
@@ -887,9 +898,9 @@ export const SalesTable: React.FC<SalesTableProps> = ({
 
               <button
                 onClick={handleNext}
-                disabled={isLastPage}
+                disabled={isNextDisabled}
                 className={`px-4 py-2 rounded-lg border font-medium transition-all duration-200 ${
-                  isLastPage
+                  isNextDisabled
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
                     : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300 hover:border-gray-400'
                 }`}
