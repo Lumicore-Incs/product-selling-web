@@ -13,6 +13,8 @@ import { TrackingId } from './pages/TrackingId';
 import { UserOrders } from './pages/UserOrders';
 import UserProfile from './pages/UserProfile';
 import { Users } from './pages/Users';
+import { Reports } from './pages/Reports';
+import { SalesSummary } from './pages/SalesSummary';
 import { getToken } from './services/authUtils';
 
 // Simple loader component
@@ -119,6 +121,8 @@ export function App() {
             <Route path="profile" element={<UserProfile />} />
             <Route path="stock" element={<StockManagement />} />
             <Route path="tracking-id" element={<TrackingId />} />
+            <Route path="reports" element={<Reports />} />
+            <Route path="sales-summary" element={<SalesSummary />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
           {/* Backward compatibility: redirect old /dashboard path to root */}

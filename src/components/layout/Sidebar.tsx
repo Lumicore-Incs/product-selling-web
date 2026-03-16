@@ -2,6 +2,7 @@ import {
   BarChart3Icon,
   ChevronDownIcon,
   DownloadIcon,
+  FileBarChart2Icon,
   HomeIcon,
   LogOutIcon,
   ProportionsIcon,
@@ -43,10 +44,17 @@ const getNavItems = (userRole: string): NavItem[] => {
       children: [
         { icon: UsersIcon, label: 'User List', to: '/users' },
         { icon: ShoppingBagIcon, label: 'User Orders', to: '/user-orders' },
-        { icon: BarChart3Icon, label: 'Daily Report', to: '/daily-report' },
       ],
     },
     { icon: StoreIcon, label: 'Stock', to: '/stock' },
+    {
+      icon: FileBarChart2Icon,
+      label: 'Reports',
+      children: [
+        { icon: FileBarChart2Icon, label: 'Sales Summary', to: '/reports' },
+        { icon: BarChart3Icon, label: 'Daily Report', to: '/daily-report' },
+      ],
+    },
     { icon: SettingsIcon, label: 'Settings', to: '/sale/settings', isSettings: true },
   ];
 
@@ -64,10 +72,17 @@ const getNavItems = (userRole: string): NavItem[] => {
           children: [
             { icon: UsersIcon, label: 'User List', to: '/users' },
             { icon: ShoppingBagIcon, label: 'User Orders', to: '/user-orders' },
-            { icon: BarChart3Icon, label: 'Daily Report', to: '/daily-report' },
           ],
         },
         { icon: StoreIcon, label: 'Stock', to: '/stock' },
+        {
+          icon: FileBarChart2Icon,
+          label: 'Reports',
+          children: [
+            { icon: FileBarChart2Icon, label: 'Sales Summary', to: '/reports' },
+            { icon: BarChart3Icon, label: 'Daily Report', to: '/daily-report' },
+          ],
+        },
         { icon: SettingsIcon, label: 'Settings', to: '/sale/settings', isSettings: true },
       ]
     : adminBaseItems;

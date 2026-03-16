@@ -211,6 +211,18 @@ class OrderService {
       throw err;
     }
   }
+
+  async getSummaryDetails(id: number | string, month: number): Promise<any> {
+    try {
+      const resp = await apiClient.get('/summary/getUserDetails', {
+        params: { id, month },
+      });
+      return resp?.data || null;
+    } catch (err) {
+      console.error('orderService.getSummaryDetails failed:', err);
+      throw err;
+    }
+  }
 }
 
 export const orderService = new OrderService();
@@ -248,3 +260,5 @@ export const updateTrackingStatus = (page?: number, size?: number) =>
 export const uploadTracking = (trackingList: TrackingUploadDto[]) =>
   uploadTrackingData(trackingList);
 export const getUserDetails = (id: string | number) => orderService.getUserDetails(id);
+export const getSummaryDetails = (id: string | number, month: number) =>
+  orderService.getSummaryDetails(id, month);
