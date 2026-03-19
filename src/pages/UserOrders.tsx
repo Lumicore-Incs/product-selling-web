@@ -10,7 +10,12 @@ import {
   PackageCheckIcon,
   RotateCcwIcon,
   CalendarIcon,
+  CreditCardIcon,
+  PlusIcon,
 } from 'lucide-react';
+import { PaymentModal } from '../components/payments/PaymentModal';
+import { PaymentDetailsTable } from '../components/payments/PaymentDetailsTable';
+import { paymentService, PaymentDetail } from '../services/payments/paymentService';
 
 interface UserWithOrders {
   id: string;
@@ -27,6 +32,9 @@ export const UserOrders = () => {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [userDetails, setUserDetails] = useState<any>(null);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [paymentDetails, setPaymentDetails] = useState<PaymentDetail[]>([]);
+  const [paymentDetailsLoading, setPaymentDetailsLoading] = useState(false);
 
   const today = new Date();
   const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -38,6 +46,7 @@ export const UserOrders = () => {
   useEffect(() => {
     if (selectedUserId) {
       fetchUserDetails(selectedUserId);
+      fetchPaymentDetails(selectedUserId);
     }
   }, [selectedUserId]);
 
@@ -118,6 +127,21 @@ export const UserOrders = () => {
     }
   };
 
+  const fetchPaymentDetails = async (userId: string) => {
+    setPaymentDetailsLoading(true);
+    try {
+      const response = await paymentService.getPaymentsByUserId(userId);
+      if (response.success) {
+        setPaymentDetails(response.data.paymentDetails || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch payment details:', err);
+      setPaymentDetails([]);
+    } finally {
+      setPaymentDetailsLoading(false);
+    }
+  };
+
   const selectedUser = usersWithOrders.find(
     u => u.id === selectedUserId
   );
@@ -171,14 +195,24 @@ export const UserOrders = () => {
 
       <div className="max-w-7xl mx-auto">
 
-        {/* Header */}
-        <div className="mb-10">
-          <h1 className="text-3xl font-bold text-gray-800">
-            User Order Analytics Dashboard
-          </h1>
-          <p className="text-gray-500 mt-2">
-            Monitor daily & monthly performance of users
-          </p>
+        <div className="mb-10 flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800">
+              User Order Analytics Dashboard
+            </h1>
+            <p className="text-gray-500 mt-2">
+              Monitor daily & monthly performance of users
+            </p>
+          </div>
+
+          {/* Add Payment Button */}
+          <button
+            onClick={() => setIsPaymentModalOpen(true)}
+            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-blue-100 flex items-center gap-2 hover:scale-105 transition-all active:scale-95"
+          >
+            <PlusIcon className="w-5 h-5" />
+            <span>Add Payment</span>
+          </button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -193,11 +227,10 @@ export const UserOrders = () => {
                 <div
                   key={user.id}
                   onClick={() => setSelectedUserId(user.id)}
-                  className={`p-3 rounded-xl cursor-pointer mb-2 transition ${
-                    selectedUserId === user.id
+                  className={`p-3 rounded-xl cursor-pointer mb-2 transition ${selectedUserId === user.id
                       ? 'bg-blue-100 border border-blue-400'
                       : 'hover:bg-gray-100'
-                  }`}
+                    }`}
                 >
                   <div className="font-medium">{user.name}</div>
                   <div className="text-xs text-gray-500">
@@ -238,76 +271,25 @@ export const UserOrders = () => {
 
                   {/* Role Badge */}
                   <div
-                    className={`px-4 py-2 rounded-xl text-sm font-semibold shadow-sm ${
-                      selectedUser.role === 'ADMIN'
+                    className={`px-4 py-2 rounded-xl text-sm font-semibold shadow-sm ${selectedUser.role === 'ADMIN'
                         ? 'bg-gradient-to-r from-red-500 to-red-600 text-white'
                         : selectedUser.role === 'SUPER USER'
-                        ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white'
-                        : 'bg-gradient-to-r from-gray-400 to-gray-500 text-white'
-                    }`}
+                          ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white'
+                          : 'bg-gradient-to-r from-gray-400 to-gray-500 text-white'
+                      }`}
                   >
                     {selectedUser.role}
                   </div>
                 </div>
-
-                {/* Orders Table */}
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b bg-gray-50">
-                        <th className="px-4 py-3 text-left font-semibold text-gray-700">Serial</th>
-                        <th className="px-4 py-3 text-left font-semibold text-gray-700">Order Date</th>
-                        <th className="px-4 py-3 text-left font-semibold text-gray-700">Status</th>
-                        <th className="px-4 py-3 text-right font-semibold text-gray-700">Total Amount (LKR)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {selectedUser.orders.length > 0 ? (
-                        selectedUser.orders.map((order: Sale, index: number) => (
-                          <tr key={order.id} className="border-b hover:bg-gray-50">
-                            <td className="px-4 py-3">{order.serialNo || `#${index + 1}`}</td>
-                            <td className="px-4 py-3">
-                              {order.date
-                                ? new Date(order.date).toLocaleDateString('en-US', {
-                                    year: 'numeric',
-                                    month: 'short',
-                                    day: 'numeric',
-                                  })
-                                : '-'}
-                            </td>
-                            <td className="px-4 py-3">
-                              <span
-                                className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                  order.status?.toLowerCase() === 'delivered'
-                                    ? 'bg-green-100 text-green-800'
-                                    : order.status?.toLowerCase() === 'pending'
-                                    ? 'bg-yellow-100 text-yellow-800'
-                                    : order.status?.toLowerCase() === 'cancelled'
-                                    ? 'bg-red-100 text-red-800'
-                                    : order.status?.toLowerCase() === 'returned'
-                                    ? 'bg-orange-100 text-orange-800'
-                                    : 'bg-gray-100 text-gray-800'
-                                }`}
-                              >
-                                {order.status || 'Unknown'}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 text-right font-semibold text-gray-800">
-                              {order.totalPrice?.toFixed(2) || '0.00'}
-                            </td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td colSpan={4} className="px-4 py-6 text-center text-gray-500">
-                            No orders found
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-
+                {/* Payment Details Section */}
+                {selectedUserId && (
+                  <PaymentDetailsTable
+                    details={paymentDetails}
+                    loading={paymentDetailsLoading}
+                    userId={selectedUserId}
+                    onRefresh={() => fetchPaymentDetails(selectedUserId)}
+                  />
+                )}
 
               </div>
             )}
@@ -315,6 +297,12 @@ export const UserOrders = () => {
           </div>
         </div>
       </div>
+      <PaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        userId={selectedUserId || ''}
+        userName={selectedUser?.name}
+      />
     </div>
   );
 };
