@@ -1,16 +1,18 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { BackgroundIcons } from '../components/BackgroundIcons';
-import { Sale } from '../models/sales';
 import { getCurrentUser } from '../service/auth';
-import { getUserDetails } from '../services/orders/orderService';
+import { getUserAnalytics, UserAnalytics } from '../services/orders/orderService';
 import { userService } from '../services/users/userService';
 import {
   UsersIcon,
-  TrendingUpIcon,
   PackageCheckIcon,
   RotateCcwIcon,
   CalendarIcon,
+  PlusIcon,
 } from 'lucide-react';
+import { PaymentModal } from '../components/payments/PaymentModal';
+import { PaymentDetailsTable } from '../components/payments/PaymentDetailsTable';
+import { paymentService, PaymentDetail } from '../services/payments/paymentService';
 
 interface UserWithOrders {
   id: string;
@@ -18,7 +20,6 @@ interface UserWithOrders {
   email: string;
   role: string;
   phone?: string;
-  orders: Sale[];
 }
 
 export const UserOrders = () => {
@@ -26,10 +27,10 @@ export const UserOrders = () => {
   const [usersWithOrders, setUsersWithOrders] = useState<UserWithOrders[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [userDetails, setUserDetails] = useState<any>(null);
-
-  const today = new Date();
-  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [paymentDetails, setPaymentDetails] = useState<PaymentDetail[]>([]);
+  const [paymentDetailsLoading, setPaymentDetailsLoading] = useState(false);
+  const [userAnalytics, setUserAnalytics] = useState<UserAnalytics | null>(null);
 
   useEffect(() => {
     initialize();
@@ -37,7 +38,8 @@ export const UserOrders = () => {
 
   useEffect(() => {
     if (selectedUserId) {
-      fetchUserDetails(selectedUserId);
+      fetchPaymentDetails(selectedUserId);
+      fetchUserAnalytics(selectedUserId);
     }
   }, [selectedUserId]);
 
@@ -56,106 +58,58 @@ export const UserOrders = () => {
   const fetchUserOrders = async () => {
     setLoading(true);
 
-    const users = await userService.getAllUsers();
-
-    const userMap = new Map<string, UserWithOrders>();
-
-    users.forEach((u: any) => {
-      userMap.set(u.id, {
+    try {
+      const users = await userService.getAllUsers();
+      const usersArray: UserWithOrders[] = users.map((u: any) => ({
         id: u.id,
         name: u.name || u.userName || 'Unknown',
         email: u.email,
         role: u.role,
         phone: u.phone,
-        orders: [],
-      });
-    });
+      }));
 
-    // Fetch user details for all users in parallel
-    const userDetailsPromises = users.map((u: any) =>
-      getUserDetails(u.id).catch((err) => {
-        console.error(`Failed to fetch details for user ${u.id}:`, err);
-        return null;
-      })
-    );
+      setUsersWithOrders(usersArray);
 
-    const userDetailsArray = await Promise.all(userDetailsPromises);
-
-    // Map user details back to userMap
-    users.forEach((u: any, index: number) => {
-      const userInMap = userMap.get(u.id);
-      if (userInMap && userDetailsArray[index]) {
-        // Merge user details, keeping orders array
-        const details = userDetailsArray[index];
-        Object.assign(userInMap, {
-          ...details,
-          orders: details.orders || [],
-        });
+      const firstNonAdminUser = usersArray.find(u => u.role !== 'ADMIN');
+      if (firstNonAdminUser) {
+        setSelectedUserId(firstNonAdminUser.id);
       }
-    });
-
-    const usersArray = Array.from(userMap.values());
-    setUsersWithOrders(usersArray);
-
-    const firstNonAdminUser = usersArray.find(
-      u => u.role !== 'ADMIN'
-    );
-
-    if (firstNonAdminUser) {
-      setSelectedUserId(firstNonAdminUser.id);
-    }
-
-    setLoading(false);
-  };
-
-  const fetchUserDetails = async (userId: string) => {
-    try {
-      const details = await getUserDetails(userId);
-      setUserDetails(details);
     } catch (err) {
-      console.error('Failed to fetch user details:', err);
-      setUserDetails(null);
+      console.error('Failed to fetch users:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const selectedUser = usersWithOrders.find(
-    u => u.id === selectedUserId
-  );
+  const fetchPaymentDetails = async (userId: string) => {
+    setPaymentDetailsLoading(true);
+    try {
+      const response = await paymentService.getPaymentsByUserId(userId);
+      if (response.success) {
+        setPaymentDetails(response.data.paymentDetails || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch payment details:', err);
+      setPaymentDetails([]);
+    } finally {
+      setPaymentDetailsLoading(false);
+    }
+  };
 
-  const stats = useMemo(() => {
-    if (!selectedUser) return null;
+  const fetchUserAnalytics = async (userId: string) => {
+    try {
+      setUserAnalytics(null);
+      const response = await getUserAnalytics(userId);
+      if (response.success && response.data) {
+        setUserAnalytics(response.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch user analytics:', err);
+      setUserAnalytics(null);
+    }
+  };
 
-    const todayOrders = selectedUser.orders.filter(o => {
-      const date = new Date(o.date || '');
-      return date.toDateString() === today.toDateString();
-    });
-
-    const monthlyOrders = selectedUser.orders.filter(o => {
-      const date = new Date(o.date || '');
-      return date >= startOfMonth;
-    });
-
-    const deliveredThisMonth = monthlyOrders.filter(
-      o => o.status?.toLowerCase() === 'delivered'
-    );
-
-    const returnedOrders = selectedUser.orders.filter(
-      o => o.status?.toLowerCase() === 'returned'
-    );
-
-    const totalSales = selectedUser.orders.reduce(
-      (sum, o) => sum + (o.totalPrice || 0),
-      0
-    );
-
-    return {
-      todayCount: todayOrders.length,
-      monthCount: monthlyOrders.length,
-      deliveredMonthCount: deliveredThisMonth.length,
-      returnedCount: returnedOrders.length,
-      totalSales,
-    };
-  }, [selectedUser]);
+  const selectedUser = usersWithOrders.find(u => u.id === selectedUserId);
 
   if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'SUPER USER')) {
     return (
@@ -166,161 +120,138 @@ export const UserOrders = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white p-6">
+    <div className="relative min-h-screen bg-[#afdbe0] p-4 lg:p-8 overflow-hidden font-sans rounded-3xl">
+      {/* Background Blobs (Slightly more subtle) */}
+      <div className="absolute top-[-5%] left-[-5%] w-[400px] h-[400px] bg-blue-300/10 rounded-full blur-[80px]" />
+      <div className="absolute bottom-[-5%] right-[-5%] w-[500px] h-[500px] bg-indigo-300/10 rounded-full blur-[100px]" />
+
       <BackgroundIcons />
 
-      <div className="max-w-7xl mx-auto">
+      <div className="relative max-w-7xl mx-auto z-10">
+        {/* Modern Compact Header */}
+        <div className="mb-8 flex flex-col md:flex-row justify-between items-center bg-white/40 backdrop-blur-xl p-6 rounded-[2rem] border border-white/60 shadow-xl shadow-blue-50/50">
+          <div className="flex items-center gap-6">
+            <div className="hidden md:flex w-14 h-14 bg-blue-600 rounded-2xl items-center justify-center shadow-lg shadow-blue-200">
+               <PackageCheckIcon className="text-white w-7 h-7" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-black text-gray-900 tracking-tight">Analytics Dashboard</h1>
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Real-time user performance metrics</p>
+            </div>
+          </div>
 
-        {/* Header */}
-        <div className="mb-10">
-          <h1 className="text-3xl font-bold text-gray-800">
-            User Order Analytics Dashboard
-          </h1>
-          <p className="text-gray-500 mt-2">
-            Monitor daily & monthly performance of users
-          </p>
+          <button
+            onClick={() => setIsPaymentModalOpen(true)}
+            className="mt-4 md:mt-0 group px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-xl shadow-blue-200 flex items-center gap-2 transition-all duration-300 hover:-translate-y-0.5"
+          >
+            <PlusIcon className="w-5 h-5" />
+            <span>Add Settlement</span>
+          </button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
 
-          {/* Sidebar */}
-          <div className="bg-white rounded-2xl shadow-md border p-4">
-            <h2 className="font-semibold text-gray-700 mb-4">Users</h2>
+          {/* User List Sidebar (More Compact) */}
+          <div className="lg:col-span-1 flex flex-col gap-4">
+            <div className="bg-white/50 backdrop-blur-xl rounded-3xl shadow-lg border border-white/60 p-5">
+              <div className="flex items-center justify-between mb-4 px-1">
+                <h2 className="text-sm font-black text-gray-800 uppercase tracking-wider">User Directory</h2>
+                <UsersIcon className="w-4 h-4 text-gray-400" />
+              </div>
 
-            {usersWithOrders
-              .filter(user => user.role !== 'ADMIN')
-              .map(user => (
-                <div
-                  key={user.id}
-                  onClick={() => setSelectedUserId(user.id)}
-                  className={`p-3 rounded-xl cursor-pointer mb-2 transition ${
-                    selectedUserId === user.id
-                      ? 'bg-blue-100 border border-blue-400'
-                      : 'hover:bg-gray-100'
-                  }`}
-                >
-                  <div className="font-medium">{user.name}</div>
-                  <div className="text-xs text-gray-500">
-                    {user.email}
-                  </div>
-                </div>
-              ))}
+              <div className="space-y-1.5 max-h-[60vh] overflow-y-auto pr-1 custom-scrollbar">
+                {usersWithOrders
+                  .filter(user => user.role !== 'ADMIN')
+                  .map(user => (
+                    <div
+                      key={user.id}
+                      onClick={() => setSelectedUserId(user.id)}
+                      className={`px-4 py-3 rounded-2xl cursor-pointer transition-all duration-300 border ${selectedUserId === user.id
+                          ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-100'
+                          : 'bg-transparent border-transparent hover:bg-blue-50/50 hover:border-blue-100 text-gray-600 hover:text-blue-600'
+                        }`}
+                    >
+                      <div className="font-bold text-sm truncate">{user.name}</div>
+                      <div className={`text-[10px] truncate ${selectedUserId === user.id ? 'text-blue-100' : 'text-gray-400'}`}>
+                        {user.email}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
           </div>
 
-          {/* Main Section */}
+          {/* Main Content Area */}
           <div className="lg:col-span-3 space-y-6">
 
-            {stats && (
-              <div className="grid md:grid-cols-5 gap-4">
-
-                <StatCard icon={<CalendarIcon />} title="Today Orders" value={stats.todayCount} color="blue" />
-                <StatCard icon={<UsersIcon />} title="This Month Orders" value={stats.monthCount} color="purple" />
-                <StatCard icon={<PackageCheckIcon />} title="Delivered (Month)" value={stats.deliveredMonthCount} color="green" />
-                <StatCard icon={<RotateCcwIcon />} title="Returned" value={stats.returnedCount} color="red" />
-                <StatCard icon={<TrendingUpIcon />} title="Total Sales (LKR)" value={stats.totalSales.toFixed(2)} color="yellow" />
-
+            {/* Quick Stats Grid (Compact Icons, Bold Labels) */}
+            {userAnalytics && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <StatCard icon={<CalendarIcon className="w-4 h-4" />} title="Today" value={userAnalytics.todayQty} color="blue" />
+                <StatCard icon={<UsersIcon className="w-4 h-4" />} title="Monthly" value={userAnalytics.monthQty} color="purple" />
+                <StatCard icon={<PackageCheckIcon className="w-4 h-4" />} title="Delivered" value={userAnalytics.deliveredQty} color="green" />
+                <StatCard icon={<RotateCcwIcon className="w-4 h-4" />} title="Returned" value={userAnalytics.returnQty} color="red" />
               </div>
             )}
 
             {selectedUser && (
-              <div className="bg-white rounded-2xl shadow-md border p-6">
-
-                {/* User Info + Role */}
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <h2 className="text-xl font-semibold">
-                      {selectedUser.name}'s Orders
-                    </h2>
-                    <p className="text-sm text-gray-500 mt-1">
-                      {selectedUser.email}
-                    </p>
+              <div className="bg-white/60 backdrop-blur-xl rounded-[2.5rem] shadow-xl border border-white/80 p-8 min-h-[500px]">
+                {/* Refined Detail Header */}
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-gray-100 rounded-2xl flex items-center justify-center font-black text-gray-400 text-xl border border-gray-200">
+                      {selectedUser.name.charAt(0)}
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-black text-gray-800 tracking-tight">{selectedUser.name}</h2>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-xs font-bold text-gray-400">{selectedUser.email}</span>
+                        <div className="w-1 h-1 rounded-full bg-gray-300" />
+                        <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${
+                          selectedUser.role === 'SUPER USER' ? 'bg-purple-100 text-purple-600' : 'bg-gray-100 text-gray-500'
+                        }`}>
+                          {selectedUser.role}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-
-                  {/* Role Badge */}
-                  <div
-                    className={`px-4 py-2 rounded-xl text-sm font-semibold shadow-sm ${
-                      selectedUser.role === 'ADMIN'
-                        ? 'bg-gradient-to-r from-red-500 to-red-600 text-white'
-                        : selectedUser.role === 'SUPER USER'
-                        ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white'
-                        : 'bg-gradient-to-r from-gray-400 to-gray-500 text-white'
-                    }`}
-                  >
-                    {selectedUser.role}
+                  
+                  <div className="text-right">
+                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Records Found</p>
+                     <p className="text-2xl font-black text-gray-800">{paymentDetails.length}</p>
                   </div>
                 </div>
 
-                {/* Orders Table */}
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b bg-gray-50">
-                        <th className="px-4 py-3 text-left font-semibold text-gray-700">Serial</th>
-                        <th className="px-4 py-3 text-left font-semibold text-gray-700">Order Date</th>
-                        <th className="px-4 py-3 text-left font-semibold text-gray-700">Status</th>
-                        <th className="px-4 py-3 text-right font-semibold text-gray-700">Total Amount (LKR)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {selectedUser.orders.length > 0 ? (
-                        selectedUser.orders.map((order: Sale, index: number) => (
-                          <tr key={order.id} className="border-b hover:bg-gray-50">
-                            <td className="px-4 py-3">{order.serialNo || `#${index + 1}`}</td>
-                            <td className="px-4 py-3">
-                              {order.date
-                                ? new Date(order.date).toLocaleDateString('en-US', {
-                                    year: 'numeric',
-                                    month: 'short',
-                                    day: 'numeric',
-                                  })
-                                : '-'}
-                            </td>
-                            <td className="px-4 py-3">
-                              <span
-                                className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                  order.status?.toLowerCase() === 'delivered'
-                                    ? 'bg-green-100 text-green-800'
-                                    : order.status?.toLowerCase() === 'pending'
-                                    ? 'bg-yellow-100 text-yellow-800'
-                                    : order.status?.toLowerCase() === 'cancelled'
-                                    ? 'bg-red-100 text-red-800'
-                                    : order.status?.toLowerCase() === 'returned'
-                                    ? 'bg-orange-100 text-orange-800'
-                                    : 'bg-gray-100 text-gray-800'
-                                }`}
-                              >
-                                {order.status || 'Unknown'}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 text-right font-semibold text-gray-800">
-                              {order.totalPrice?.toFixed(2) || '0.00'}
-                            </td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td colSpan={4} className="px-4 py-6 text-center text-gray-500">
-                            No orders found
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
+                {/* Table with refined glass container */}
+                <div className="bg-white/40 p-1 rounded-3xl border border-white/40">
+                  {selectedUserId && (
+                    <PaymentDetailsTable
+                      details={paymentDetails}
+                      loading={paymentDetailsLoading}
+                      userId={selectedUserId}
+                      onRefresh={() => fetchPaymentDetails(selectedUserId)}
+                    />
+                  )}
                 </div>
-
-
               </div>
             )}
-
           </div>
         </div>
       </div>
+
+      <PaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        userId={selectedUserId || ''}
+        userName={selectedUser?.name}
+        deliveredQty={userAnalytics?.deliveredQty || 0}
+      />
     </div>
   );
 };
 
 /* ===============================
-   Stat Card Component
+   Modern Stat Card Component
 ================================= */
 
 const StatCard = ({
@@ -334,25 +265,22 @@ const StatCard = ({
   value: any;
   color: string;
 }) => {
-  const colors: any = {
-    blue: 'bg-blue-100 text-blue-600',
-    purple: 'bg-purple-100 text-purple-600',
-    green: 'bg-green-100 text-green-600',
-    red: 'bg-red-100 text-red-600',
-    yellow: 'bg-yellow-100 text-yellow-600',
+  const accentColors: any = {
+    blue: 'text-blue-600 bg-blue-50 border-blue-100',
+    purple: 'text-purple-600 bg-purple-50 border-purple-100',
+    green: 'text-emerald-600 bg-emerald-50 border-emerald-100',
+    red: 'text-rose-600 bg-rose-50 border-rose-100',
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-md p-4 border hover:shadow-lg transition">
-      <div className="flex justify-between items-center">
-        <div>
-          <p className="text-xs text-gray-500">{title}</p>
-          <h3 className="text-xl font-bold mt-1">{value}</h3>
-        </div>
-        <div className={`p-3 rounded-xl ${colors[color]}`}>
+    <div className="bg-white/60 backdrop-blur-xl rounded-3xl p-4 border border-white hover:bg-white/80 transition-all duration-300 group shadow-sm hover:shadow-xl">
+      <div className="flex items-center gap-3 mb-3">
+        <div className={`p-2 rounded-xl border transition-transform duration-500 group-hover:scale-110 ${accentColors[color]}`}>
           {icon}
         </div>
+        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{title}</p>
       </div>
+      <h3 className="text-2xl font-black text-gray-800 tracking-tight leading-none">{value}</h3>
     </div>
   );
 };
