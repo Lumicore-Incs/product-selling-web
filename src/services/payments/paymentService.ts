@@ -77,6 +77,26 @@ export const paymentService = {
       console.error('Error adding payment details:', error);
       throw error;
     }
+  },
+
+  updatePaymentDetails: async (id: number, details: PaymentDetailRequest): Promise<ApiResponse<PaymentDetail>> => {
+    try {
+      const response = await http.put<ApiResponse<PaymentDetail>>(`/payments/Details/${id}`, details);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating payment details:', error);
+      throw error;
+    }
+  },
+
+  deletePaymentDetails: async (id: number): Promise<ApiResponse<any>> => {
+    try {
+      const response = await http.delete<ApiResponse<any>>(`/payments/details/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting payment details:', error);
+      throw error;
+    }
   }
 };
 

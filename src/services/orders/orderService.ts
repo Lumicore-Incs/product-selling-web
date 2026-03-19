@@ -191,15 +191,6 @@ class OrderService {
     }
   }
 
-  async getUserDetails(id: number | string): Promise<any> {
-    try {
-      const resp = await apiClient.get(`/dashboard/getUserDetails/${id}`);
-      return resp?.data || null;
-    } catch (err) {
-      console.error('orderService.getUserDetails failed:', err);
-      throw err;
-    }
-  }
 
   async updateTrackingStatus(page = 0, size = 10): Promise<PaginatedResult<Sale>> {
     try {
@@ -223,10 +214,33 @@ class OrderService {
       throw err;
     }
   }
+
+  async getUserAnalytics(id: number | string): Promise<ApiResponse<UserAnalytics>> {
+    try {
+      const resp = await apiClient.get<ApiResponse<UserAnalytics>>(`/payments/qty/${id}`);
+      return resp?.data;
+    } catch (err) {
+      console.error('orderService.getUserAnalytics failed:', err);
+      throw err;
+    }
+  }
+}
+
+export interface UserAnalytics {
+  todayQty: number;
+  monthQty: number;
+  deliveredQty: number;
+  returnQty: number;
+}
+
+export interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  message?: string;
+  code?: number;
 }
 
 export const orderService = new OrderService();
-
 interface TrackingUploadDto {
   wayBillNo: string;
   orderId: string;
@@ -259,6 +273,6 @@ export const updateTrackingStatus = (page?: number, size?: number) =>
   orderService.updateTrackingStatus(page, size);
 export const uploadTracking = (trackingList: TrackingUploadDto[]) =>
   uploadTrackingData(trackingList);
-export const getUserDetails = (id: string | number) => orderService.getUserDetails(id);
 export const getSummaryDetails = (id: string | number, month: number) =>
   orderService.getSummaryDetails(id, month);
+export const getUserAnalytics = (id: string | number) => orderService.getUserAnalytics(id);

@@ -8,9 +8,16 @@ interface PaymentModalProps {
   onClose: () => void;
   userId: string;
   userName?: string;
+  deliveredQty?: number;
 }
 
-export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, userId, userName }) => {
+export const PaymentModal: React.FC<PaymentModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  userId, 
+  userName,
+  deliveredQty = 0
+}) => {
   const [paymentData, setPaymentData] = useState<PaymentResponseData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -109,6 +116,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, use
                   mode={mode}
                   paymentId={paymentData?.id}
                   isParentLoading={loading}
+                  deliveredQty={deliveredQty}
                   initialData={paymentData ? {
                     commission: paymentData.commission,
                     basicSalary: paymentData.basicSalary

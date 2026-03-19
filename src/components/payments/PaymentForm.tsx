@@ -12,6 +12,7 @@ interface PaymentFormProps {
   };
   paymentId?: number;
   isParentLoading?: boolean;
+  deliveredQty?: number;
 }
 
 export const PaymentForm: React.FC<PaymentFormProps> = ({ 
@@ -20,20 +21,21 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
   mode = 'create', 
   initialData,
   paymentId: initialPaymentId,
-  isParentLoading = false
+  isParentLoading = false,
+  deliveredQty = 0
 }) => {
   // Main Payment Settings State
-  const [commission, setCommission] = useState<string>('');
-  const [basicSalary, setBasicSalary] = useState<string>('');
+  const [commission, setCommission] = useState<number | ''>('');
+  const [basicSalary, setBasicSalary] = useState<number | ''>('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Payment Details Input State (New Section)
   const [paymentId, setPaymentId] = useState<number | null>(initialPaymentId || null);
   const [detailDate, setDetailDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [detailMonthlyQty, setDetailMonthlyQty] = useState<string>('');
-  const [detailTotalCommission, setDetailTotalCommission] = useState<string>('');
-  const [detailTotalAmount, setDetailTotalAmount] = useState<string>('');
+  const [detailMonthlyQty, setDetailMonthlyQty] = useState<number>(deliveredQty);
+  const [detailTotalCommission, setDetailTotalCommission] = useState<number>(0);
+  const [detailTotalAmount, setDetailTotalAmount] = useState<number>(0);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
   const [successDetails, setSuccessDetails] = useState<boolean>(false);
@@ -41,26 +43,40 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
   // Sync internal paymentId with prop updates from parent
   useEffect(() => {
     if (initialPaymentId) {
-      console.log('Syncing paymentId from props:', initialPaymentId);
       setPaymentId(initialPaymentId);
     }
   }, [initialPaymentId]);
 
   useEffect(() => {
-    if (mode === 'edit' && initialData) {
-      setCommission(initialData.commission.toString());
-      setBasicSalary(initialData.basicSalary.toString());
+    if (initialData) {
+      setCommission(initialData.commission);
+      setBasicSalary(initialData.basicSalary);
     } else {
       setCommission('');
       setBasicSalary('');
     }
-  }, [mode, initialData]);
+  }, [initialData]);
+
+  // Auto-calculation logic with mandatory conversion and logging
+  useEffect(() => {
+    console.log('Calculation Triggered:', { deliveredQty, commission, basicSalary });
+
+    if (deliveredQty !== null && commission !== null) {
+      const calculatedCommission = Number(deliveredQty) * Number(commission);
+      setDetailTotalCommission(calculatedCommission);
+
+      const calculatedAmount = Number(basicSalary) + calculatedCommission;
+      setDetailTotalAmount(calculatedAmount);
+      
+      setDetailMonthlyQty(Number(deliveredQty));
+    }
+  }, [commission, basicSalary, deliveredQty]);
 
   const handleSubmitSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const commValue = parseFloat(commission);
-    const salaryValue = parseFloat(basicSalary);
+    const commValue = Number(commission);
+    const salaryValue = Number(basicSalary);
 
     if (isNaN(commValue) || commValue < 0) {
       setError('Please enter a valid commission amount.');
@@ -102,12 +118,9 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
   const handleSubmitDetails = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Debugging point
-    console.log('Submitting settlement. Current paymentId:', paymentId);
-
-    const qty = parseInt(detailMonthlyQty);
-    const comm = parseFloat(detailTotalCommission);
-    const amount = parseFloat(detailTotalAmount);
+    const qty = detailMonthlyQty;
+    const comm = detailTotalCommission;
+    const amount = detailTotalAmount;
 
     if (!paymentId) {
       setErrorDetails('Reference ID missing. You must have an active payment strategy first.');
@@ -118,16 +131,8 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
       setErrorDetails('Date is required.');
       return;
     }
-    if (isNaN(qty) || qty <= 0) {
-      setErrorDetails('Monthly quantity must be a positive number.');
-      return;
-    }
-    if (isNaN(comm) || comm <= 0) {
-      setErrorDetails('Total commission must be a positive amount.');
-      return;
-    }
-    if (isNaN(amount) || amount <= 0) {
-      setErrorDetails('Total amount must be a positive amount.');
+    if (isNaN(qty) || qty < 0) {
+      setErrorDetails('Invalid monthly quantity.');
       return;
     }
 
@@ -145,20 +150,10 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
         paymentId: paymentId
       };
 
-      // Debugging payload before API call
-      console.log('API Request Payload (POST /payments/details):', payload);
-
       await paymentService.addPaymentDetails(payload);
       
-      // Clear fields
-      setDetailMonthlyQty('');
-      setDetailTotalCommission('');
-      setDetailTotalAmount('');
       setSuccessDetails(true);
-      
-      // Refresh list
       onSuccess();
-      
       setTimeout(() => setSuccessDetails(false), 3000);
     } catch (err: any) {
       setErrorDetails(err.response?.data?.message || 'Failed to add settlement details.');
@@ -189,12 +184,11 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
                 </div>
                 <input
                   type="number"
-                  step="0.01"
+                  step="1"
                   required
                   min="0"
                   value={basicSalary}
-                  onChange={(e) => setBasicSalary(e.target.value)}
-                  placeholder="e.g. 45000"
+                  onChange={(e) => setBasicSalary(e.target.value === '' ? '' : Number(e.target.value))}
                   className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all placeholder:text-gray-300"
                 />
               </div>
@@ -213,7 +207,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
                   required
                   min="0"
                   value={commission}
-                  onChange={(e) => setCommission(e.target.value)}
+                  onChange={(e) => setCommission(e.target.value === '' ? '' : Number(e.target.value))}
                   placeholder="e.g. 1500"
                   className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all placeholder:text-gray-300"
                 />
@@ -228,26 +222,28 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className={`w-full py-3 px-6 rounded-2xl font-bold text-white shadow-lg shadow-blue-200 flex items-center justify-center gap-3 transition-all ${
-              loading 
-                ? 'bg-gray-400 cursor-not-allowed' 
-                : mode === 'edit'
-                  ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 hover:scale-[1.01]'
-                  : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:scale-[1.01] active:scale-[0.98]'
-            }`}
-          >
-            {loading ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-              <>
-                {mode === 'edit' ? <RefreshCw className="w-5 h-5" /> : <Save className="w-5 h-5" />}
-                {mode === 'edit' ? 'Update Settings' : 'Initialize Strategy'}
-              </>
-            )}
-          </button>
+          {!(mode === 'create' && initialData && initialData.basicSalary > 0) && (
+            <button
+              type="submit"
+              disabled={loading}
+              className={`w-full py-3 px-6 rounded-2xl font-bold text-white shadow-lg shadow-blue-200 flex items-center justify-center gap-3 transition-all ${
+                loading 
+                  ? 'bg-gray-400 cursor-not-allowed' 
+                  : mode === 'edit'
+                    ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 hover:scale-[1.01]'
+                    : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:scale-[1.01] active:scale-[0.98]'
+              }`}
+            >
+              {loading ? (
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <>
+                  {mode === 'edit' ? <RefreshCw className="w-5 h-5" /> : <Save className="w-5 h-5" />}
+                  {mode === 'edit' ? 'Update Settings' : 'Initialize Strategy'}
+                </>
+              )}
+            </button>
+          )}
         </form>
       </div>
 
@@ -255,7 +251,6 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
 
       {/* SECTION 2: Payment Details (New Settlements) */}
       <div className="space-y-6 relative">
-        {/* Loading Overlay for fetching paymentId */}
         {isParentLoading && (
           <div className="absolute inset-0 z-10 bg-white/60 backdrop-blur-[1px] flex items-center justify-center rounded-3xl">
             <div className="flex flex-col items-center gap-2 bg-white p-4 rounded-2xl shadow-xl border border-gray-100">
@@ -301,61 +296,56 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
               </div>
             </div>
 
-            {/* Monthly Qty */}
+            {/* Monthly Qty - Read Only */}
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-gray-500 ml-1 uppercase tracking-wider">Monthly Quantity</label>
+              <div className="flex justify-between items-center ml-1">
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Monthly Quantity</label>
+              </div>
               <div className="relative group">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-emerald-500 transition-colors pointer-events-none">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500 transition-colors pointer-events-none">
                   <Layers className="w-5 h-5" />
                 </div>
                 <input
                   type="number"
-                  required
-                  min="1"
+                  readOnly
                   value={detailMonthlyQty}
-                  onChange={(e) => setDetailMonthlyQty(e.target.value)}
-                  placeholder="e.g. 10"
-                  className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all placeholder:text-gray-300"
+                  className="w-full pl-12 pr-4 py-3 border border-emerald-100 bg-emerald-50/30 text-emerald-700 font-bold rounded-2xl outline-none cursor-not-allowed"
                 />
               </div>
             </div>
 
-            {/* Total Commission */}
+            {/* Total Commission - Read Only */}
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-gray-500 ml-1 uppercase tracking-wider">Total Commission (LKR)</label>
+              <div className="flex justify-between items-center ml-1">
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Commission (LKR)</label>
+              </div>
               <div className="relative group">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-emerald-500 transition-colors pointer-events-none">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500 transition-colors pointer-events-none">
                   <DollarSign className="w-5 h-5" />
                 </div>
                 <input
-                  type="number"
-                  step="0.01"
-                  required
-                  min="0"
+                  type="text"
+                  readOnly
                   value={detailTotalCommission}
-                  onChange={(e) => setDetailTotalCommission(e.target.value)}
-                  placeholder="e.g. 500.00"
-                  className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all placeholder:text-gray-300"
+                  className="w-full pl-12 pr-4 py-3 border border-emerald-100 bg-emerald-50/30 text-emerald-700 font-bold rounded-2xl outline-none cursor-not-allowed"
                 />
               </div>
             </div>
 
-            {/* Total Amount */}
+            {/* Total Amount - Read Only */}
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-gray-500 ml-1 uppercase tracking-wider">Total Amount (LKR)</label>
+              <div className="flex justify-between items-center ml-1">
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Amount (LKR)</label>
+              </div>
               <div className="relative group">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-emerald-500 transition-colors pointer-events-none">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500 transition-colors pointer-events-none">
                   <Wallet className="w-5 h-5" />
                 </div>
                 <input
-                  type="number"
-                  step="0.01"
-                  required
-                  min="0"
+                  type="text"
+                  readOnly
                   value={detailTotalAmount}
-                  onChange={(e) => setDetailTotalAmount(e.target.value)}
-                  placeholder="e.g. 5000.00"
-                  className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all placeholder:text-gray-300"
+                  className="w-full pl-12 pr-4 py-3 border border-emerald-100 bg-emerald-50/30 text-emerald-700 font-bold rounded-2xl outline-none cursor-not-allowed"
                 />
               </div>
             </div>

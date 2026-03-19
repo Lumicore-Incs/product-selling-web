@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { PaymentDetail, paymentService } from '../../services/payments/paymentService';
-import { Calendar, Receipt, Loader2, IndianRupee, Hash, Layers, CheckCircle2, Clock, RefreshCw, AlertCircle } from 'lucide-react';
+import { PaymentDetail, paymentService, PaymentDetailRequest } from '../../services/payments/paymentService';
+import { 
+  Calendar, Receipt, Loader2, Hash, RefreshCw, AlertCircle, Edit2, Trash2, X, Save
+} from 'lucide-react';
 
 interface PaymentDetailsTableProps {
   details: PaymentDetail[];
@@ -19,6 +21,11 @@ export const PaymentDetailsTable: React.FC<PaymentDetailsTableProps> = ({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  
+  // Edit State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedDetail, setSelectedDetail] = useState<PaymentDetail | null>(null);
+  const [isDeletingId, setIsDeletingId] = useState<number | null>(null);
 
   // Sync with prop updates from parent
   useEffect(() => {
@@ -51,6 +58,45 @@ export const PaymentDetailsTable: React.FC<PaymentDetailsTableProps> = ({
     } finally {
       setIsRefreshing(false);
     }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!window.confirm('Are you sure you want to delete this payment record? This action cannot be undone.')) {
+      return;
+    }
+
+    setIsDeletingId(id);
+    setError(null);
+
+    try {
+      const response = await paymentService.deletePaymentDetails(id);
+      if (response.success) {
+        setLocalDetails(prev => prev.filter(item => item.id !== id));
+        if (onRefresh) onRefresh();
+      } else {
+        setError('Failed to delete the record.');
+      }
+    } catch (err) {
+      console.error('Delete failed:', err);
+      setError('Error deleting record.');
+    } finally {
+      setIsDeletingId(null);
+    }
+  };
+
+  const openEditModal = (detail: PaymentDetail) => {
+    setSelectedDetail(detail);
+    setIsEditModalOpen(true);
+  };
+
+  const closeEditModal = () => {
+    setSelectedDetail(null);
+    setIsEditModalOpen(false);
+  };
+
+  const handleUpdateSuccess = () => {
+    handleRefresh();
+    closeEditModal();
   };
 
   if (parentLoading && localDetails.length === 0) {
@@ -110,7 +156,7 @@ export const PaymentDetailsTable: React.FC<PaymentDetailsTableProps> = ({
         </div>
       </div>
 
-      {/* DESKTOP VIEW: Normal Table */}
+      {/* DESKTOP VIEW */}
       <div className={`hidden md:block bg-white rounded-[2rem] shadow-xl shadow-gray-100/50 border border-gray-100 overflow-hidden transition-all duration-500 ${isRefreshing ? 'opacity-60 grayscale-[0.5]' : 'opacity-100'}`}>
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left border-separate border-spacing-0">
@@ -123,41 +169,35 @@ export const PaymentDetailsTable: React.FC<PaymentDetailsTableProps> = ({
                 </th>
                 <th className="px-6 py-5 font-bold text-gray-400 border-b border-gray-100">
                   <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4" /> Settlement Date
+                    <Calendar className="w-4 h-4" /> Date
                   </div>
                 </th>
                 <th className="px-6 py-5 font-bold text-gray-400 border-b border-gray-100 text-center">
-                  <div className="flex items-center justify-center gap-2">
-                    <Layers className="w-4 h-4" /> Monthly Qty
-                  </div>
+                  Qty
                 </th>
                 <th className="px-6 py-5 font-bold text-gray-400 border-b border-gray-100 text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    <IndianRupee className="w-4 h-4" /> Commission
-                  </div>
+                  Commission
                 </th>
                 <th className="px-6 py-5 font-bold text-gray-800 border-b border-gray-100 text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    <IndianRupee className="w-4 h-4" /> Total Amount
-                  </div>
+                  Total
                 </th>
                 <th className="px-6 py-5 font-bold text-gray-400 border-b border-gray-100 text-center">
                   Status
+                </th>
+                <th className="px-6 py-5 font-bold text-gray-400 border-b border-gray-100 text-right">
+                   Actions
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {hasDetails ? (
                 localDetails.map((detail) => (
-                  <tr 
-                    key={detail.id} 
-                    className="hover:bg-blue-50/30 transition-all duration-300 group cursor-default"
-                  >
+                  <tr key={detail.id} className="hover:bg-blue-50/30 transition-all duration-300 group cursor-default">
                     <td className="px-6 py-5 font-bold text-gray-400 group-hover:text-blue-600 transition-colors">
                       #{detail.id}
                     </td>
                     <td className="px-6 py-5 text-gray-700 font-medium">
-                      {detail.date ? detail.date : 'N/A'}
+                      {detail.date || 'N/A'}
                     </td>
                     <td className="px-6 py-5 text-center">
                       <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-lg font-bold text-xs">
@@ -165,35 +205,41 @@ export const PaymentDetailsTable: React.FC<PaymentDetailsTableProps> = ({
                       </span>
                     </td>
                     <td className="px-6 py-5 text-right font-semibold text-gray-600">
-                      {detail.totalCommission.toLocaleString(undefined, { 
-                         minimumFractionDigits: 2, 
-                         maximumFractionDigits: 2 
-                      })}
+                      {detail.totalCommission.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </td>
                     <td className="px-6 py-5 text-right">
-                      <span className="text-lg font-black text-gray-800">
-                        {detail.totalAmount.toLocaleString(undefined, { 
-                          minimumFractionDigits: 2, 
-                          maximumFractionDigits: 2 
-                        })}
+                      <span className="font-black text-gray-800">
+                        {detail.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                       </span>
                     </td>
                     <td className="px-6 py-5 text-center">
-                      <div className="flex justify-center">
-                        <span className={`
-                          px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.1em] flex items-center gap-1.5
-                          ${detail.status?.toLowerCase() === 'paid' 
-                            ? 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200' 
-                            : 'bg-amber-100 text-amber-700 ring-1 ring-amber-200'
-                          }
-                        `}>
-                          {detail.status?.toLowerCase() === 'paid' ? (
-                            <CheckCircle2 className="w-3 h-3" />
+                       <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                         detail.status?.toLowerCase() === 'paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                       }`}>
+                         {detail.status || 'Pending'}
+                       </span>
+                    </td>
+                    <td className="px-6 py-5 text-right">
+                      <div className="flex justify-end items-center gap-2 opacity-0 opacity-100 ">
+                        <button 
+                          onClick={() => openEditModal(detail)}
+                          className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                          title="Edit"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(detail.id)}
+                          disabled={isDeletingId === detail.id}
+                          className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                          title="Delete"
+                        >
+                          {isDeletingId === detail.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
                           ) : (
-                            <Clock className="w-3 h-3" />
+                            <Trash2 className="w-4 h-4" />
                           )}
-                          {detail.status || 'Pending'}
-                        </span>
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -206,14 +252,11 @@ export const PaymentDetailsTable: React.FC<PaymentDetailsTableProps> = ({
         </div>
       </div>
 
-      {/* MOBILE VIEW: Card Layout */}
+      {/* MOBILE VIEW */}
       <div className={`block md:hidden space-y-4 transition-all duration-500 ${isRefreshing ? 'opacity-60 scale-[0.98]' : 'opacity-100 scale-100'}`}>
         {hasDetails ? (
           localDetails.map((detail) => (
-            <div 
-              key={detail.id} 
-              className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-4 active:scale-[0.98] transition-all"
-            >
+            <div key={detail.id} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-4">
               <div className="flex justify-between items-start">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-gray-50 rounded-xl text-gray-400">
@@ -224,48 +267,193 @@ export const PaymentDetailsTable: React.FC<PaymentDetailsTableProps> = ({
                     <p className="text-sm font-bold text-gray-800">{detail.date || 'N/A'}</p>
                   </div>
                 </div>
-                <span className={`
-                  px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5
-                  ${detail.status?.toLowerCase() === 'paid' 
-                    ? 'bg-emerald-100 text-emerald-700' 
-                    : 'bg-amber-100 text-amber-700'
-                  }
-                `}>
-                  {detail.status || 'Pending'}
-                </span>
+                <div className="flex items-center gap-2">
+                   <button 
+                    onClick={() => openEditModal(detail)}
+                    className="p-2 text-blue-600 bg-blue-50 rounded-lg font-bold text-xs"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button 
+                    onClick={() => handleDelete(detail.id)}
+                    className="p-2 text-red-500 bg-red-50 rounded-lg font-bold text-xs"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4 pt-2 border-t border-gray-50">
-                <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Quantity</p>
-                  <p className="text-sm font-black text-gray-700 flex items-center gap-1.5">
-                    <Layers className="w-3 h-3 text-blue-500" />
-                    {detail.monthlyQty} Units
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Commission</p>
-                  <p className="text-sm font-black text-gray-700 flex items-center gap-1.5">
-                    <IndianRupee className="w-3 h-3 text-emerald-500" />
-                    {detail.totalCommission.toLocaleString()}
-                  </p>
-                </div>
-              </div>
-
-              <div className="bg-blue-600/5 p-4 rounded-xl flex justify-between items-center">
-                <p className="text-xs font-bold text-blue-800">Total Settlement</p>
-                <p className="text-lg font-black text-blue-600">
-                  <span className="text-[10px] mr-1">LKR</span>
-                  {detail.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                </p>
+                 <div>
+                    <p className="text-xs font-bold text-gray-700">{detail.monthlyQty} Units</p>
+                    <p className="text-[10px] text-gray-400">Monthly Qty</p>
+                 </div>
+                 <div className="text-right">
+                    <p className="text-sm font-black text-gray-800 underline decoration-blue-200 decoration-2">LKR {detail.totalAmount.toLocaleString()}</p>
+                    <p className="text-[10px] text-gray-400 uppercase">Total Settlement</p>
+                 </div>
               </div>
             </div>
           ))
         ) : (
-          <div className="bg-white rounded-[2rem] border border-dashed border-gray-200 p-10">
-            <EmptyState />
-          </div>
+          <EmptyState />
         )}
+      </div>
+
+      {/* Edit Modal */}
+      {isEditModalOpen && selectedDetail && (
+        <EditPaymentDetailModal 
+          detail={selectedDetail} 
+          onClose={closeEditModal} 
+          onSuccess={handleUpdateSuccess} 
+        />
+      )}
+    </div>
+  );
+};
+
+/* ===============================
+   Edit Modal Component
+================================= */
+
+interface EditModalProps {
+  detail: PaymentDetail;
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+const EditPaymentDetailModal: React.FC<EditModalProps> = ({ detail, onClose, onSuccess }) => {
+  const [formData, setFormData] = useState<PaymentDetailRequest>({
+    date: detail.date || '',
+    monthlyQty: detail.monthlyQty,
+    totalCommission: detail.totalCommission,
+    totalAmount: detail.totalAmount,
+    status: detail.status,
+    paymentId: detail.paymentId
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      if (formData.monthlyQty < 0 || formData.totalCommission < 0 || formData.totalAmount < 0) {
+        throw new Error('Numeric values must be positive.');
+      }
+
+      await paymentService.updatePaymentDetails(detail.id, formData);
+      onSuccess();
+    } catch (err: any) {
+      setError(err.message || 'Failed to update settlement record.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+      <div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 border border-white">
+        <div className="px-8 py-6 border-b border-gray-50 flex items-center justify-between bg-blue-50/30">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-600 rounded-xl text-white">
+              <Edit2 className="w-5 h-5" />
+            </div>
+            <h2 className="text-xl font-black text-gray-800 tracking-tight">Edit Settlement</h2>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-red-50 rounded-xl text-gray-400 hover:text-red-500 transition-colors">
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-8 space-y-5">
+          <div className="space-y-4">
+            <div>
+              <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Settlement Date</label>
+              <input 
+                type="date" 
+                required
+                className="w-full mt-1 px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-bold"
+                value={formData.date || ''}
+                onChange={(e) => setFormData({...formData, date: e.target.value})}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Quantity</label>
+                <input 
+                  type="number" 
+                  required
+                  min="0"
+                  className="w-full mt-1 px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl outline-none font-bold focus:border-blue-500"
+                  value={formData.monthlyQty}
+                  onChange={(e) => setFormData({...formData, monthlyQty: Number(e.target.value)})}
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Status</label>
+                <select 
+                  className="w-full mt-1 px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl font-bold outline-none"
+                  value={formData.status}
+                  onChange={(e) => setFormData({...formData, status: e.target.value})}
+                >
+                  <option value="PAID">PAID</option>
+                  <option value="PENDING">PENDING</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Commission</label>
+                <input 
+                  type="number" 
+                  step="0.01"
+                  required
+                  min="0"
+                  className="w-full mt-1 px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl outline-none font-bold focus:border-blue-500"
+                  value={formData.totalCommission}
+                  onChange={(e) => setFormData({...formData, totalCommission: Number(e.target.value)})}
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Total Amount</label>
+                <input 
+                  type="number" 
+                  step="0.01"
+                  required
+                  min="0"
+                  className="w-full mt-1 px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl outline-none font-bold focus:border-blue-500"
+                  value={formData.totalAmount}
+                  onChange={(e) => setFormData({...formData, totalAmount: Number(e.target.value)})}
+                />
+              </div>
+            </div>
+          </div>
+
+          {error && <p className="text-xs text-red-500 bg-red-50 p-3 rounded-xl flex items-center gap-2 font-bold"><AlertCircle className="w-3 h-3" /> {error}</p>}
+
+          <div className="pt-4 flex gap-3">
+             <button 
+              type="button" 
+              onClick={onClose}
+              className="flex-1 px-6 py-4 bg-gray-100 text-gray-600 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-gray-200 transition-colors"
+             >
+                Cancel
+             </button>
+             <button 
+              type="submit" 
+              disabled={submitting}
+              className="flex-[2] px-6 py-4 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
+             >
+                {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                {submitting ? 'Updating...' : 'Save Changes'}
+             </button>
+          </div>
+        </form>
       </div>
     </div>
   );
