@@ -9,13 +9,16 @@ export const DashboardLayout = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [salesTitle, setSalesTitle] = useState('Sales Management');
   const [salesBackgroundColor, setSalesBackgroundColor] = useState('#ffffff');
+  const [headerColor, setHeaderColor] = useState('#2a98a4');
   const location = useLocation();
 
   useEffect(() => {
     const savedTitle = localStorage.getItem('salesTitle') || 'Add New Order';
     const savedColor = localStorage.getItem('appBackgroundColor') || '#ffffff';
+    const savedHeaderColor = localStorage.getItem('headerColor') || '#2a98a4';
     setSalesTitle(savedTitle);
     setSalesBackgroundColor(savedColor);
+    setHeaderColor(savedHeaderColor);
   }, []);
 
   useEffect(() => {
@@ -32,10 +35,19 @@ export const DashboardLayout = () => {
     setSalesBackgroundColor(color);
   };
 
+  const handleHeaderColorChange = (color: string) => {
+    setHeaderColor(color);
+  };
+
   return (
     <div
-      className="h-screen w-screen flex flex-col md:flex-row bg-gray-100 overflow-x-hidden"
-      style={{ backgroundColor: salesBackgroundColor }}
+      className="h-screen w-screen flex flex-col md:flex-row overflow-x-hidden"
+      style={{
+        background: 
+          salesBackgroundColor && salesBackgroundColor !== '#ffffff'
+            ? salesBackgroundColor
+            : 'linear-gradient(135deg, #208591c0 0%, rgba(172, 119, 233, 0.3) 50%, rgba(207, 154, 241, 0.4) 100%)'
+      }}
     >
       {/* Sidebar (Fixed) */}
       <div
@@ -52,7 +64,10 @@ export const DashboardLayout = () => {
 
       {/* Main Content Area */}
       <div className={`flex-1 flex flex-col h-screen overflow-hidden transition-all duration-300`}>
-        <Header onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} />
+        <Header 
+          onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          onSettingsClick={() => setShowSettings(!showSettings)}
+        />
         <main className="flex-1 overflow-y-auto overflow-x-hidden w-full">
           <div className="w-full px-4 sm:px-6 lg:px-8 py-6 max-w-full">
             <Outlet

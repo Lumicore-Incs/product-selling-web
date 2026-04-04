@@ -74,6 +74,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
 }) => {
   // Status options
   const statusOptions = ['TEMPORARY', 'PENDING'];
+
   const [columnWidths, setColumnWidths] = useState(DEFAULT_COLUMN_WIDTHS);
   const resizingRef = useRef<null | { key: ColumnKey; startX: number; startWidth: number }>(null);
 
@@ -118,6 +119,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
     width: columnWidth(key),
     minWidth: columnWidth(key),
   });
+
   const [currentPage, setCurrentPage] = useState(1);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
@@ -141,7 +143,6 @@ export const SalesTable: React.FC<SalesTableProps> = ({
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return '-';
-
     const date = new Date(dateString);
     return date.toLocaleDateString('en-GB', {
       day: '2-digit',
@@ -174,8 +175,8 @@ export const SalesTable: React.FC<SalesTableProps> = ({
         return 'bg-orange-300 text-white border-red-400';
       case 'Returned to Branch Rescheduled':
         return 'bg-orange-600 text-white border-red-400';
-        case 'Returned to Branch Failed':
-      return 'bg-red-500 text-white border-red-400';
+      case 'Returned to Branch Failed':
+        return 'bg-red-500 text-white border-red-400';
       case 'Returned to Branch':
         return 'bg-red-300 text-white border-red-400';
       case 'Returned to Client':
@@ -220,7 +221,6 @@ export const SalesTable: React.FC<SalesTableProps> = ({
     ? serverPagination.totalPages
     : Math.ceil(sortedSales.length / rowsPerPage);
 
-  // When server pagination is active, all records in `sales` belong to the current page — no slicing needed
   const paginatedSales = serverPagination
     ? sortedSales
     : sortedSales.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
@@ -232,6 +232,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
       setCurrentPage((p) => Math.max(1, p - 1));
     }
   };
+
   const handleNext = () => {
     if (serverPagination) {
       serverPagination.onNext();
@@ -257,19 +258,17 @@ export const SalesTable: React.FC<SalesTableProps> = ({
   // Show skeleton loader when data is loading
   if (isLoading) {
     return (
-      <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 sm:p-6 flex items-center justify-between">
+      <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden font-inter">
+        <div className="bg-gray-50 border-b border-gray-200 p-4 sm:p-6 flex items-center justify-between">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-white">Sales Entries</h2>
-            <p className="text-blue-100 text-sm mt-1">Loading...</p>
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Sales Entries</h2>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-white bg-opacity-10 flex items-center justify-center">
-              <Spinner size={20} colorClass="text-white" />
+            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+              <Spinner size={20} colorClass="text-gray-600" />
             </div>
           </div>
         </div>
-
         <div className="p-8 flex flex-col items-center justify-center">
           <Spinner size={48} colorClass="text-blue-600 mb-4" />
           <div className="text-gray-600 text-lg">Loading sales data...</div>
@@ -280,7 +279,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
 
   if (sales.length === 0) {
     return (
-      <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 sm:p-8 text-center">
+      <div className="bg-white rounded-lg shadow border border-gray-200 p-6 sm:p-8 text-center font-inter">
         <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <PackageIcon className="w-8 h-8 text-gray-400" />
         </div>
@@ -293,61 +292,62 @@ export const SalesTable: React.FC<SalesTableProps> = ({
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 sm:p-6">
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <h2 className="text-xl sm:text-2xl font-bold text-white">Sales Entries</h2>
-              <p className="text-blue-100 text-sm mt-1">
-                {serverPagination
-                  ? `${serverPagination.total} entries`
-                  : `${filteredSales.length} of ${sales.length} entries`}
-              </p>
-            </div>
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <div className="relative flex-1 sm:flex-none sm:w-64">
-                <SearchIcon className="absolute left-3 top-2.5 w-4 h-4 text-white text-opacity-70" />
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  value={searchTerm}
-                  onChange={(e) => {
-                    if (onSearchChange) {
-                      onSearchChange(e.target.value);
-                    } else {
-                      setInternalSearchTerm(e.target.value);
+    <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden font-inter">
+      {/* Header with Search & Refresh */}
+      <div className="bg-gray-50 border-b border-gray-200 p-4 sm:p-4" style={{backgroundColor:'#0E626E', font:'plus-jakarta-sans'}}>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-bold text-white">Sales Entries</h2>
+            <p className="text-gray-100 text-sm mt-1">
+              {serverPagination
+                ? `${serverPagination.total} entries`
+                : `${filteredSales.length} of ${sales.length} entries`}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="relative flex-1 sm:flex-none sm:w-72">
+              <SearchIcon className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search by serial, customer, waybill, address..."
+                value={searchTerm}
+                onChange={(e) => {
+                  if (onSearchChange) {
+                    onSearchChange(e.target.value);
+                  } else {
+                    setInternalSearchTerm(e.target.value);
+                    setCurrentPage(1);
+                  }
+                }}
+                className="w-full pl-10 pr-10 py-1.5 bg-white border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
+                // className="w-60 bg-white border border-gray-200 rounded-2xl px-1 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => {
+                    if (onSearchChange) onSearchChange('');
+                    else {
+                      setInternalSearchTerm('');
                       setCurrentPage(1);
                     }
                   }}
-                  className="w-full pl-10 pr-8 py-2 bg-white bg-opacity-10 text-white placeholder-gray-100 text-sm rounded-lg border border-white border-opacity-20 focus:outline-none focus:bg-opacity-20 focus:border-opacity-40"
-                />
-                {searchTerm && (
-                  <button
-                    onClick={() => {
-                      if (onSearchChange) {
-                        onSearchChange('');
-                      } else {
-                        setInternalSearchTerm('');
-                        setCurrentPage(1);
-                      }
-                    }}
-                    className="absolute right-2 top-2.5 text-white text-opacity-70 hover:text-opacity-100"
-                    title="Clear search"
-                  >
-                    <XIcon className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
+                  className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+                >
+                  <XIcon className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
+            {onRefresh && (
               <button
-                onClick={() => onRefresh && onRefresh()}
+                onClick={onRefresh}
                 title="Refresh"
-                className="p-2 bg-white bg-opacity-10 hover:bg-opacity-20 rounded text-white flex-shrink-0"
+                className="p-2 border border-gray-300 hover:bg-gray-50 rounded-lg text-white hover:text-gray-700 transition-colors"
               >
                 <RefreshCwIcon className="w-4 h-4" />
               </button>
-            </div>
+            )}
           </div>
         </div>
       </div>
@@ -364,10 +364,11 @@ export const SalesTable: React.FC<SalesTableProps> = ({
           {searchTerm && (
             <button
               onClick={() => {
-                setSearchTerm('');
+                if (onSearchChange) onSearchChange('');
+                else setInternalSearchTerm('');
                 setCurrentPage(1);
               }}
-              className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+              className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-inter"
             >
               Clear Search
             </button>
@@ -379,10 +380,10 @@ export const SalesTable: React.FC<SalesTableProps> = ({
           <div className="hidden lg:block overflow-x-auto">
             <div className="inline-block min-w-full">
               <table className="w-full table-fixed">
-                <thead className="bg-gray-50 border-b border-gray-200">
+                <thead className="bg-blue-50 border-b border-gray-200">
                   <tr>
                     <th
-                      className="px-4 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider relative"
+                      className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider relative"
                       style={widthStyle('serial')}
                     >
                       Serial
@@ -393,7 +394,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                       />
                     </th>
                     <th
-                      className="px-4 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider relative"
+                      className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider relative"
                       style={widthStyle('customer')}
                     >
                       Customer
@@ -404,7 +405,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                       />
                     </th>
                     <th
-                      className="px-4 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider relative"
+                      className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider relative"
                       style={widthStyle('waybill')}
                     >
                       Waybill Id
@@ -426,7 +427,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                       />
                     </th>
                     <th
-                      className="px-4 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider relative"
+                      className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider relative"
                       style={widthStyle('address')}
                     >
                       Address
@@ -437,7 +438,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                       />
                     </th>
                     <th
-                      className="px-4 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider relative"
+                      className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider relative"
                       style={widthStyle('contact1')}
                     >
                       Contact 1
@@ -448,7 +449,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                       />
                     </th>
                     <th
-                      className="px-4 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider relative"
+                      className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider relative"
                       style={widthStyle('contact2')}
                     >
                       Contact 2
@@ -470,7 +471,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                       />
                     </th>
                     <th
-                      className="pl-12 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider relative"
+                      className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider relative"
                       style={widthStyle('qty')}
                     >
                       Qty
@@ -503,7 +504,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                       />
                     </th>
                     <th
-                      className="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider relative"
+                      className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider relative"
                       style={widthStyle('actions')}
                     >
                       Actions
@@ -515,20 +516,23 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {paginatedSales.map((sale) => (
-                    <tr key={sale.id} className="hover:bg-gray-50 transition-colors duration-150">
+                <tbody className="divide-y divide-gray-200">
+                  {paginatedSales.map((sale, index) => (
+                    <tr
+                      key={sale.id}
+                      className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}
+                    >
                       <td
-                        className="px-2 py-4 whitespace-nowrap text-sm text-gray-700"
+                        className="px-6 py-4 whitespace-nowrap text-sm text-gray-700"
                         style={widthStyle('serial')}
                       >
                         {sale.serialNo}
                       </td>
-                      <td className="py-4 whitespace-nowrap" style={widthStyle('customer')}>
+                      <td className="px-6 py-4 whitespace-nowrap" style={widthStyle('customer')}>
                         <div className="font-medium text-gray-900">{sale.customerName}</div>
                       </td>
                       <td
-                        className="px-4 py-4 whitespace-nowrap text-sm text-gray-600"
+                        className="px-6 py-4 whitespace-nowrap text-sm text-gray-600"
                         style={widthStyle('waybill')}
                       >
                         {sale.waybillId ?? '-'}
@@ -539,13 +543,11 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                       >
                         {formatDate(sale.date)}
                       </td>
-                      <td className="px-6 py-4" style={widthStyle('address')}>
-                        <div className="text-sm text-gray-600 max-w-xs truncate">
-                          {sale.address}
-                        </div>
+                      <td className="px-6 py-4 text-sm text-gray-600" style={widthStyle('address')}>
+                        <div className="max-w-xs truncate">{sale.address}</div>
                       </td>
                       <td
-                        className="px-4 py-4 whitespace-nowrap text-sm text-gray-600"
+                        className="px-6 py-4 whitespace-nowrap text-sm text-gray-600"
                         style={widthStyle('contact1')}
                       >
                         {sale.contact01}
@@ -556,10 +558,10 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                       >
                         {sale.contact02 || '-'}
                       </td>
-                      <td className="px-4 py-4 whitespace-nowrap" style={widthStyle('status')}>
+                      <td className="px-6 py-4 whitespace-nowrap" style={widthStyle('status')}>
                         {onStatusChange && sale.status === 'TEMPORARY' ? (
                           <select
-                            className={`px-2 py-1 rounded-full text-xs font-medium border focus:outline-none ${getStatusColor(
+                            className={`px-3 py-1 rounded-full text-xs font-medium border focus:outline-none ${getStatusColor(
                               sale.status ?? '-',
                             )}`}
                             value={sale.status}
@@ -582,64 +584,43 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                         )}
                       </td>
                       <td
-                        className="pl-12 py-4 whitespace-nowrap text-sm text-gray-600"
+                        className="px-6 py-4 whitespace-nowrap text-sm text-gray-600"
                         style={widthStyle('qty')}
                       >
                         {sale.qty}
                       </td>
                       <td className="px-6 py-4" style={widthStyle('products')}>
-                        <div className="max-w-xs">
-                          {sale.items && sale.items.length > 0 ? (
-                            <div className="space-y-1">
-                              {sale.items.slice(0, 2).map((item, index) => (
-                                <div
-                                  key={item.productId + '-' + index}
-                                  className="text-xs text-gray-600"
-                                >
-                                  {item.productName} (x{item.qty})
-                                </div>
-                              ))}
-                              {sale.items.length > 2 && (
-                                <div className="text-xs text-blue-600">
-                                  +{sale.items.length - 2} more items
-                                </div>
-                              )}
-                              <div className="text-xs font-medium text-blue-600 mt-1">
-                                Total: {sale.items.reduce((sum, item) => sum + item.qty, 0)} items
-                              </div>
-                            </div>
-                          ) : (
-                            <span className="text-gray-400 text-sm">No products</span>
-                          )}
+                        <div className="text-sm text-gray-600">
+                          {sale.items?.length ? `${sale.items.length} items` : '—'}
                         </div>
                       </td>
-                      <td className="px-1 py-4 whitespace-nowrap" style={widthStyle('total')}>
-                        <div className="text-lg font-semibold text-green-600">
+                      <td className="px-6 py-4 whitespace-nowrap" style={widthStyle('total')}>
+                        <div className="font-semibold text-green-600">
                           LKR {sale.totalPrice ? sale.totalPrice.toFixed(2) : '0.00'}
                         </div>
                       </td>
                       <td
-                        className="px-6 py-4 whitespace-nowrap text-right"
+                        className="px-6 py-4 whitespace-nowrap text-center"
                         style={widthStyle('actions')}
                       >
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="flex items-center justify-center gap-3">
                           <button
                             onClick={() => setSelectedSale(sale)}
-                            className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                            className="p-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-all"
                             title="View Details"
                           >
                             <EyeIcon className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => onEdit(sale)}
-                            className="p-2 text-yellow-600 hover:text-yellow-800 hover:bg-yellow-50 rounded-lg transition-all duration-200"
+                            className="p-1.5 text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded transition-all"
                             title="Edit Sale"
                           >
                             <PencilIcon className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => setPendingDeleteId(sale.id)}
-                            className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-all duration-200"
+                            className="p-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-all"
                             title="Delete Sale"
                           >
                             <Trash2Icon className="w-4 h-4" />
@@ -653,7 +634,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
             </div>
           </div>
 
-          {/* Mobile Card View */}
+          {/* Mobile Card View - Updated Style */}
           <div className="lg:hidden">
             <div className="p-4 space-y-4">
               {paginatedSales.map((sale) => {
@@ -661,40 +642,29 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                 return (
                   <div
                     key={sale.id}
-                    className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden"
+                    className="bg-white rounded-lg border border-gray-200 overflow-hidden"
                   >
-                    {/* Card Header */}
                     <div className="p-4">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
                             <h3 className="text-lg font-semibold text-gray-900 truncate">
-                              {sale.name}
+                              {sale.customerName}
                             </h3>
-                            <div className="text-xs text-gray-500 ml-3">{sale.serialNo}</div>
+                            <div className="text-xs text-gray-500 ml-3">#{sale.serialNo}</div>
                           </div>
                           <div className="flex items-center gap-1 mt-1">
                             <MapPinIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
                             <p className="text-sm text-gray-600 truncate">{sale.address}</p>
                           </div>
-                          <div className="flex items-center gap-1 mt-1">
-                            <PhoneIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                            <div className="text-sm text-gray-600">
-                              {sale.contact01}
-                              {sale.contact02 && <span className="ml-2">• {sale.contact02}</span>}
-                            </div>
-                          </div>
                           <div className="text-xs text-gray-500 mt-1">
-                            Order Date: {formatDate(sale.date)}
-                          </div>
-                          <div className="text-xs text-gray-500 mt-1">
-                            Waybill Id: {sale.waybillId ?? '-'}
+                            Waybill: {sale.waybillId ?? '-'} • {formatDate(sale.date)}
                           </div>
                         </div>
-                        <div className="ml-3 flex items-center gap-2">
+                        <div className="ml-3">
                           {onStatusChange && sale.status === 'TEMPORARY' ? (
                             <select
-                              className={`px-2 py-1 rounded-full text-xs font-medium border focus:outline-none ${getStatusColor(
+                              className={`px-3 py-1 rounded-full text-xs font-medium border focus:outline-none ${getStatusColor(
                                 sale.status ?? '-',
                               )}`}
                               value={sale.status}
@@ -712,13 +682,12 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                                 sale.status ?? '-',
                               )}`}
                             >
-                              {sale.status}
+                              {sale.status ?? '-'}
                             </span>
                           )}
                         </div>
                       </div>
 
-                      {/* Quick Info Row */}
                       <div className="flex items-center justify-between">
                         <div className="text-lg font-bold text-green-600">
                           LKR {sale.totalPrice ? sale.totalPrice.toFixed(2) : '0.00'}
@@ -726,31 +695,27 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => toggleRowExpansion(sale.id)}
-                            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-white rounded-lg transition-all duration-200"
+                            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-all"
                           >
-                            {isExpanded ? (
-                              <ChevronUpIcon className="w-4 h-4" />
-                            ) : (
-                              <ChevronDownIcon className="w-4 h-4" />
-                            )}
+                            {isExpanded ? <ChevronUpIcon className="w-4 h-4" /> : <ChevronDownIcon className="w-4 h-4" />}
                           </button>
                           <button
                             onClick={() => setSelectedSale(sale)}
-                            className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                            className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-all"
                             title="View Details"
                           >
                             <EyeIcon className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => onEdit(sale)}
-                            className="p-2 text-yellow-600 hover:text-yellow-800 hover:bg-yellow-50 rounded-lg transition-all duration-200"
+                            className="p-2 text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded transition-all"
                             title="Edit Sale"
                           >
                             <PencilIcon className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => setPendingDeleteId(sale.id)}
-                            className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-all duration-200"
+                            className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-all"
                             title="Delete Sale"
                           >
                             <Trash2Icon className="w-4 h-4" />
@@ -761,80 +726,42 @@ export const SalesTable: React.FC<SalesTableProps> = ({
 
                     {/* Expandable Details */}
                     {isExpanded && (
-                      <div className="border-t border-gray-200 bg-white p-4 space-y-4">
-                        {/* Contact Information */}
+                      <div className="border-t border-gray-200 bg-gray-50 p-4 space-y-4">
                         <div>
                           <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
                             <PhoneIcon className="w-4 h-4" />
                             Contact Information
                           </h4>
                           <div className="space-y-2">
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm text-gray-600">WhatsApp:</span>
-                              <span className="text-sm font-medium text-gray-900">
-                                {sale.contact01}
-                              </span>
+                            <div className="flex justify-between">
+                              <span className="text-sm text-gray-600">Contact 1:</span>
+                              <span className="font-medium text-gray-900">{sale.contact01}</span>
                             </div>
-                            <div className="flex justify-between items-center">
+                            <div className="flex justify-between">
                               <span className="text-sm text-gray-600">Contact 2:</span>
-                              <span className="text-sm font-medium text-gray-900">
-                                {sale.contact02 || '-'}
-                              </span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm text-gray-600">Quantity:</span>
-                              <span className="text-sm font-medium text-gray-900">{sale.qty}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm text-gray-600">Waybill Id:</span>
-                              <span className="text-sm font-medium text-gray-900">
-                                {sale.waybillId ?? '-'}
-                              </span>
+                              <span className="font-medium text-gray-900">{sale.contact02 || '-'}</span>
                             </div>
                           </div>
                         </div>
 
-                        {/* Products Information */}
                         {sale.items && sale.items.length > 0 && (
                           <div>
                             <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
                               <PackageIcon className="w-4 h-4" />
-                              Products ({sale.items.length} items)
+                              Products ({sale.items.length})
                             </h4>
                             <div className="space-y-2">
-                              {sale.items.map((item, index) => (
-                                <div
-                                  key={item.productId + '-' + index}
-                                  className="flex justify-between items-center p-2 bg-gray-50 rounded"
-                                >
-                                  <div>
-                                    <div className="text-sm font-medium text-gray-900">
-                                      {item.productName}
-                                    </div>
-                                    <div className="text-xs text-gray-600">
-                                      LKR {item.price} each
-                                    </div>
-                                  </div>
+                              {sale.items.map((item, idx) => (
+                                <div key={idx} className="flex justify-between items-center p-2 bg-white rounded border">
+                                  <div className="text-sm font-medium">{item.productName}</div>
                                   <div className="text-right">
-                                    <div className="text-sm font-medium text-gray-900">
-                                      x{item.qty}
-                                    </div>
+                                    <div className="text-sm">x{item.qty}</div>
                                     <div className="text-xs text-green-600">
-                                      LKR {(item.qty * item.price).toFixed(2)}
+                                      LKR {(item.price * item.qty).toFixed(2)}
                                     </div>
                                   </div>
                                 </div>
                               ))}
-                              <div className="pt-2 border-t border-gray-200">
-                                <div className="flex justify-between items-center">
-                                  <span className="text-sm font-semibold text-gray-700">
-                                    Total Items:
-                                  </span>
-                                  <span className="text-sm font-semibold text-blue-600">
-                                    {sale.items.reduce((sum, item) => sum + item.qty, 0)} items
-                                  </span>
-                                </div>
-                              </div>
                             </div>
                           </div>
                         )}
@@ -850,32 +777,14 @@ export const SalesTable: React.FC<SalesTableProps> = ({
 
       {/* Pagination */}
       {displayTotal > 0 && (
-        <div className="border-t border-gray-200 bg-gray-50 px-4 py-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600 text-center sm:text-left">
-              <span>
-                Showing <span className="font-medium">{displayFrom}</span> to{' '}
-                <span className="font-medium">{displayTo}</span> of{' '}
-                <span className="font-medium">{displayTotal}</span> entries
-                {!serverPagination && searchTerm && (
-                  <span className="text-gray-500"> (filtered from {sales.length} total)</span>
-                )}
-              </span>
-              {serverPagination && (
-                <label className="flex items-center gap-1">
-                  <span className="text-gray-500">Rows:</span>
-                  <select
-                    value={serverPagination.pageSize}
-                    onChange={(e) => serverPagination.onPageSizeChange(Number(e.target.value))}
-                    className="border border-gray-300 rounded px-2 py-0.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    {serverPagination.pageSizeOptions.map((s) => (
-                      <option key={s} value={s}>
-                        {s}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+        <div className="border-t border-gray-200 bg-white px-4 sm:px-6 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="text-sm text-gray-600">
+              Showing <span className="font-medium">{displayFrom}</span> to{' '}
+              <span className="font-medium">{displayTo}</span> of{' '}
+              <span className="font-medium">{displayTotal}</span> entries
+              {!serverPagination && searchTerm && (
+                <span className="text-gray-500"> (filtered)</span>
               )}
             </div>
 
@@ -883,26 +792,26 @@ export const SalesTable: React.FC<SalesTableProps> = ({
               <button
                 onClick={handlePrev}
                 disabled={isPrevDisabled}
-                className={`px-4 py-2 rounded-lg border font-medium transition-all duration-200 ${
+                className={`px-4 py-2 rounded-lg border font-medium transition-all ${
                   isPrevDisabled
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
-                    : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300 hover:border-gray-400'
+                    : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'
                 }`}
               >
                 Previous
               </button>
 
-              <div className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg">
+              <div className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg">
                 Page {displayPage} of {totalPages}
               </div>
 
               <button
                 onClick={handleNext}
                 disabled={isNextDisabled}
-                className={`px-4 py-2 rounded-lg border font-medium transition-all duration-200 ${
+                className={`px-4 py-2 rounded-lg border font-medium transition-all ${
                   isNextDisabled
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
-                    : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300 hover:border-gray-400'
+                    : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'
                 }`}
               >
                 Next
@@ -911,7 +820,8 @@ export const SalesTable: React.FC<SalesTableProps> = ({
           </div>
         </div>
       )}
-      {/* ConfirmDialog for admin delete */}
+
+      {/* Dialogs */}
       <ConfirmDialog
         open={Boolean(pendingDeleteId)}
         title="Delete Sale"
@@ -925,7 +835,6 @@ export const SalesTable: React.FC<SalesTableProps> = ({
         onCancel={() => setPendingDeleteId(null)}
       />
 
-      {/* Block dialog for non-admins */}
       <ConfirmDialog
         open={showBlockDialog}
         title="Permission Denied"
@@ -936,7 +845,6 @@ export const SalesTable: React.FC<SalesTableProps> = ({
         onCancel={() => setShowBlockDialog(false)}
       />
 
-      {/* View Modal */}
       <SalesViewModal sale={selectedSale} onClose={() => setSelectedSale(null)} />
     </div>
   );

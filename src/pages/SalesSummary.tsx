@@ -24,7 +24,8 @@ function toMonthKey(date: Date) {
 /* ==================== Main Component ==================== */
 export const SalesSummary = () => {
   const now = new Date();
-  const [selectedMonth, setSelectedMonth] = useState<string>(toMonthKey(now));
+  const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const [selectedMonth, setSelectedMonth] = useState<string>(toMonthKey(nextMonth));
   const [users, setUsers] = useState<User[]>([]);
   const [summary, setSummary] = useState<UserSummaryResponse | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
@@ -142,7 +143,7 @@ export const SalesSummary = () => {
               <input
                 type="month"
                 value={selectedMonth}
-                max={toMonthKey(now)}
+                max={toMonthKey(nextMonth)}
                 onChange={(e) => setSelectedMonth(e.target.value)}
                 className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-gray-800 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 transition"
               />
