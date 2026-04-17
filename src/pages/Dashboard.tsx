@@ -232,16 +232,16 @@ export const Dashboard = () => {
       />
 
       {/* Header */}
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-4xl font-bold" style={{ color: '#0E626E' }}>Welcome Back !</h1>
+          <h1 className="text-2xl md:text-4xl font-bold" style={{ color: '#0E626E', fontFamily: 'Plus Jakarta Sans' }}>Welcome Back !</h1>
         </div>
 
         {/* Product Filters */}
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-2 md:gap-3">
           <button
             onClick={() => handleProductFilter('all')}
-            className={`px-6 py-2.5 rounded-2xl font-medium transition-all ${selectedProduct === 'all'
+            className={`px-3 md:px-6 py-2 md:py-2.5 rounded-2xl font-medium text-xs md:text-sm transition-all ${selectedProduct === 'all'
               ? 'bg-teal-600 text-white shadow-lg'
               : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
               }`}
@@ -250,7 +250,7 @@ export const Dashboard = () => {
           </button>
           <button
             onClick={() => handleProductFilter('sugar')}
-            className={`px-6 py-2.5 rounded-2xl font-medium transition-all ${selectedProduct === 'sugar'
+            className={`px-3 md:px-6 py-2 md:py-2.5 rounded-2xl font-medium text-xs md:text-sm transition-all ${selectedProduct === 'sugar'
               ? 'bg-teal-600 text-white shadow-lg'
               : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
               }`}
@@ -259,7 +259,7 @@ export const Dashboard = () => {
           </button>
           <button
             onClick={() => handleProductFilter('ani')}
-            className={`px-6 py-2.5 rounded-2xl font-medium transition-all ${selectedProduct === 'ani'
+            className={`px-3 md:px-6 py-2 md:py-2.5 rounded-2xl font-medium text-xs md:text-sm transition-all ${selectedProduct === 'ani'
               ? 'bg-teal-600 text-white shadow-lg'
               : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
               }`}
@@ -268,7 +268,7 @@ export const Dashboard = () => {
           </button>
           <button
             onClick={() => handleProductFilter('medani')}
-            className={`px-6 py-2.5 rounded-2xl font-medium transition-all ${selectedProduct === 'medani'
+            className={`px-3 md:px-6 py-2 md:py-2.5 rounded-2xl font-medium text-xs md:text-sm transition-all ${selectedProduct === 'medani'
               ? 'bg-teal-600 text-white shadow-lg'
               : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
               }`}

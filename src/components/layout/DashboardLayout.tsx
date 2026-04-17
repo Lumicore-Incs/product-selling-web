@@ -46,7 +46,7 @@ export const DashboardLayout = () => {
         background: 
           salesBackgroundColor && salesBackgroundColor !== '#ffffff'
             ? salesBackgroundColor
-            : 'linear-gradient(135deg, #208591c0 0%, rgba(172, 119, 233, 0.3) 50%, rgba(207, 154, 241, 0.4) 100%)'
+            : 'linear-gradient(135deg, #208591c0 0%, rgba(207, 184, 233, 0.31) 50%, rgba(211, 170, 237, 0.4) 100%)'
       }}
     >
       {/* Sidebar (Fixed) */}

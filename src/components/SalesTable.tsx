@@ -321,7 +321,6 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                   }
                 }}
                 className="w-full pl-10 pr-10 py-1.5 bg-white border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
-                // className="w-60 bg-white border border-gray-200 rounded-2xl px-1 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
               />
               {searchTerm && (
                 <button

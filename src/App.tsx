@@ -116,7 +116,7 @@ export function App() {
             <Route path="sale" element={<SalesManagement />} />
             <Route path="sale/duplicate" element={<DuplicateSales />} />
             <Route path="sale/settings" element={<SalesManagement />} />
-            <Route path="export-order" element={<ExportOrder />} />
+            <Route path="export-orders" element={<ExportOrder />} />
             <Route path="product" element={<ProductManagement />} />
             <Route path="users" element={<Users />} />
             <Route path="user-orders" element={<UserOrders />} />
