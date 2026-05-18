@@ -1,4 +1,4 @@
-import { CreditCardIcon, ScaleIcon, TrendingDownIcon, TrendingUpIcon } from 'lucide-react';
+import { Package, Truck, XCircle, BarChart2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertSnackbar } from '../components/AlertSnackbar';
 import { BackgroundIcons } from '../components/BackgroundIcons';
@@ -6,7 +6,8 @@ import { SalesTable } from '../components/SalesTable';
 import { Sale } from '../models/sales';
 import { getCurrentUser } from '../service/auth';
 import { getDashboardStats } from '../service/dashboard';
-import { getAllProducts } from '../service/product'; // Add this import
+import { getAllProducts } from '../service/product';
+import { useNotification } from '../context/NotificationContext';
 import {
   getAllCustomerOrdersPaginated,
   getOrdersPaginated,
@@ -15,44 +16,115 @@ import {
   type PaginatedResult,
 } from '../services/orders/orderService';
 
+// ─── Stat Card ──────────────────────────────────────────────────────────────
+
+type AccentColor = 'teal' | 'yellow' | 'emerald' | 'pink';
+
 type StatCardProps = {
   icon: React.ComponentType<any>;
   label: string;
   value: string;
-  trend: string;
+  accentColor?: AccentColor;
 };
 
-const StatCard = ({ icon: Icon, label, value, trend }: StatCardProps) => (
-  <div className="bg-blue-200 bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl p-6 md:mb-8 shadow-sm">
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-sm text-gray-600">{label}</p>
-        <h3 className="text-2xl font-bold text-gray-800 mt-1">{value}</h3>
+const accentMap: Record<
+  AccentColor,
+  { value: string; icon: string; bar: string; shadow: string }
+> = {
+  teal: {
+    value: '#0891b2',
+    icon: '#0891b2',
+    bar: '#0891b2',
+    shadow: '0 8px 24px rgba(8,145,178,0.18)',
+  },
+  yellow: {
+    value: '#d97706',
+    icon: '#f59e0b',
+    bar: '#f59e0b',
+    shadow: '0 8px 24px rgba(245,158,11,0.18)',
+  },
+  emerald: {
+    value: '#059669',
+    icon: '#10b981',
+    bar: '#10b981',
+    shadow: '0 8px 24px rgba(16,185,129,0.18)',
+  },
+  pink: {
+    value: '#db2777',
+    icon: '#ec4899',
+    bar: '#ec4899',
+    shadow: '0 8px 24px rgba(236,72,153,0.18)',
+  },
+};
+
+const StatCard = ({ icon: Icon, label, value, accentColor = 'teal' }: StatCardProps) => {
+  const cfg = accentMap[accentColor];
+  return (
+    <div
+      className="relative overflow-hidden flex flex-col justify-between cursor-pointer group transition-all duration-300 hover:-translate-y-1"
+      style={{
+        background: 'rgba(255,255,255,0.88)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        borderRadius: '20px',
+        padding: '20px 20px 24px',
+        border: '1px solid rgba(255,255,255,0.9)',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
+        minHeight: '110px',
+        fontFamily: "'Plus Jakarta Sans', sans-serif",
+      }}
+    >
+      <div className="flex items-start justify-between">
+        <div>
+          <p
+            className="text-xs font-medium tracking-wide"
+            style={{ color: '#6b7280', marginBottom: '10px' }}
+          >
+            {label}
+          </p>
+          <p
+            className="text-3xl font-black leading-none"
+            style={{ color: cfg.value, letterSpacing: '-1px' }}
+          >
+            {value}
+          </p>
+        </div>
+
+        {/* Icon box */}
+        <div
+          className="flex items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110"
+          style={{
+            width: '44px',
+            height: '44px',
+            background: `${cfg.icon}18`,
+            flexShrink: 0,
+          }}
+        >
+          <Icon size={22} style={{ color: cfg.icon }} strokeWidth={2.2} />
+        </div>
       </div>
-      <div className="p-3 bg-blue-50 rounded-lg">
-        <Icon size={24} className="text-blue-500" />
-      </div>
+
+      {/* Colored bottom accent bar */}
+      <div
+        className="absolute bottom-0 left-6 right-6 rounded-t-full"
+        style={{ height: '4px', background: cfg.bar, opacity: 0.85 }}
+      />
     </div>
-    <div className="flex items-center mt-4 ">
-      <TrendingUpIcon size={16} className="text-green-500 mr-1" />
-      <span className="text-sm text-green-500">{trend}</span>
-    </div>
-  </div>
-);
+  );
+};
+
+// ─── Dashboard ───────────────────────────────────────────────────────────────
 
 export const Dashboard = () => {
+  const { addNotification } = useNotification();
+
   const [stats, setStats] = useState({
     total_order: '0',
     todayOrders: '0',
     confirmedOrders: '0',
     cancelledOrders: '0',
-    totalOrdersTrend: 'upcomming',
-    todayOrdersTrend: 'upcomming',
-    confirmedOrdersTrend: 'upcomming',
-    cancelledOrdersTrend: 'upcomming',
   });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -63,20 +135,19 @@ export const Dashboard = () => {
   const [salesLoading, setSalesLoading] = useState(true);
   const [salesError, setSalesError] = useState('');
   const [showTodayOnly, setShowTodayOnly] = useState(false);
-
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-  const PAGE_SIZE_OPTIONS = [5, 10, 20];
 
   const [user, setUser] = useState<{ role: string } | null>(null);
-  const [userLoading, setUserLoading] = useState(true);
-
+  const [products, setProducts] = useState<any[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [salesSearch, setSalesSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const searchTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleSearchChange = (value: string) => {
     setSalesSearch(value);
@@ -87,13 +158,47 @@ export const Dashboard = () => {
     }, 400);
   };
 
-  // Add product-related state
-  const [products, setProducts] = useState<any[]>([]);
-  const [productsLoading, setProductsLoading] = useState(true);
-  const [selectedProduct, setSelectedProduct] = useState<string>('all');
+  const handleProductFilter = (productId: string) => {
+    setSelectedProduct(productId);
+    setCurrentPage(0);
+  };
 
-  // Add state for check status button
-  const [checkStatusLoading, setCheckStatusLoading] = useState(false);
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setSalesLoading(true);
+
+      const filters: OrderFilterParams = {
+        search: debouncedSearch,
+        status: statusFilter === 'all' ? undefined : statusFilter,
+        productId: selectedProduct === 'all' ? undefined : selectedProduct,
+      };
+
+      const [statsData, salesResult] = await Promise.all([
+        getDashboardStats(),
+        showTodayOnly
+          ? getOrdersPaginated(currentPage, pageSize, filters)
+          : getAllCustomerOrdersPaginated(currentPage, pageSize, filters),
+      ]);
+
+      setStats({
+        total_order: String(statsData.total_order || 0),
+        todayOrders: String(statsData.today_order || 0),
+        confirmedOrders: String(statsData.conform_order || 0),
+        cancelledOrders: String(statsData.cancel_order || 0),
+      });
+
+      setSales((salesResult as PaginatedResult<Sale>).data);
+      setTotalCount((salesResult as PaginatedResult<Sale>).total);
+      setTotalPages((salesResult as PaginatedResult<Sale>).totalPages);
+    } catch (err) {
+      console.error('Failed to fetch dashboard data:', err);
+      setSnackbar({ open: true, message: 'Failed to load dashboard data', type: 'error' });
+    } finally {
+      setLoading(false);
+      setSalesLoading(false);
+    }
+  }, [showTodayOnly, currentPage, pageSize, debouncedSearch, statusFilter, selectedProduct]);
 
   const statusOptions = [
     { value: 'all', label: 'ALL STATUS' },
@@ -115,342 +220,288 @@ export const Dashboard = () => {
   ];
 
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchInitialData = async () => {
       try {
-        const userData = await getCurrentUser();
+        const [userData, productsData] = await Promise.all([
+          getCurrentUser(),
+          getAllProducts(),
+        ]);
         setUser(userData);
-      } catch (err) {
-        console.error('Failed to fetch user data:', err);
-        setUser(null);
-      } finally {
-        setUserLoading(false);
-      }
-    };
-
-    fetchUser();
-  }, []);
-
-  // Add effect to fetch products
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setProductsLoading(true);
-        const productsData = await getAllProducts();
         setProducts(productsData as any[]);
       } catch (err) {
-        console.error('Failed to fetch products:', err);
-        setProducts([]);
-      } finally {
-        setProductsLoading(false);
+        console.error(err);
       }
     };
-
-    fetchProducts();
+    fetchInitialData();
   }, []);
-
-  const fetchData = useCallback(async () => {
-    try {
-      setLoading(true);
-      setSalesLoading(true);
-
-      const filters: OrderFilterParams = {
-        search: debouncedSearch,
-        status: statusFilter,
-        productId: selectedProduct,
-      };
-
-      const [statsData, salesResult] = await Promise.all([
-        getDashboardStats(),
-        showTodayOnly
-          ? getOrdersPaginated(currentPage, pageSize, filters)
-          : getAllCustomerOrdersPaginated(currentPage, pageSize, filters),
-      ]);
-
-      // Process stats
-      setStats({
-        total_order: String(statsData.total_order || 0),
-        todayOrders: String(statsData.today_order || 0),
-        confirmedOrders: String(statsData.conform_order || 0),
-        cancelledOrders: String(statsData.cancel_order || 0),
-        totalOrdersTrend: statsData.totalOrdersTrend || 'upcomming',
-        todayOrdersTrend: statsData.todayOrdersTrend || 'upcomming',
-        confirmedOrdersTrend: statsData.confirmedOrdersTrend || 'upcomming',
-        cancelledOrdersTrend: statsData.cancelledOrdersTrend || 'upcomming',
-      });
-      setError('');
-
-      setSales((salesResult as PaginatedResult<Sale>).data);
-      setTotalCount((salesResult as PaginatedResult<Sale>).total);
-      setTotalPages((salesResult as PaginatedResult<Sale>).totalPages);
-      setSalesError('');
-    } catch (err) {
-      console.error('Failed to fetch dashboard data:', err);
-      setError('Failed to load dashboard statistics');
-      setSnackbar({ open: true, message: 'Failed to load dashboard statistics', type: 'error' });
-      setSalesError('Failed to load recent sales');
-      setSnackbar({ open: true, message: 'Failed to load recent sales', type: 'error' });
-    } finally {
-      setLoading(false);
-      setSalesLoading(false);
-    }
-  }, [showTodayOnly, currentPage, pageSize, debouncedSearch, statusFilter, selectedProduct]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  const filteredSales = sales;
+  // ─── Shared font family
+  const ff = "'Plus Jakarta Sans', sans-serif";
 
-  const handleEdit = (sale: any) => {
-    console.log('Editing:', sale);
-  };
-
-  const handleDelete = async (id: string) => {
-    setLoading(true);
-    setError('');
-    try {
-      await orderService.deleteOrder(id);
-      // Refresh the full list from server to keep data consistent
-      await fetchData();
-      setSnackbar({ open: true, message: 'Order deleted successfully', type: 'success' });
-    } catch (err: unknown) {
-      const message = (err as Error)?.message || 'Failed to delete order';
-      setSnackbar({ open: true, message, type: 'error' });
-      console.error('Delete order failed:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Add product filter handler
-  const handleProductFilter = (productId: string) => {
-    setSelectedProduct(productId);
-    setCurrentPage(0);
-  };
-
-  // Handle check tracking status
-  const handleCheckStatus = async () => {
-    try {
-      setCheckStatusLoading(true);
-      await orderService.updateTrackingStatus();
-      setSnackbar({
-        open: true,
-        message: 'Tracking status updated successfully',
-        type: 'success',
-      });
-      // Refresh the data after updating tracking status
-      await fetchData();
-    } catch (err) {
-      const message = (err as Error)?.message || 'Failed to update tracking status';
-      setSnackbar({
-        open: true,
-        message,
-        type: 'error',
-      });
-      console.error('Check status failed:', err);
-    } finally {
-      setCheckStatusLoading(false);
-    }
+  // ─── Product filter button helper
+  const prodBtn = (id: string, label: string) => {
+    const active = selectedProduct === id;
+    return (
+      <button
+        key={id}
+        onClick={() => handleProductFilter(id)}
+        className="px-4 py-2 rounded-2xl text-sm font-semibold transition-all duration-200"
+        style={{
+          fontFamily: ff,
+          background: active
+            ? 'linear-gradient(135deg, #0d9488, #0891b2)'
+            : 'rgba(255,255,255,0.75)',
+          color: active ? '#fff' : '#374151',
+          border: active ? 'none' : '1px solid rgba(0,0,0,0.08)',
+          boxShadow: active ? '0 4px 14px rgba(13,148,136,0.3)' : '0 1px 4px rgba(0,0,0,0.06)',
+        }}
+      >
+        {label}
+      </button>
+    );
   };
 
   return (
-    <div
-      className="
-    w-full
-    max-w-full
-    sm:max-w-full
-    md:max-w-7xl
-    lg:max-w-screen-2xl
-    mx-auto
-    px-3
-    sm:px-4
-    md:px-6
-    relative
-    overflow-x-hidden
-  "
-    >
+    <div className="min-h-screen relative" style={{ fontFamily: ff }}>
       <BackgroundIcons type="dashboard" />
+
       <AlertSnackbar
         message={snackbar.message}
         type={snackbar.type}
         open={snackbar.open}
         onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
       />
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Dashboard Overview</h1>
-        <button
-          onClick={handleCheckStatus}
-          disabled={checkStatusLoading}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors duration-200 flex items-center gap-2 whitespace-nowrap"
+
+      {/* ─── Page Header ─────────────────────────────────────────────────── */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-7">
+        <h1
+          className="text-3xl md:text-4xl font-black"
+          style={{ color: '#0E626E', letterSpacing: '-0.5px', fontFamily: ff }}
         >
-          {checkStatusLoading ? (
-            <>
-              <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-              Checking...
-            </>
-          ) : (
-            'Check Status'
-          )}a
-        </button>
-        {!userLoading && user && user.role.toLowerCase() === 'admin' && (
-          <div className="flex flex-wrap gap-2 max-w-full overflow-x-auto pb-2">
-            <button
-              onClick={() => handleProductFilter('all')}
-              className={`px-4 py-2 rounded-lg transition-all duration-200 flex items-center shrink-0 ${
-                selectedProduct === 'all'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-blue-100 bg-opacity-70 hover:bg-opacity-100 text-blue-600'
-              }`}
-            >
-              <span>All Products</span>
-            </button>
-            {productsLoading && (
-              <div className="px-4 py-2 bg-gray-100 bg-opacity-70 text-gray-600 rounded-lg">
-                Loading products...
-              </div>
-            )}
-            {!productsLoading && products.length === 0 && (
-              <div className="px-4 py-2 bg-red-100 bg-opacity-70 text-red-600 rounded-lg">
-                No products found
-              </div>
-            )}
-            {!productsLoading && products.length > 0 && (
-              <>
-                {products.map((product, index) => {
-                  const productId = product.productId || product.id || index;
-                  const productName = product.name || product.productName || `Product ${index + 1}`;
+          Welcome Back !
+        </h1>
 
-                  return (
-                    <button
-                      key={productId}
-                      onClick={() => handleProductFilter(String(productId))}
-                      className={`px-4 py-2 rounded-lg transition-all duration-200 flex items-center ${
-                        selectedProduct === String(productId)
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-blue-100 bg-opacity-70 hover:bg-opacity-100 text-blue-600'
-                      }`}
-                    >
-                      <span>{productName}</span>
-                    </button>
-                  );
-                })}
-              </>
-            )}
-          </div>
-        )}
+        <div className="flex flex-wrap gap-2">
+          {prodBtn('all', 'All Products')}
+          {prodBtn('sugar', 'SUGAR END')}
+          {prodBtn('vac', 'ANI')}
+          {prodBtn('medani', 'MEDANI')}
+        </div>
       </div>
 
-      {error && <></>}
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-2">
+      {/* ─── Stats Row ───────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-7">
         <StatCard
-          icon={ScaleIcon}
+          icon={Package}
           label="Total Monthly Packs"
-          value={loading ? 'Loading...' : stats.total_order}
-          trend={stats.totalOrdersTrend}
+          value={loading ? '...' : stats.total_order}
+          accentColor="teal"
         />
         <StatCard
-          icon={CreditCardIcon}
+          icon={Package}
           label="Today Packs"
-          value={loading ? 'Loading...' : stats.todayOrders}
-          trend={stats.todayOrdersTrend}
+          value={loading ? '...' : stats.todayOrders}
+          accentColor="yellow"
         />
         <StatCard
-          icon={TrendingUpIcon}
+          icon={Truck}
           label="Delivered Packs"
-          value={loading ? 'Loading...' : stats.confirmedOrders}
-          trend={stats.confirmedOrdersTrend}
+          value={loading ? '...' : stats.confirmedOrders}
+          accentColor="emerald"
         />
         <StatCard
-          icon={TrendingDownIcon}
-          label="Cancelled/ Returned Packs"
-          value={loading ? 'Loading...' : stats.cancelledOrders}
-          trend={stats.cancelledOrdersTrend}
+          icon={XCircle}
+          label="Canceled/Returned Packs"
+          value={loading ? '...' : stats.cancelledOrders}
+          accentColor="pink"
         />
       </div>
 
-      <div className="bg-gray-200 w-full bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl p-4 sm:p-6 shadow-2xl overflow-hidden">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-          <h2 className="text-xl font-semibold text-gray-800">Sales</h2>
-          <div className="flex flex-wrap items-center gap-4 w-full sm:w-auto">
-            <div className="w-full sm:w-[260px]">
+      {/* ─── Sales Section ───────────────────────────────────────────────── */}
+      <div
+        className="rounded-3xl overflow-hidden"
+        style={{
+          background: 'rgba(255,255,255,0.7)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255,255,255,0.9)',
+          boxShadow: '0 8px 40px rgba(0,0,0,0.06)',
+        }}
+      >
+        {/* Sales section top-bar (outside the teal header) */}
+        <div
+          className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-6 py-4"
+          style={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}
+        >
+          <p className="text-base font-bold text-gray-800">Sales</p>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Search */}
+            <input
+              type="text"
+              value={salesSearch}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              placeholder="Search name, contact, waybill"
+              className="text-sm focus:outline-none focus:ring-2 focus:ring-teal-300/50 transition-all"
+              style={{
+                background: 'rgba(255,255,255,0.9)',
+                border: '1px solid rgba(0,0,0,0.09)',
+                borderRadius: '12px',
+                padding: '7px 14px',
+                width: '210px',
+                fontFamily: ff,
+              }}
+            />
+
+            {/* Status */}
+            <select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(0);
+              }}
+              className="text-sm focus:outline-none focus:ring-2 focus:ring-teal-300/50"
+              style={{
+                background: 'rgba(255,255,255,0.9)',
+                border: '1px solid rgba(0,0,0,0.09)',
+                borderRadius: '12px',
+                padding: '7px 12px',
+                fontFamily: ff,
+                color: '#374151',
+              }}
+            >
+              {statusOptions.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+
+            {/* Today / All toggle */}
+            <div
+              className="flex p-1 rounded-xl"
+              style={{
+                background: 'rgba(255,255,255,0.9)',
+                border: '1px solid rgba(0,0,0,0.09)',
+              }}
+            >
+              {['All', 'Today'].map((lbl) => {
+                const isToday = lbl === 'Today';
+                const active = showTodayOnly === isToday;
+                return (
+                  <button
+                    key={lbl}
+                    onClick={() => setShowTodayOnly(isToday)}
+                    className="px-3 py-1 rounded-lg text-sm font-semibold transition-all duration-200"
+                    style={{
+                      fontFamily: ff,
+                      background: active
+                        ? 'linear-gradient(135deg, #0d9488, #0891b2)'
+                        : 'transparent',
+                      color: active ? '#fff' : '#6b7280',
+                    }}
+                  >
+                    {lbl}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Teal inner header (Sales Entries) */}
+        <div
+          className="flex items-center justify-between px-6 py-4"
+          style={{
+            background: 'linear-gradient(135deg, #0d9488, #0a7f8a)',
+          }}
+        >
+          <div>
+            <p className="text-white font-bold text-lg leading-tight">Sales Entries</p>
+            <p className="text-teal-200 text-xs mt-0.5">
+              {loading ? '...' : totalCount.toLocaleString()} entries
+            </p>
+          </div>
+
+          {/* Inner search + refresh */}
+          <div className="flex items-center gap-2">
+            <div className="relative">
               <input
                 type="text"
                 value={salesSearch}
                 onChange={(e) => handleSearchChange(e.target.value)}
-                placeholder="Search name, contact, waybill"
-                className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div className="relative min-w-[150px]">
-              <select
-                value={statusFilter}
-                onChange={(e) => {
-                  setStatusFilter(e.target.value);
-                  setCurrentPage(0);
+                placeholder="Search..."
+                className="text-sm focus:outline-none"
+                style={{
+                  background: 'rgba(255,255,255,0.15)',
+                  border: '1px solid rgba(255,255,255,0.25)',
+                  borderRadius: '10px',
+                  padding: '6px 12px 6px 30px',
+                  color: '#fff',
+                  fontFamily: ff,
+                  width: '160px',
                 }}
-                className="w-full appearance-none bg-white border border-gray-300 rounded-md pl-3 pr-6 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+              <svg
+                className="absolute left-2.5 top-1/2 -translate-y-1/2"
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="rgba(255,255,255,0.7)"
+                strokeWidth="2.5"
               >
-                {statusOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                <svg
-                  className="fill-current h-4 w-4"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                >
-                  <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-                </svg>
-              </div>
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
+              </svg>
             </div>
-            <div className="inline-flex rounded-lg bg-gray-100 p-1 cursor-pointer transition-all duration-300 ease-in-out">
-              <div className="relative flex">
-                <div
-                  className={`
-            absolute top-0 h-full rounded-md bg-white shadow-sm transition-all duration-300
-            ${showTodayOnly ? 'left-0 w-[60px]' : 'left-[60px] w-[40px]'}
-          `}
-                />
-                <div
-                  className={`
-              px-3 py-1 text-sm z-10 transition-colors duration-300
-              ${showTodayOnly ? 'text-blue-600 font-medium' : 'text-gray-500'}
-            `}
-                  onClick={() => {
-                    setShowTodayOnly(true);
-                    setCurrentPage(0);
-                  }}
-                >
-                  Today
-                </div>
-                <div
-                  className={`
-              px-3 py-1 text-sm z-10 transition-colors duration-300
-              ${!showTodayOnly ? 'text-blue-600 font-medium' : 'text-gray-500'}
-            `}
-                  onClick={() => {
-                    setShowTodayOnly(false);
-                    setCurrentPage(0);
-                  }}
-                >
-                  All
-                </div>
-              </div>
-            </div>
+            <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/15 hover:bg-white/25 transition-colors">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="white"
+                strokeWidth="2.5"
+              >
+                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                <path d="M21 3v5h-5" />
+                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+                <path d="M8 16H3v5" />
+              </svg>
+            </button>
           </div>
         </div>
-        <div className="lg:col-span-2">
-          {salesLoading && <p>Loading sales...</p>}
-          {salesError && <p className="text-red-500">{salesError}</p>}
+
+        {/* Table area */}
+        <div className="p-2">
+          {salesLoading && (
+            <p className="text-center py-10 text-gray-400 text-sm">Loading sales...</p>
+          )}
+          {salesError && (
+            <p className="text-red-500 text-center py-10 text-sm">{salesError}</p>
+          )}
+
           {!salesLoading && !salesError && (
             <SalesTable
-              sales={filteredSales}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
+              sales={sales}
+              onEdit={() => {}}
+              onDelete={async (id) => {
+                try {
+                  await orderService.deleteOrder(id);
+                  fetchData();
+                } catch (err) {
+                  setSnackbar({
+                    open: true,
+                    message: 'Failed to delete order',
+                    type: 'error',
+                  });
+                }
+              }}
               userRole={user?.role}
               onRefresh={fetchData}
               searchTerm={salesSearch}
@@ -460,9 +511,10 @@ export const Dashboard = () => {
                 pageSize,
                 total: totalCount,
                 totalPages,
-                pageSizeOptions: PAGE_SIZE_OPTIONS,
+                pageSizeOptions: [5, 10, 20],
                 onPrev: () => setCurrentPage((p) => Math.max(0, p - 1)),
-                onNext: () => setCurrentPage((p) => Math.min(totalPages - 1, p + 1)),
+                onNext: () =>
+                  setCurrentPage((p) => Math.min(totalPages - 1, p + 1)),
                 onPageSizeChange: (size) => {
                   setPageSize(size);
                   setCurrentPage(0);

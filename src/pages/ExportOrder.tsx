@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AlertSnackbar } from '../components/AlertSnackbar';
 import { Sale } from '../models/sales';
 import { getAllProducts } from '../service/product';
@@ -171,12 +171,19 @@ export const ExportOrder = () => {
     loadProducts();
   }, []);
 
+  const lastFetchedProductRef = useRef<string | null>(null);
+
   useEffect(() => {
     const selectedProductName =
       selectedProductId === 'all'
         ? 'all'
         : products.find((product) => product.id === selectedProductId)?.name || 'all';
 
+    if (lastFetchedProductRef.current === selectedProductName) {
+      return;
+    }
+
+    lastFetchedProductRef.current = selectedProductName;
     loadOrdersFromExportApi(selectedProductName);
   }, [selectedProductId, products]);
 
@@ -261,16 +268,13 @@ export const ExportOrder = () => {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       });
       const fileUrl = window.URL.createObjectURL(excelBlob);
-      const openedTab = window.open(fileUrl, '_blank', 'noopener,noreferrer');
 
-      if (!openedTab) {
-        const fallbackLink = document.createElement('a');
-        fallbackLink.href = fileUrl;
-        fallbackLink.download = `Selected_Sales_${new Date().toISOString().split('T')[0]}.xlsx`;
-        document.body.appendChild(fallbackLink);
-        fallbackLink.click();
-        document.body.removeChild(fallbackLink);
-      }
+      const downloadLink = document.createElement('a');
+      downloadLink.href = fileUrl;
+      downloadLink.download = `Selected_Sales_${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
 
       setTimeout(() => {
         window.URL.revokeObjectURL(fileUrl);

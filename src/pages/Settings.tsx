@@ -4,14 +4,17 @@ import { BackgroundIcons } from '../components/BackgroundIcons';
 interface SettingsProps {
   onTitleChange?: (title: string) => void;
   onBackgroundColorChange?: (color: string) => void;
+  onHeaderColorChange?: (color: string) => void;
 }
 
 export const Settings: React.FC<SettingsProps> = ({ 
   onTitleChange, 
-  onBackgroundColorChange 
+  onBackgroundColorChange,
+  onHeaderColorChange
 }) => {
   const [title, setTitle] = useState('Sales Management');
   const [backgroundColor, setBackgroundColor] = useState('#e0f2fe');
+  const [headerColor, setHeaderColor] = useState('#2a98a4');
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [tempTitle, setTempTitle] = useState(title);
 
@@ -19,10 +22,12 @@ export const Settings: React.FC<SettingsProps> = ({
   useEffect(() => {
     const savedTitle = localStorage.getItem('salesTitle') || 'Sales Management';
     const savedColor = localStorage.getItem('appBackgroundColor') || '#e0f2fe';
+    const savedHeaderColor = localStorage.getItem('headerColor') || '#2a98a4';
     
     setTitle(savedTitle);
     setTempTitle(savedTitle);
     setBackgroundColor(savedColor);
+    setHeaderColor(savedHeaderColor);
   }, []);
 
   const handleTitleSave = () => {
@@ -41,6 +46,12 @@ export const Settings: React.FC<SettingsProps> = ({
     setBackgroundColor(color);
     localStorage.setItem('appBackgroundColor', color);
     onBackgroundColorChange?.(color);
+  };
+
+  const handleHeaderColorChange = (color: string) => {
+    setHeaderColor(color);
+    localStorage.setItem('headerColor', color);
+    onHeaderColorChange?.(color);
   };
 
   const presetColors = [
@@ -174,6 +185,69 @@ export const Settings: React.FC<SettingsProps> = ({
           <p className="text-xs text-gray-600">
             Preview of your application background
           </p>
+        </div>
+      </div>
+
+      {/* Header Color Section */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <h2 className="text-lg font-semibold text-gray-800 mb-3">Header Color</h2>
+        
+        {/* Current Color Display */}
+        <div className="mb-4">
+          <label className="block text-xs font-medium text-gray-700 mb-2">
+            Current Header Color
+          </label>
+          <div className="flex items-center space-x-3">
+            <div 
+              className="w-8 h-8 rounded border-2 border-gray-300"
+              style={{ backgroundColor: headerColor }}
+            ></div>
+            <span className="text-xs text-gray-600 font-mono">{headerColor}</span>
+          </div>
+        </div>
+
+        {/* Color Picker */}
+        <div className="mb-4">
+          <label className="block text-xs font-medium text-gray-700 mb-2">
+            Choose Header Color
+          </label>
+          <div className="flex items-center space-x-2">
+            <input
+              type="color"
+              value={headerColor}
+              onChange={(e) => handleHeaderColorChange(e.target.value)}
+              className="w-8 h-8 border-2 border-gray-300 rounded cursor-pointer"
+            />
+            <input
+              type="text"
+              value={headerColor}
+              onChange={(e) => handleHeaderColorChange(e.target.value)}
+              className="flex-1 px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono"
+              placeholder="#2a98a4"
+            />
+          </div>
+        </div>
+
+        {/* Preset Header Colors */}
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-2">
+            Preset Header Colors
+          </label>
+          <div className="grid grid-cols-6 gap-1">
+            {['#2a98a4', '#0B818D', '#1f2937', '#1e40af', '#7c3aed', '#db2777', '#ea580c'].map((color) => (
+              <button
+                key={color}
+                onClick={() => handleHeaderColorChange(color)}
+                className={`w-6 h-6 rounded border-2 transition-all hover:scale-110 ${
+                  headerColor === color 
+                    ? 'border-blue-500 ring-2 ring-blue-200' 
+                    : 'border-gray-300 hover:border-gray-400'
+                }`}
+                style={{ backgroundColor: color }}
+                title={color}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </div>

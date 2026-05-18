@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 import { BackgroundIcons } from '../components/BackgroundIcons';
 import { Header } from '../components/product/Header';
 import { ProductModal } from '../components/product/ProductModal';
@@ -264,7 +263,7 @@ export const ProductManagement = () => {
         />
 
         {/* Pagination Controls */}
-        <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="mt-4 sm:mt-2 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs sm:text-sm text-gray-500 order-2 sm:order-1">
             Showing {paginatedProducts.length} of {filteredProducts.length} entries
           </p>
