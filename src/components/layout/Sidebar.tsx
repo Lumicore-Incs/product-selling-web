@@ -189,7 +189,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <button
           key={item.to}
           onClick={handleSettingsClick}
-          className="w-full flex items-center px-4 py-2.5 mx-6 rounded-lg text-[#0B818D] hover:bg-[#16a34a]/20 hover:text-white transition"
+          className="w-full flex items-center px-4 py-2.5 mx-6 rounded-lg text-[#0B818D] hover:bg-[#0B818D]/20 hover:text-white transition"
         >
           <item.icon size={18} className="mr-3" />
           {item.label}
@@ -204,7 +204,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div key={item.label} className="mx-6 ">
           <button
             onClick={() => toggleExpand(item.label)}
-            className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-[#0B818D] hover:bg-[#16a34a]/20 hover:text-white transition"
+            className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-[#0B818D] hover:bg-[#0B818D]/20 hover:text-white transition"
           >
             <div className="flex items-center">
               <item.icon size={18} className="mr-3" />
@@ -225,10 +225,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onClick={onClose}
                   end={child.end}
                   className={({ isActive }) =>
-                    `block px-4 py-2 text-sm rounded-md transition text-[#0B818D] ${
+                    `block px-4 py-2 text-sm rounded-md transition ${
                       isActive
-                        ? 'bg-[#16a34a]/30 text-white font-semibold'
-                        : 'hover:bg-[#16a34a]/20 hover:text-white'
+                        ? 'bg-[#16a34a]/30 text-white'
+                        : 'hover:bg-[#16a34a]/20 hover:text-white text-[#0B818D] '
                     }`
                   }
                 >
@@ -250,8 +250,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         className={({ isActive }) =>
           `flex items-center px-5 py-2.5 mx-6 rounded-lg transition ${
             isActive
-              ? 'bg-[#16a34a]/30 text-white'
-              : 'hover:bg-[#16a34a]/20 hover:text-white text-[#0B818D] '
+              ? 'bg-[#0B818D] text-white'
+              : 'hover:bg-[#0B818D]/20 hover:text-white text-[#0B818D] '
           }`
         }
       >
@@ -271,7 +271,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       )}
 
       <aside
-        className={`fixed md:static z-30 w-64 border-r transition overflow-x-hidden ${
+        className={`fixed md:static z-30 w-64 border-r bg-black md:bg-transparent transition overflow-x-hidden ${
           isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         } flex flex-col`}
         style={{ height: '100vh', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
@@ -288,7 +288,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <LogOutIcon size={18} className="text-[#16a34a]" />
             </button>
             <button onClick={onClose} className="md:hidden">
-              <XIcon size={18} />
+              <XIcon size={18}  className="text-[#16a34a]" />
             </button>
           </div>
         </div>
@@ -296,12 +296,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* 🔹 Content */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden">
           <div className="mt-4">
-            <p className="px-4 pb-4 text-xs text-white">Main menu</p>
+            <p className="px-4 pb-4 text-s text-[#0B818D]">Main menu</p>
             {getNavItems(user?.role || '').map(renderNavItem)}
           </div>
 
           <div className="mt-6 pt-4">
-            <p className="px-4 text-xs text-white">Help & Settings</p>
+            <p className="px-4 pb-4 text-s text-[#0B818D]">Help & Settings</p>
             {getHelpSettingsItems(user?.role || '').map(renderNavItem)}
           </div>
         </div>

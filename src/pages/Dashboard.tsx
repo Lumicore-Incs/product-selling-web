@@ -1,4 +1,4 @@
-import { Package, Truck, XCircle } from 'lucide-react';
+import { Package, Truck, XCircle, BarChart2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertSnackbar } from '../components/AlertSnackbar';
 import { BackgroundIcons } from '../components/BackgroundIcons';
@@ -16,87 +16,108 @@ import {
   type PaginatedResult,
 } from '../services/orders/orderService';
 
+// ─── Stat Card ──────────────────────────────────────────────────────────────
+
+type AccentColor = 'teal' | 'yellow' | 'emerald' | 'pink';
+
 type StatCardProps = {
   icon: React.ComponentType<any>;
   label: string;
   value: string;
-  accentColor?: 'teal' | 'yellow' | 'emerald' | 'pink';
+  accentColor?: AccentColor;
+};
+
+const accentMap: Record<
+  AccentColor,
+  { value: string; icon: string; bar: string; shadow: string }
+> = {
+  teal: {
+    value: '#0891b2',
+    icon: '#0891b2',
+    bar: '#0891b2',
+    shadow: '0 8px 24px rgba(8,145,178,0.18)',
+  },
+  yellow: {
+    value: '#d97706',
+    icon: '#f59e0b',
+    bar: '#f59e0b',
+    shadow: '0 8px 24px rgba(245,158,11,0.18)',
+  },
+  emerald: {
+    value: '#059669',
+    icon: '#10b981',
+    bar: '#10b981',
+    shadow: '0 8px 24px rgba(16,185,129,0.18)',
+  },
+  pink: {
+    value: '#db2777',
+    icon: '#ec4899',
+    bar: '#ec4899',
+    shadow: '0 8px 24px rgba(236,72,153,0.18)',
+  },
 };
 
 const StatCard = ({ icon: Icon, label, value, accentColor = 'teal' }: StatCardProps) => {
-  const colorConfig = {
-    teal: {
-      number: 'text-teal-600',
-      iconBg: 'bg-teal-500',
-      bottomBar: 'bg-teal-500',
-      icon: 'text-white',
-      hoverShadow: 'hover:shadow-2xl hover:shadow-teal-500/20',
-    },
-    yellow: {
-      number: 'text-amber-600',
-      iconBg: 'bg-amber-500',
-      bottomBar: 'bg-amber-500',
-      icon: 'text-white',
-      hoverShadow: 'hover:shadow-2xl hover:shadow-amber-500/20',
-    },
-    emerald: {
-      number: 'text-emerald-600',
-      iconBg: 'bg-emerald-500',
-      bottomBar: 'bg-emerald-500',
-      icon: 'text-white',
-      hoverShadow: 'hover:shadow-2xl hover:shadow-emerald-500/20',
-    },
-    pink: {
-      number: 'text-pink-600',
-      iconBg: 'bg-pink-500',
-      bottomBar: 'bg-pink-500',
-      icon: 'text-white',
-      hoverShadow: 'hover:shadow-2xl hover:shadow-pink-500/20',
-    },
-  };
-
-  const config = colorConfig[accentColor];
-
+  const cfg = accentMap[accentColor];
   return (
     <div
-      className={`
-        bg-white/95 backdrop-blur-2xl 
-        rounded-3xl p-4 
-        border border-white/70 
-        shadow-lg 
-        ${config.hoverShadow}
-        transition-all duration-300 
-        hover:-translate-y-1 
-        hover:scale-[1.02]
-        relative overflow-hidden
-        cursor-pointer
-      `}
+      className="relative overflow-hidden flex flex-col justify-between cursor-pointer group transition-all duration-300 hover:-translate-y-1"
+      style={{
+        background: 'rgba(255,255,255,0.88)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        borderRadius: '20px',
+        padding: '20px 20px 24px',
+        border: '1px solid rgba(255,255,255,0.9)',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
+        minHeight: '110px',
+        fontFamily: "'Plus Jakarta Sans', sans-serif",
+      }}
     >
-      {/* Main Content */}
-      <div className="flex justify-between items-start h-1/4">
+      <div className="flex items-start justify-between">
         <div>
-          <p className="text-gray-600 text-[12px] font-medium tracking-wide">
+          <p
+            className="text-xs font-medium tracking-wide"
+            style={{ color: '#6b7280', marginBottom: '10px' }}
+          >
             {label}
           </p>
-          <h3 className={`text-[28px] leading-none font-bold mt-3 tracking-tighter ml-4 ${config.number}`}>
+          <p
+            className="text-3xl font-black leading-none"
+            style={{ color: cfg.value, letterSpacing: '-1px' }}
+          >
             {value}
-          </h3>
+          </p>
         </div>
 
-        {/* Icon */}
-        <div className={`${config.iconBg} p-2 rounded-2xl shadow-sm transition-transform duration-300 group-hover:scale-110`}>
-          <Icon size={30} className={config.icon} strokeWidth={2.5} />
+        {/* Icon box */}
+        <div
+          className="flex items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110"
+          style={{
+            width: '44px',
+            height: '44px',
+            background: `${cfg.icon}18`,
+            flexShrink: 0,
+          }}
+        >
+          <Icon size={22} style={{ color: cfg.icon }} strokeWidth={2.2} />
         </div>
       </div>
 
-      {/* Thicker Bottom Colored Line */}
-      <div className={`absolute bottom-0 left-6 right-6 h-[5px] rounded-t-full ${config.bottomBar}`} />
+      {/* Colored bottom accent bar */}
+      <div
+        className="absolute bottom-0 left-6 right-6 rounded-t-full"
+        style={{ height: '4px', background: cfg.bar, opacity: 0.85 }}
+      />
     </div>
   );
 };
 
+// ─── Dashboard ───────────────────────────────────────────────────────────────
+
 export const Dashboard = () => {
   const { addNotification } = useNotification();
+
   const [stats, setStats] = useState({
     total_order: '0',
     todayOrders: '0',
@@ -104,11 +125,11 @@ export const Dashboard = () => {
     cancelledOrders: '0',
   });
   const [loading, setLoading] = useState(true);
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; type: 'success' | 'error' }>({
-    open: false,
-    message: '',
-    type: 'error',
-  });
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    type: 'success' | 'error';
+  }>({ open: false, message: '', type: 'error' });
 
   const [sales, setSales] = useState<Sale[]>([]);
   const [salesLoading, setSalesLoading] = useState(true);
@@ -198,8 +219,6 @@ export const Dashboard = () => {
     { value: 'Delivered', label: 'DELIVERED' },
   ];
 
-
-  // Fetch user and products
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
@@ -220,8 +239,34 @@ export const Dashboard = () => {
     fetchData();
   }, [fetchData]);
 
+  // ─── Shared font family
+  const ff = "'Plus Jakarta Sans', sans-serif";
+
+  // ─── Product filter button helper
+  const prodBtn = (id: string, label: string) => {
+    const active = selectedProduct === id;
+    return (
+      <button
+        key={id}
+        onClick={() => handleProductFilter(id)}
+        className="px-4 py-2 rounded-2xl text-sm font-semibold transition-all duration-200"
+        style={{
+          fontFamily: ff,
+          background: active
+            ? 'linear-gradient(135deg, #0d9488, #0891b2)'
+            : 'rgba(255,255,255,0.75)',
+          color: active ? '#fff' : '#374151',
+          border: active ? 'none' : '1px solid rgba(0,0,0,0.08)',
+          boxShadow: active ? '0 4px 14px rgba(13,148,136,0.3)' : '0 1px 4px rgba(0,0,0,0.06)',
+        }}
+      >
+        {label}
+      </button>
+    );
+  };
+
   return (
-    <div className="min-h-screen relative overflow-hidden">
+    <div className="min-h-screen relative" style={{ fontFamily: ff }}>
       <BackgroundIcons type="dashboard" />
 
       <AlertSnackbar
@@ -231,66 +276,30 @@ export const Dashboard = () => {
         onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
       />
 
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-4">
-        <div>
-          <h1 className="text-2xl md:text-4xl font-bold" style={{ color: '#0E626E', fontFamily: 'Plus Jakarta Sans' }}>Welcome Back !</h1>
-        </div>
+      {/* ─── Page Header ─────────────────────────────────────────────────── */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-7">
+        <h1
+          className="text-3xl md:text-4xl font-black"
+          style={{ color: '#0E626E', letterSpacing: '-0.5px', fontFamily: ff }}
+        >
+          Welcome Back !
+        </h1>
 
-        {/* Product Filters */}
-        <div className="flex flex-wrap gap-2 md:gap-3">
-          <button
-            onClick={() => handleProductFilter('all')}
-            className={`px-3 md:px-6 py-2 md:py-2.5 rounded-2xl font-medium text-xs md:text-sm transition-all ${selectedProduct === 'all'
-              ? 'bg-teal-600 text-white shadow-lg'
-              : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
-              }`}
-          >
-            All Products
-          </button>
-          <button
-            onClick={() => handleProductFilter('sugar')}
-            className={`px-3 md:px-6 py-2 md:py-2.5 rounded-2xl font-medium text-xs md:text-sm transition-all ${selectedProduct === 'sugar'
-              ? 'bg-teal-600 text-white shadow-lg'
-              : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
-              }`}
-          >
-            SUGAR END
-          </button>
-          <button
-            onClick={() => handleProductFilter('ani')}
-            className={`px-3 md:px-6 py-2 md:py-2.5 rounded-2xl font-medium text-xs md:text-sm transition-all ${selectedProduct === 'ani'
-              ? 'bg-teal-600 text-white shadow-lg'
-              : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
-              }`}
-          >
-            ANI
-          </button>
-          <button
-            onClick={() => handleProductFilter('medani')}
-            className={`px-3 md:px-6 py-2 md:py-2.5 rounded-2xl font-medium text-xs md:text-sm transition-all ${selectedProduct === 'medani'
-              ? 'bg-teal-600 text-white shadow-lg'
-              : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
-              }`}
-          >
-            MEDANI
-          </button>
+        <div className="flex flex-wrap gap-2">
+          {prodBtn('all', 'All Products')}
+          {prodBtn('sugar', 'SUGAR END')}
+          {prodBtn('vac', 'ANI')}
+          {prodBtn('medani', 'MEDANI')}
         </div>
       </div>
 
-      {/* Stats Grid with Hover Effect */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+      {/* ─── Stats Row ───────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-7">
         <StatCard
           icon={Package}
           label="Total Monthly Packs"
           value={loading ? '...' : stats.total_order}
           accentColor="teal"
-        />
-         <StatCard
-          icon={XCircle}
-          label="Poccesing"
-          value={loading ? '...' : stats.cancelledOrders}
-          accentColor="pink"
         />
         <StatCard
           icon={Package}
@@ -312,89 +321,208 @@ export const Dashboard = () => {
         />
       </div>
 
-      {/* Sales Table Section */}
-      <div className="bg-white/70 backdrop-blur-2xl rounded-3xl shadow-xl border border-white p-8">
-        <div className="flex justify-between items-center mb-4">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">Sales Entries</h2>
-            <p className="text-gray-500 text-sm mt-1">4,406 entries</p>
-          </div>
+      {/* ─── Sales Section ───────────────────────────────────────────────── */}
+      <div
+        className="rounded-3xl overflow-hidden"
+        style={{
+          background: 'rgba(255,255,255,0.7)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255,255,255,0.9)',
+          boxShadow: '0 8px 40px rgba(0,0,0,0.06)',
+        }}
+      >
+        {/* Sales section top-bar (outside the teal header) */}
+        <div
+          className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-6 py-4"
+          style={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}
+        >
+          <p className="text-base font-bold text-gray-800">Sales</p>
 
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Search */}
             <input
               type="text"
               value={salesSearch}
               onChange={(e) => handleSearchChange(e.target.value)}
               placeholder="Search name, contact, waybill"
-              className="w-60 bg-white border border-gray-200 rounded-2xl px-1 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
+              className="text-sm focus:outline-none focus:ring-2 focus:ring-teal-300/50 transition-all"
+              style={{
+                background: 'rgba(255,255,255,0.9)',
+                border: '1px solid rgba(0,0,0,0.09)',
+                borderRadius: '12px',
+                padding: '7px 14px',
+                width: '210px',
+                fontFamily: ff,
+              }}
             />
 
+            {/* Status */}
             <select
               value={statusFilter}
               onChange={(e) => {
                 setStatusFilter(e.target.value);
                 setCurrentPage(0);
               }}
-              className="w-60 bg-white border border-gray-200 rounded-2xl px-1 py-1 text-s focus:outline-none focus:ring-2 focus:ring-teal-400"
+              className="text-sm focus:outline-none focus:ring-2 focus:ring-teal-300/50"
+              style={{
+                background: 'rgba(255,255,255,0.9)',
+                border: '1px solid rgba(0,0,0,0.09)',
+                borderRadius: '12px',
+                padding: '7px 12px',
+                fontFamily: ff,
+                color: '#374151',
+              }}
             >
-              {statusOptions.map((status) => (
-                <option key={status.value} value={status.value}>
-                  {status.label}
+              {statusOptions.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
                 </option>
               ))}
             </select>
 
-            <div className="flex bg-white rounded-2xl p-1 border border-gray-200">
-              <button
-                onClick={() => setShowTodayOnly(false)}
-                className={`px-2 py-1 rounded-xl text-sm font-medium transition-all ${!showTodayOnly ? 'bg-teal-600 text-white' : 'text-gray-600'}`}
-              >
-                All
-              </button>
-              <button
-                onClick={() => setShowTodayOnly(true)}
-                className={`px-2 py-1 rounded-xl text-sm font-medium transition-all ${showTodayOnly ? 'bg-teal-600 text-white' : 'text-gray-600'}`}
-              >
-                Today
-              </button>
+            {/* Today / All toggle */}
+            <div
+              className="flex p-1 rounded-xl"
+              style={{
+                background: 'rgba(255,255,255,0.9)',
+                border: '1px solid rgba(0,0,0,0.09)',
+              }}
+            >
+              {['All', 'Today'].map((lbl) => {
+                const isToday = lbl === 'Today';
+                const active = showTodayOnly === isToday;
+                return (
+                  <button
+                    key={lbl}
+                    onClick={() => setShowTodayOnly(isToday)}
+                    className="px-3 py-1 rounded-lg text-sm font-semibold transition-all duration-200"
+                    style={{
+                      fontFamily: ff,
+                      background: active
+                        ? 'linear-gradient(135deg, #0d9488, #0891b2)'
+                        : 'transparent',
+                      color: active ? '#fff' : '#6b7280',
+                    }}
+                  >
+                    {lbl}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
 
-        {salesLoading && <p className="text-center py-10 text-gray-500">Loading sales...</p>}
-        {salesError && <p className="text-red-500 text-center py-10">{salesError}</p>}
+        {/* Teal inner header (Sales Entries) */}
+        <div
+          className="flex items-center justify-between px-6 py-4"
+          style={{
+            background: 'linear-gradient(135deg, #0d9488, #0a7f8a)',
+          }}
+        >
+          <div>
+            <p className="text-white font-bold text-lg leading-tight">Sales Entries</p>
+            <p className="text-teal-200 text-xs mt-0.5">
+              {loading ? '...' : totalCount.toLocaleString()} entries
+            </p>
+          </div>
 
-        {!salesLoading && !salesError && (
-          <SalesTable
-            sales={sales}
-            onEdit={() => { }}
-            onDelete={async (id) => {
-              try {
-                await orderService.deleteOrder(id);
-                fetchData();
-              } catch (err) {
-                setSnackbar({ open: true, message: 'Failed to delete order', type: 'error' });
-              }
-            }}
-            userRole={user?.role}
-            onRefresh={fetchData}
-            searchTerm={salesSearch}
-            onSearchChange={handleSearchChange}
-            serverPagination={{
-              page: currentPage,
-              pageSize,
-              total: totalCount,
-              totalPages,
-              pageSizeOptions: [5, 10, 20],
-              onPrev: () => setCurrentPage((p) => Math.max(0, p - 1)),
-              onNext: () => setCurrentPage((p) => Math.min(totalPages - 1, p + 1)),
-              onPageSizeChange: (size) => {
-                setPageSize(size);
-                setCurrentPage(0);
-              },
-            }}
-          />
-        )}
+          {/* Inner search + refresh */}
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <input
+                type="text"
+                value={salesSearch}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                placeholder="Search..."
+                className="text-sm focus:outline-none"
+                style={{
+                  background: 'rgba(255,255,255,0.15)',
+                  border: '1px solid rgba(255,255,255,0.25)',
+                  borderRadius: '10px',
+                  padding: '6px 12px 6px 30px',
+                  color: '#fff',
+                  fontFamily: ff,
+                  width: '160px',
+                }}
+              />
+              <svg
+                className="absolute left-2.5 top-1/2 -translate-y-1/2"
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="rgba(255,255,255,0.7)"
+                strokeWidth="2.5"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
+              </svg>
+            </div>
+            <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/15 hover:bg-white/25 transition-colors">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="white"
+                strokeWidth="2.5"
+              >
+                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                <path d="M21 3v5h-5" />
+                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+                <path d="M8 16H3v5" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Table area */}
+        <div className="p-2">
+          {salesLoading && (
+            <p className="text-center py-10 text-gray-400 text-sm">Loading sales...</p>
+          )}
+          {salesError && (
+            <p className="text-red-500 text-center py-10 text-sm">{salesError}</p>
+          )}
+
+          {!salesLoading && !salesError && (
+            <SalesTable
+              sales={sales}
+              onEdit={() => {}}
+              onDelete={async (id) => {
+                try {
+                  await orderService.deleteOrder(id);
+                  fetchData();
+                } catch (err) {
+                  setSnackbar({
+                    open: true,
+                    message: 'Failed to delete order',
+                    type: 'error',
+                  });
+                }
+              }}
+              userRole={user?.role}
+              onRefresh={fetchData}
+              searchTerm={salesSearch}
+              onSearchChange={handleSearchChange}
+              serverPagination={{
+                page: currentPage,
+                pageSize,
+                total: totalCount,
+                totalPages,
+                pageSizeOptions: [5, 10, 20],
+                onPrev: () => setCurrentPage((p) => Math.max(0, p - 1)),
+                onNext: () =>
+                  setCurrentPage((p) => Math.min(totalPages - 1, p + 1)),
+                onPageSizeChange: (size) => {
+                  setPageSize(size);
+                  setCurrentPage(0);
+                },
+              }}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

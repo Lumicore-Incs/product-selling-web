@@ -547,13 +547,13 @@ export const Users = () => {
         onResetPassword={handleResetPassword}
       />
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800">Users Management</h1>
+        <h1 className="text-3xl  text-[#0B818D]" style={{ fontFamily: "Plus Jakarta Sans", fontWeight: 'semibold' }}>Users Management</h1>
         <button
           onClick={() => setShowAddForm(true)}
-          className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-2 rounded-lg hover:shadow-lg transform transition-all duration-300 hover:-translate-y-0.5"
+          className="flex items-center gap-2  bg-[#0B818D] text-white px-2 py-1 rounded-lg hover:shadow-lg transform transition-all duration-300 hover:-translate-y-0.5"
         >
           <Plus className="w-5 h-5" />
-          Add User
+          Add
         </button>
       </div>
 
@@ -937,7 +937,7 @@ export const Users = () => {
           paginatedUsers.map((user) => (
             <div
               key={user.id}
-              className="bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl shadow-sm p-4 border border-gray-200"
+              className="bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl shadow-m p-3 border border-[#0B818D] "
             >
               {/* User Card Header */}
               <div className="flex justify-between items-start mb-4">
@@ -950,8 +950,8 @@ export const Users = () => {
                       className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 font-semibold text-gray-900"
                     />
                   ) : (
-                    <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                      <User className="w-5 h-5 text-blue-500" />
+                    <h3 className="text-lg font-semibold flex items-center gap-2 text-[#0B818D]">
+                      <User className="w-5 h-5 text-[#0B818D]" />
                       {user.name}
                     </h3>
                   )}
@@ -985,9 +985,9 @@ export const Users = () => {
               <div className="space-y-3 mb-4">
                 {/* Email */}
                 <div className="flex items-start gap-3">
-                  <Mail className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-gray-500 uppercase tracking-wider">Email</p>
+                  <Mail className="w-5 h-5 flex-shrink-0 mt-0.5 text-[#0B818D]" />
+                  <div className="flex-1 min-w-0 border-b-2 border-[#0B818D]/10">
+                    <p className="text-xs uppercase tracking-wider" style={{ fontFamily: "'Inter'" }}>Email</p>
                     {editingUser?.id === user.id ? (
                       <input
                         type="email"
@@ -998,16 +998,16 @@ export const Users = () => {
                         className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 text-sm text-gray-700"
                       />
                     ) : (
-                      <p className="text-sm text-gray-700 truncate">{user.email}</p>
+                      <p className="text-sm truncate">{user.email}</p>
                     )}
                   </div>
                 </div>
 
                 {/* Contact */}
                 <div className="flex items-start gap-3">
-                  <Phone className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-gray-500 uppercase tracking-wider">Contact</p>
+                  <Phone className="w-5 h-5 flex-shrink-0 mt-0.5 text-[#0B818D]" />
+                  <div className="flex-1 min-w-0 border-b-2 border-[#0B818D]/10">
+                    <p className="text-xs uppercase tracking-wider" style={{ fontFamily: "'Inter'" }}>Contact</p>
                     {editingUser?.id === user.id ? (
                       <input
                         type="tel"
@@ -1018,16 +1018,16 @@ export const Users = () => {
                         className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 text-sm text-gray-700"
                       />
                     ) : (
-                      <p className="text-sm text-gray-700">{user.contact}</p>
+                      <p className="text-sm ">{user.contact}</p>
                     )}
                   </div>
                 </div>
 
                 {/* Role */}
                 <div className="flex items-start gap-3">
-                  <Shield className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-gray-500 uppercase tracking-wider">Role</p>
+                  <Shield className="w-5 h-5 text-[#0B818D] flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0 border-b-2 border-[#0B818D]/10">
+                    <p className="text-xs uppercase tracking-wider" style={{ fontFamily: "'Inter'" }}>Role</p>
                     {editingUser?.id === user.id ? (
                       <select
                         value={editingUser.role}
@@ -1038,16 +1038,16 @@ export const Users = () => {
                         <option value="SUPER USER">SUPER USER</option>
                       </select>
                     ) : (
-                      <p className="text-sm text-gray-700">{user.role}</p>
+                      <p className="text-sm">{user.role}</p>
                     )}
                   </div>
                 </div>
 
                 {/* Serial Prefix */}
                 <div className="flex items-start gap-3">
-                  <Package className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-gray-500 uppercase tracking-wider">Serial Prefix</p>
+                  <Package className="w-5 h-5 text-[#0B818D] flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0 border-b-2 border-[#0B818D]/10">
+                    <p className="text-xs uppercase tracking-wider" style={{ fontFamily: "'Inter'" }}>Serial Prefix</p>
                     {editingUser?.id === user.id ? (
                       <input
                         type="text"
@@ -1058,17 +1058,17 @@ export const Users = () => {
                         className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 text-sm text-gray-700"
                       />
                     ) : (
-                      <p className="text-sm text-gray-700">{user.serialPrefix || '-'}</p>
+                      <p className="text-sm">{user.serialPrefix || '-'}</p>
                     )}
                   </div>
                 </div>
 
                 {/* Date */}
                 <div className="flex items-start gap-3">
-                  <Calendar className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1">
-                    <p className="text-xs text-gray-500 uppercase tracking-wider">Registration Date</p>
-                    <p className="text-sm text-gray-700">
+                  <Calendar className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 border-b-2 border-[#0B818D]/10">
+                    <p className="text-xs uppercase tracking-wider" style={{ fontFamily: "'Inter'" }}>Registration Date</p>
+                    <p className="text-sm ">
                       {new Date(user.registration_date).toLocaleDateString()}
                     </p>
                   </div>
@@ -1104,7 +1104,7 @@ export const Users = () => {
                         userId: user.id,
                         userName: user.name,
                       })}
-                      className="flex-1 flex items-center justify-center gap-2 bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium"
+                      className="flex-1 flex items-center justify-center gap-2 bg-purple-500 hover:bg-purple-600 text-white px-2 py-2 rounded-lg transition-colors text-sm font-medium"
                       title="Reset Password"
                     >
                       <Key className="w-4 h-4" />
@@ -1112,7 +1112,7 @@ export const Users = () => {
                     </button>
                     <button
                       onClick={() => handleEdit(user)}
-                      className="flex-1 flex items-center justify-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium"
+                      className="flex-1 flex items-center justify-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-2 rounded-lg transition-colors text-sm font-medium"
                       title="Edit"
                     >
                       <Edit className="w-4 h-4" />
@@ -1120,7 +1120,7 @@ export const Users = () => {
                     </button>
                     <button
                       onClick={() => handleDelete(user.id)}
-                      className="flex-1 flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium"
+                      className="flex-1 flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white px-2 py-2 rounded-lg transition-colors text-sm font-medium"
                       title="Delete"
                     >
                       <Trash2 className="w-4 h-4" />
