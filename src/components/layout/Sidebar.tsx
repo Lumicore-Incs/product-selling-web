@@ -12,7 +12,8 @@ import {
   TruckIcon,
   ClipboardListIcon,
   XIcon,
-  Copy
+  Copy,
+  BadgeDollarSign
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
@@ -48,7 +49,14 @@ const getNavItems = (userRole: string): NavItem[] => {
   // USER Specific items
   if (isUser) {
     items.push({ icon: ClipboardListIcon, label: 'Add New Order', to: '/sale', end: true });
-    items.push({ icon: Copy, label: 'Duplicate Orders', to: '/sale/duplicate' });
+    items.push({
+      icon: BadgeDollarSign,
+      label: 'Orders',
+      children: [
+        { icon: Copy, label: 'Duplicate Orders', to: '/sale/duplicate' },
+        { icon: ShoppingCartIcon, label: 'My Orders', to: '/my-orders' },
+      ],
+    });
   }
 
   // SUPER USER Specific items
@@ -81,7 +89,14 @@ const getNavItems = (userRole: string): NavItem[] => {
 
   // DUPLICATE ORDERS - Super User and Admin (User already added above)
   if (isSuperUser || isAdmin) {
-    items.push({ icon: Copy, label: 'Duplicate Orders', to: '/sale/duplicate' });
+    items.push({
+      icon: BadgeDollarSign,
+      label: 'Orders',
+      children: [
+        { icon: Copy, label: 'Duplicate Orders', to: '/sale/duplicate' },
+        { icon: ShoppingCartIcon, label: 'My Orders', to: '/my-orders' },
+      ],
+    });
   }
 
   return items;

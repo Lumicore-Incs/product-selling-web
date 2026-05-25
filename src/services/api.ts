@@ -73,6 +73,11 @@ export interface OrderDetailsDto {
   orderId?: number;
 }
 
+export interface ProductQtyDto {
+  totalQty: number;
+  productName: string;
+}
+
 // API service functions
 export const productApi = {
   // Get all products
@@ -246,6 +251,16 @@ export const dashboardApiReturnData = {
       return response.data;
     } catch (error) {
       console.error('Error confirming export:', error);
+      throw error;
+    }
+  },
+
+  getOrderQtySummary: async (): Promise<ProductQtyDto[]> => {
+    try {
+      const response = await api.get<ProductQtyDto[]>('/dashboard/exportDataQty');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching order quantity summary:', error);
       throw error;
     }
   },

@@ -288,7 +288,7 @@ export const Dashboard = () => {
         <div className="flex flex-wrap gap-2">
           {prodBtn('all', 'All Products')}
           {prodBtn('sugar', 'SUGAR END')}
-          {prodBtn('vac', 'ANI')}
+          {prodBtn('vac', 'VAC')}
           {prodBtn('medani', 'MEDANI')}
         </div>
       </div>

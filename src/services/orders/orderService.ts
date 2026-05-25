@@ -14,6 +14,7 @@ export interface OrderFilterParams {
   search?: string;
   status?: string; // omit or pass empty string to mean "all"
   productId?: string; // omit or pass empty string to mean "all"
+  date?: string; // YYYY-MM-DD format
 }
 
 function parsePaginatedResponse(raw: unknown, page: number, size: number): PaginatedResult<Sale> {
@@ -57,12 +58,13 @@ function parsePaginatedResponse(raw: unknown, page: number, size: number): Pagin
 function buildFilterParams(
   page: number,
   size: number,
-  { search, status, productId }: OrderFilterParams,
+  { search, status, productId, date }: OrderFilterParams,
 ): Record<string, string | number> {
   const params: Record<string, string | number> = { page, size };
   if (search && search.trim()) params['search'] = search.trim();
   if (status && status !== 'all') params['status'] = status;
   if (productId && productId !== 'all') params['productId'] = productId;
+  if (date) params['date'] = date;
   return params;
 }
 
@@ -125,6 +127,37 @@ class OrderService {
     }
   }
 
+  async updateCustomerOrder(id: string, payload: Sale): Promise<unknown> {
+    try {
+      const requestDTO = {
+        customerId: isNaN(Number(id)) ? null : Number(id),
+        name: payload.name || payload.customerName,
+        customerName: payload.customerName,
+        serialNo: payload.serialNo,
+        address: payload.address,
+        contact01: payload.contact01,
+        contact02: payload.contact02,
+        date: payload.date,
+        remark: payload.remark,
+        status: payload.status,
+        items: payload.items?.map(item => ({
+          orderDetailsId: item.orderDetailsId ? Number(item.orderDetailsId) : null,
+          orderId: item.orderId ? Number(item.orderId) : null,
+          productId: Number(item.productId),
+          qty: item.qty || item.quantity,
+          total: item.total || (item.qty * item.price)
+        })) || [],
+        totalPrice: payload.totalPrice
+      };
+
+      const putResp = await apiClient.put(`/customer/${id}`, requestDTO);
+      return putResp.data;
+    } catch (err) {
+      console.error('orderService.updateCustomerOrder failed:', err);
+      throw err;
+    }
+  }
+
   async getOrders(): Promise<Sale[]> {
     try {
       // Prefer direct backend call for today's orders
@@ -140,23 +173,6 @@ class OrderService {
       return this.getAllDuplicateOrders();
     } catch (err) {
       console.error('orderService.getOrders failed:', err);
-      throw err;
-    }
-  }
-
-  async getAllCustomerOrders(): Promise<Sale[]> {
-    try {
-      const resp = await apiClient.get('/order/allCustomer');
-      const data = resp?.data;
-      if (!data) return [];
-      if (Array.isArray(data)) return (data as unknown[]).map((o) => mapOrderDtoToSale(o));
-      const maybeData =
-        data && typeof data === 'object' ? (data as Record<string, unknown>)['data'] : undefined;
-      if (Array.isArray(maybeData))
-        return (maybeData as unknown[]).map((o) => mapOrderDtoToSale(o));
-      return [];
-    } catch (err) {
-      console.error('orderService.getAllCustomerOrders failed:', err);
       throw err;
     }
   }
@@ -260,8 +276,8 @@ async function uploadTrackingData(trackingList: TrackingUploadDto[]): Promise<st
 
 export const getAllDuplicateOrders = () => orderService.getAllDuplicateOrders();
 export const deleteOrder = (id: string) => orderService.deleteOrder(id);
+export const updateCustomerOrder = (id: string, payload: Sale) => orderService.updateCustomerOrder(id, payload);
 export const getOrders = () => orderService.getOrders();
-export const getAllCustomerOrders = () => orderService.getAllCustomerOrders();
 export const getOrdersPaginated = (page: number, size: number, filters?: OrderFilterParams) =>
   orderService.getOrdersPaginated(page, size, filters);
 export const getAllCustomerOrdersPaginated = (
