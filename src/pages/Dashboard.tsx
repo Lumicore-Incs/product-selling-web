@@ -18,7 +18,7 @@ import {
 
 // ─── Stat Card ──────────────────────────────────────────────────────────────
 
-type AccentColor = 'teal' | 'yellow' | 'emerald' | 'pink';
+type AccentColor = 'teal' | 'yellow' | 'blue' |'emerald' | 'pink';
 
 type StatCardProps = {
   icon: React.ComponentType<any>;
@@ -43,6 +43,12 @@ const accentMap: Record<
     bar: '#f59e0b',
     shadow: '0 8px 24px rgba(245,158,11,0.18)',
   },
+  blue: {
+    value: '#060ad9',
+    icon: '#0b2ef5',
+    bar: '#0b0ff5',
+    shadow: '0 8px 24px rgba(245,158,11,0.18)',
+  },
   emerald: {
     value: '#059669',
     icon: '#10b981',
@@ -63,13 +69,13 @@ const StatCard = ({ icon: Icon, label, value, accentColor = 'teal' }: StatCardPr
     <div
       className="relative overflow-hidden flex flex-col justify-between cursor-pointer group transition-all duration-300 hover:-translate-y-1"
       style={{
-        background: 'rgba(255,255,255,0.88)',
+        background: 'rgba(255, 255, 255, 0.6)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
         borderRadius: '20px',
         padding: '20px 20px 24px',
         border: '1px solid rgba(255,255,255,0.9)',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
         minHeight: '110px',
         fontFamily: "'Plus Jakarta Sans', sans-serif",
       }}
@@ -77,8 +83,8 @@ const StatCard = ({ icon: Icon, label, value, accentColor = 'teal' }: StatCardPr
       <div className="flex items-start justify-between">
         <div>
           <p
-            className="text-xs font-medium tracking-wide"
-            style={{ color: '#6b7280', marginBottom: '10px' }}
+            className="text-sm text-black tracking-wide"
+            style={{ color: '#050505', marginBottom: '10px', fontFamily: 'sans-serif' }}
           >
             {label}
           </p>
@@ -147,7 +153,7 @@ export const Dashboard = () => {
   const [salesSearch, setSalesSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
-  const searchTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleSearchChange = (value: string) => {
     setSalesSearch(value);
@@ -266,7 +272,7 @@ export const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen relative" style={{ fontFamily: ff }}>
+    <div className="min-h-screen relative mt-6" style={{ fontFamily: ff }}>
       <BackgroundIcons type="dashboard" />
 
       <AlertSnackbar
@@ -280,7 +286,7 @@ export const Dashboard = () => {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-7">
         <h1
           className="text-3xl md:text-4xl font-black"
-          style={{ color: '#0E626E', letterSpacing: '-0.5px', fontFamily: ff }}
+          style={{ color: '#0E626E', letterSpacing: '-0.5px', fontFamily: 'Inter', fontWeight: 'bold' }}
         >
           Welcome Back !
         </h1>
@@ -294,12 +300,18 @@ export const Dashboard = () => {
       </div>
 
       {/* ─── Stats Row ───────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-7">
+      <div className="grid grid-cols-3 lg:grid-cols-5 gap-4 mb-7">
         <StatCard
           icon={Package}
           label="Total Monthly Packs"
           value={loading ? '...' : stats.total_order}
           accentColor="teal"
+        />
+        <StatCard
+          icon={Package}
+          label="Processing Packs"
+          value={loading ? '...' : stats.todayOrders}
+          accentColor="blue"
         />
         <StatCard
           icon={Package}

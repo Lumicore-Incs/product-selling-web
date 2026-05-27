@@ -133,7 +133,7 @@ export const ExportOrder = () => {
       const firstSheet = workbook.Sheets[firstSheetName];
       const excelRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(firstSheet, { defval: '' });
       if (excelRows.length > 0) return excelRows;
-    } catch {}
+    } catch { }
     try {
       const text = await blob.text();
       const parsed = JSON.parse(text) as unknown;
@@ -142,7 +142,7 @@ export const ExportOrder = () => {
         const data = (parsed as { data?: unknown }).data;
         if (Array.isArray(data)) return data as Record<string, unknown>[];
       }
-    } catch {}
+    } catch { }
     return [];
   };
 
@@ -321,14 +321,14 @@ export const ExportOrder = () => {
   return (
     <div className="space-y-4">
       {/* ── Dashboard Summary Section ── */}
-      <div className=" rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+      <div className=" rounded-xl shadow-lg shadow-white/30 border border-white p-4 sm:p-6 overflow-hidden">
         {/* Header */}
-        <div className="px-4 sm:px-6 py-4 flex items-center justify-between bg-transparent text-[#0E626E]" style={{fontFamily:'Plus Jakarta Sans', fontWeight: 'bold'}}>
+        <div className="px-4 sm:px-6 py-4 flex items-center justify-between bg-transparent text-[#0E626E]" style={{ fontFamily: 'revert', fontWeight: 'bold' }}>
           <div>
             <h2 className="text-lg sm:text-xl font-bold  tracking-tight">
               Pending Orders Summary
             </h2>
-            <p className="text-slate-300 text-xs mt-0.5">Live stock of unprocessed orders</p>
+            <p className="text-xs mt-0.5" style={{ fontFamily: 'Inter', fontWeight: 'bold', color: 'black' }}>Live stock of unprocessed orders</p>
           </div>
           <div className="flex items-center gap-3">
             {/* Total orders badge */}
@@ -336,7 +336,7 @@ export const ExportOrder = () => {
               <div className="text-white font-bold text-lg leading-tight">
                 {summaryLoading ? '—' : totalPendingOrders}
               </div>
-              <div className="text-slate-300 text-xs">Total Orders</div>
+              <div className="text-white text-xs">Total Orders</div>
             </div>
             {/* Refresh button */}
             <button
@@ -382,7 +382,7 @@ export const ExportOrder = () => {
               <span className="text-sm">No pending orders found</span>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
               {productSummaries.map((summary, index) => {
                 const color = PRODUCT_COLORS[index % PRODUCT_COLORS.length];
                 return (
@@ -404,7 +404,6 @@ export const ExportOrder = () => {
                         <div className={`text-2xl sm:text-3xl font-extrabold ${color.qty} leading-none`}>
                           {summary.totalQty}
                         </div>
-                        <div className={`text-xs ${color.text} opacity-70 mt-0.5`}>units pending</div>
                       </div>
                       {/* Mini bar indicator */}
                       <div className="flex flex-col gap-0.5 items-end">
@@ -426,7 +425,7 @@ export const ExportOrder = () => {
       </div>
 
       {/* ── Export Orders Section ── */}
-      <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+      <div className="rounded-xl  overflow-hidden">
         <AlertSnackbar
           message={snackbar.message}
           type={snackbar.type}
@@ -434,23 +433,21 @@ export const ExportOrder = () => {
           onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
         />
 
-        <div className="p-4 sm:p-6" style={{background: 'linear-gradient(135deg, rgb(13, 148, 136), rgb(10, 127, 138))'}}>
-          <h2 className="text-xl sm:text-2xl font-bold text-white">Export Orders</h2>
+        <div className="p-4 sm:p-6" style={{ paddingBottom: '0' }}>
+          <h2 className="text-xl sm:text-2xl font-bold  text-[#0E626E]">Export Orders</h2>
         </div>
 
-        <div className="p-4 sm:p-6 space-y-4">
+        <div className="p-4 sm:p-6 space-y-2">
           {/* Product filter buttons */}
           <div className="flex flex-col gap-3">
-            <div className="text-sm font-semibold text-gray-700">Products</div>
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={() => setSelectedProductId('all')}
-                className={`px-3 py-2 rounded-full text-sm font-medium border transition-all duration-200 ${
-                  selectedProductId === 'all'
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                }`}
+                className={`px-3 py-2 rounded-full text-sm font-medium border transition-all duration-200 ${selectedProductId === 'all'
+                    ? 'bg-[#0B818D] text-white border-blue-600'
+                    : 'bg-[#FFFFFF7D] text-gray-700 border-gray-300 hover:bg-gray-50'
+                  }`}
               >
                 All Products
               </button>
@@ -459,11 +456,10 @@ export const ExportOrder = () => {
                   key={product.id}
                   type="button"
                   onClick={() => setSelectedProductId(product.id)}
-                  className={`px-3 py-2 rounded-full text-sm font-medium border transition-all duration-200 ${
-                    selectedProductId === product.id
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                  }`}
+                  className={`px-3 py-2 rounded-full text-sm font-medium border transition-all duration-200 ${selectedProductId === product.id
+                      ? 'bg-[#0B818D]/80 text-white border-[#0B818D]'
+                      : 'bg-[#FFFFFF7D] text-black border-gray-300 hover:bg-gray-50'
+                    }`}
                 >
                   {product.name}
                 </button>
@@ -472,7 +468,7 @@ export const ExportOrder = () => {
           </div>
 
           {/* Stats row */}
-          <div className="flex items-center justify-between text-sm text-gray-600">
+          <div className="flex items-center justify-between text-sm text-black">
             <div>Selected: {selectedIds.size}</div>
             <div className="flex items-center gap-3">
               <span>{loading ? 'Loading...' : `${filteredOrders.length} orders`}</span>
@@ -480,7 +476,7 @@ export const ExportOrder = () => {
                 type="button"
                 onClick={handleExportExcel}
                 disabled={isExporting}
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-purple-400 text-sm font-medium transition-colors"
+                className="px-4 py-2 bg-[#0B818D] text-white rounded-lg hover:bg-purple-700 disabled:bg-purple-400 text-sm font-medium transition-colors"
               >
                 {isExporting ? 'Exporting...' : 'Export Excel'}
               </button>
@@ -488,18 +484,20 @@ export const ExportOrder = () => {
           </div>
 
           {/* Table */}
-          <div className="overflow-x-auto border border-gray-200 rounded-lg">
+          <div className="overflow-x-auto border border-gray-200 rounded-lg bg-[#FFFFFF7D]" style={{ backdropFilter: 'border-radius(18px)' }}>
             <table className="min-w-[960px] w-full text-sm">
               <thead className="bg-gray-50 text-gray-700">
                 <tr>
-                  <th className="px-3 py-3 text-left w-10">
-                    <input
-                      type="checkbox"
-                      checked={allVisibleSelected}
-                      onChange={toggleSelectAll}
-                      aria-label="Select all"
-                    />
-                  </th>
+                  {selectedProductId !== 'all' && (
+                    <th className="px-3 py-3 text-left w-10">
+                      <input
+                        type="checkbox"
+                        checked={allVisibleSelected}
+                        onChange={toggleSelectAll}
+                        aria-label="Select all"
+                      />
+                    </th>
+                  )}
                   <th className="px-3 py-3 text-left">ID</th>
                   <th className="px-3 py-3 text-left">Name</th>
                   <th className="px-3 py-3 text-left">Address</th>
@@ -537,14 +535,16 @@ export const ExportOrder = () => {
                     const note = sale.remark || '';
                     return (
                       <tr key={id} className="hover:bg-gray-50">
-                        <td className="px-3 py-3">
-                          <input
-                            type="checkbox"
-                            checked={selectedIds.has(id)}
-                            onChange={() => toggleSelectOne(id)}
-                            aria-label={`Select ${name || id}`}
-                          />
-                        </td>
+                        {selectedProductId !== 'all' && (
+                          <td className="px-3 py-3">
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.has(id)}
+                              onChange={() => toggleSelectOne(id)}
+                              aria-label={`Select ${name || id}`}
+                            />
+                          </td>
+                        )}
                         <td className="px-3 py-3 text-gray-800">{id}</td>
                         <td className="px-3 py-3 text-gray-800">{name}</td>
                         <td className="px-3 py-3 text-gray-800">{address}</td>
