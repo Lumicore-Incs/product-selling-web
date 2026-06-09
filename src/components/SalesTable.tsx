@@ -38,11 +38,14 @@ type ColumnKey = keyof typeof DEFAULT_COLUMN_WIDTHS;
 interface SalesTableProps {
   sales: Sale[];
   isLoading?: boolean;
-  onEdit: (sale: Sale) => void;
-  onDelete: (id: string) => void;
+  onEdit?: (sale: Sale) => void;
+  onDelete?: (id: string) => void;
   userRole?: string;
   onRefresh?: () => void;
   onStatusChange?: (saleId: string, newStatus: string) => void;
+  alwaysEditableStatus?: boolean;
+  onWaybillChange?: (saleId: string, newWaybill: string) => void;
+  onWaybillSave?: (saleId: string) => void;
   /** Search term value (for controlled input) */
   searchTerm?: string;
   /** Callback when search term changes */
@@ -68,12 +71,33 @@ export const SalesTable: React.FC<SalesTableProps> = ({
   userRole,
   onRefresh,
   onStatusChange,
+  alwaysEditableStatus,
+  onWaybillChange,
+  onWaybillSave,
   searchTerm: externalSearchTerm,
   onSearchChange,
   serverPagination,
 }) => {
   // Status options
-  const statusOptions = ['TEMPORARY', 'PENDING'];
+  const statusOptions = alwaysEditableStatus
+    ? [
+        'TEMPORARY',
+        'PENDING',
+        'Processing',
+        'Collected At Sorting Center',
+        'Collected from Warehouse',
+        'Dispatched To Destination',
+        'Received At Destination',
+        'Out For Delivery',
+        'Failed To Deliver',
+        'Returned to HO',
+        'Returned to Branch Rescheduled',
+        'Returned to Branch Failed',
+        'Returned to Branch',
+        'Returned to Client',
+        'Delivered',
+      ]
+    : ['TEMPORARY', 'PENDING'];
 
   const [columnWidths, setColumnWidths] = useState(DEFAULT_COLUMN_WIDTHS);
   const resizingRef = useRef<null | { key: ColumnKey; startX: number; startWidth: number }>(null);
@@ -294,7 +318,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
   return (
     <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden font-inter">
       {/* Header with Search & Refresh */}
-      <div className="bg-gray-50 border-b border-gray-200 p-4 sm:p-4" style={{backgroundColor:'#0E626E', font:'plus-jakarta-sans'}}>
+      <div className="bg-gray-50 border-b border-gray-200 p-4 sm:p-4" style={{backgroundColor:'#147989', font:'plus-jakarta-sans'}}>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h2 className="text-xl sm:text-2xl font-bold text-white">Sales Entries</h2>
@@ -305,9 +329,9 @@ export const SalesTable: React.FC<SalesTableProps> = ({
             </p>
           </div>
 
-          <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="flex items-center w-full sm:w-auto">
             <div className="relative flex-1 sm:flex-none sm:w-72">
-              <SearchIcon className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+              <SearchIcon className="absolute left-3 top-2.5 w-4 h-4 text-white" />
               <input
                 type="text"
                 placeholder="Search by serial, customer, waybill, address..."
@@ -320,7 +344,15 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                     setCurrentPage(1);
                   }
                 }}
-                className="w-full pl-10 pr-10 py-1.5 bg-white border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
+               className="text-sm focus:outline-none"
+                style={{
+                  background: 'rgba(255,255,255,0.15)',
+                  border: '1px solid rgba(255,255,255,0.25)',
+                  borderRadius: '10px',
+                  padding: '6px 12px 6px 30px',
+                  color: '#fff',
+                  width: '270px',
+                }}
               />
               {searchTerm && (
                 <button
@@ -459,7 +491,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                       />
                     </th>
                     <th
-                      className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider relative"
+                      className=" py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider relative"
                       style={widthStyle('status')}
                     >
                       Status
@@ -534,7 +566,18 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                         className="px-6 py-4 whitespace-nowrap text-sm text-gray-600"
                         style={widthStyle('waybill')}
                       >
-                        {sale.waybillId ?? '-'}
+                        {onWaybillChange ? (
+                          <input
+                            type="text"
+                            value={sale.waybillId || ''}
+                            onChange={(e) => onWaybillChange(sale.id, e.target.value)}
+                            onBlur={() => onWaybillSave && onWaybillSave(sale.id)}
+                            className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            placeholder="Waybill..."
+                          />
+                        ) : (
+                          sale.waybillId ?? '-'
+                        )}
                       </td>
                       <td
                         className="px-6 py-4 whitespace-nowrap text-sm text-gray-600"
@@ -557,10 +600,10 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                       >
                         {sale.contact02 || '-'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap" style={widthStyle('status')}>
-                        {onStatusChange && sale.status === 'TEMPORARY' ? (
+                      <td className="py-4 whitespace-nowrap" style={widthStyle('status')}>
+                        {onStatusChange && (alwaysEditableStatus || sale.status === 'TEMPORARY') ? (
                           <select
-                            className={`px-3 py-1 rounded-full text-xs font-medium border focus:outline-none ${getStatusColor(
+                            className={`py-1 rounded-full text-xs font-medium border focus:outline-none ${getStatusColor(
                               sale.status ?? '-',
                             )}`}
                             value={sale.status}
@@ -610,20 +653,24 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                           >
                             <EyeIcon className="w-4 h-4" />
                           </button>
-                          <button
-                            onClick={() => onEdit(sale)}
-                            className="p-1.5 text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded transition-all"
-                            title="Edit Sale"
-                          >
-                            <PencilIcon className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => setPendingDeleteId(sale.id)}
-                            className="p-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-all"
-                            title="Delete Sale"
-                          >
-                            <Trash2Icon className="w-4 h-4" />
-                          </button>
+                          {onEdit && (
+                            <button
+                              onClick={() => onEdit(sale)}
+                              className="p-1.5 text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded transition-all"
+                              title="Edit Sale"
+                            >
+                              <PencilIcon className="w-4 h-4" />
+                            </button>
+                          )}
+                          {onDelete && (
+                            <button
+                              onClick={() => setPendingDeleteId(sale.id)}
+                              className="p-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-all"
+                              title="Delete Sale"
+                            >
+                              <Trash2Icon className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -656,12 +703,25 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                             <MapPinIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
                             <p className="text-sm text-gray-600 truncate">{sale.address}</p>
                           </div>
-                          <div className="text-xs text-gray-500 mt-1">
-                            Waybill: {sale.waybillId ?? '-'} • {formatDate(sale.date)}
+                          <div className="text-xs text-gray-500 mt-1 flex items-center gap-2">
+                            <span>Waybill:</span>
+                            {onWaybillChange ? (
+                              <input
+                                type="text"
+                                value={sale.waybillId || ''}
+                                onChange={(e) => onWaybillChange(sale.id, e.target.value)}
+                                onBlur={() => onWaybillSave && onWaybillSave(sale.id)}
+                                className="px-5 py-0.5 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 w-24"
+                                placeholder="Waybill..."
+                              />
+                            ) : (
+                              <span>{sale.waybillId ?? '-'}</span>
+                            )}
+                            <span>• {formatDate(sale.date)}</span>
                           </div>
                         </div>
                         <div className="ml-3">
-                          {onStatusChange && sale.status === 'TEMPORARY' ? (
+                          {onStatusChange && (alwaysEditableStatus || sale.status === 'TEMPORARY') ? (
                             <select
                               className={`px-3 py-1 rounded-full text-xs font-medium border focus:outline-none ${getStatusColor(
                                 sale.status ?? '-',
@@ -705,20 +765,24 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                           >
                             <EyeIcon className="w-4 h-4" />
                           </button>
-                          <button
-                            onClick={() => onEdit(sale)}
-                            className="p-2 text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded transition-all"
-                            title="Edit Sale"
-                          >
-                            <PencilIcon className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => setPendingDeleteId(sale.id)}
-                            className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-all"
-                            title="Delete Sale"
-                          >
-                            <Trash2Icon className="w-4 h-4" />
-                          </button>
+                          {onEdit && (
+                            <button
+                              onClick={() => onEdit(sale)}
+                              className="p-2 text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded transition-all"
+                              title="Edit Sale"
+                            >
+                              <PencilIcon className="w-4 h-4" />
+                            </button>
+                          )}
+                          {onDelete && (
+                            <button
+                              onClick={() => setPendingDeleteId(sale.id)}
+                              className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-all"
+                              title="Delete Sale"
+                            >
+                              <Trash2Icon className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>

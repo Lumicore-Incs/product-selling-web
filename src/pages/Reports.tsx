@@ -7,6 +7,16 @@ export const Reports = () => {
 
   const reportCards = [
     {
+      icon: FileBarChart2,
+      title: 'Monthly Report',
+      description: 'Track monthly order counts and user performance metrics.',
+      color: 'from-violet-500 to-violet-600',
+      bg: 'from-violet-50 to-violet-100',
+      border: 'border-violet-200',
+      textColor: 'text-violet-600',
+      route: '/monthly-report',
+    },
+    {
       icon: CalendarDays,
       title: 'Daily Report',
       description: 'View daily product counts and sales breakdown by date.',

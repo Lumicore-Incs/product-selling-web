@@ -1,4 +1,4 @@
-import { Package, Truck, XCircle, BarChart2 } from 'lucide-react';
+import { Package, Truck, XCircle } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertSnackbar } from '../components/AlertSnackbar';
 import { BackgroundIcons } from '../components/BackgroundIcons';
@@ -16,9 +16,9 @@ import {
   type PaginatedResult,
 } from '../services/orders/orderService';
 
-// ─── Stat Card ──────────────────────────────────────────────────────────────
+// ─── Types ───────────────────────────────────────────────────────────────────
 
-type AccentColor = 'teal' | 'yellow' | 'emerald' | 'pink';
+type AccentColor = 'teal' | 'yellow' | 'blue' | 'emerald' | 'pink';
 
 type StatCardProps = {
   icon: React.ComponentType<any>;
@@ -27,10 +27,11 @@ type StatCardProps = {
   accentColor?: AccentColor;
 };
 
-const accentMap: Record<
-  AccentColor,
-  { value: string; icon: string; bar: string; shadow: string }
-> = {
+type AccentConfig = { value: string; icon: string; bar: string; shadow: string };
+
+// ─── Accent Map ──────────────────────────────────────────────────────────────
+
+const accentMap: Record<AccentColor, AccentConfig> = {
   teal: {
     value: '#0891b2',
     icon: '#0891b2',
@@ -41,6 +42,12 @@ const accentMap: Record<
     value: '#d97706',
     icon: '#f59e0b',
     bar: '#f59e0b',
+    shadow: '0 8px 24px rgba(245,158,11,0.18)',
+  },
+  blue: {
+    value: '#060ad9',
+    icon: '#0b2ef5',
+    bar: '#0b0ff5',
     shadow: '0 8px 24px rgba(245,158,11,0.18)',
   },
   emerald: {
@@ -57,34 +64,46 @@ const accentMap: Record<
   },
 };
 
+// ─── Stat Card ───────────────────────────────────────────────────────────────
+
 const StatCard = ({ icon: Icon, label, value, accentColor = 'teal' }: StatCardProps) => {
   const cfg = accentMap[accentColor];
   return (
     <div
       className="relative overflow-hidden flex flex-col justify-between cursor-pointer group transition-all duration-300 hover:-translate-y-1"
       style={{
-        background: 'rgba(255,255,255,0.88)',
+        background: 'rgba(255, 255, 255, 0.6)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
-        borderRadius: '20px',
-        padding: '20px 20px 24px',
+        borderRadius: '16px',
+        padding: 'clamp(10px, 2.5vw, 20px) clamp(10px, 2.5vw, 20px) clamp(18px, 3vw, 24px)',
         border: '1px solid rgba(255,255,255,0.9)',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
-        minHeight: '110px',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+        minHeight: 'clamp(90px, 12vw, 110px)',
         fontFamily: "'Plus Jakarta Sans', sans-serif",
       }}
     >
-      <div className="flex items-start justify-between">
-        <div>
+      <div className="flex items-start justify-between gap-1">
+        <div className="flex-1 min-w-0">
           <p
-            className="text-xs font-medium tracking-wide"
-            style={{ color: '#6b7280', marginBottom: '10px' }}
+            style={{
+              color: '#050505',
+              marginBottom: 'clamp(6px, 1.2vw, 10px)',
+              fontFamily: 'sans-serif',
+              fontSize: 'clamp(9px, 1.8vw, 13px)',
+              wordBreak: 'break-word',
+              lineHeight: '1.3',
+            }}
           >
             {label}
           </p>
           <p
-            className="text-3xl font-black leading-none"
-            style={{ color: cfg.value, letterSpacing: '-1px' }}
+            className="font-black leading-none"
+            style={{
+              color: cfg.value,
+              letterSpacing: '-0.5px',
+              fontSize: 'clamp(18px, 3.5vw, 30px)',
+            }}
           >
             {value}
           </p>
@@ -92,22 +111,28 @@ const StatCard = ({ icon: Icon, label, value, accentColor = 'teal' }: StatCardPr
 
         {/* Icon box */}
         <div
-          className="flex items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110"
+          className="flex items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110 flex-shrink-0"
           style={{
-            width: '44px',
-            height: '44px',
+            width: 'clamp(32px, 5vw, 44px)',
+            height: 'clamp(32px, 5vw, 44px)',
             background: `${cfg.icon}18`,
-            flexShrink: 0,
           }}
         >
-          <Icon size={22} style={{ color: cfg.icon }} strokeWidth={2.2} />
+          <Icon
+            style={{
+              color: cfg.icon,
+              width: 'clamp(14px, 2.5vw, 22px)',
+              height: 'clamp(14px, 2.5vw, 22px)',
+            }}
+            strokeWidth={2.2}
+          />
         </div>
       </div>
 
       {/* Colored bottom accent bar */}
       <div
-        className="absolute bottom-0 left-6 right-6 rounded-t-full"
-        style={{ height: '4px', background: cfg.bar, opacity: 0.85 }}
+        className="absolute bottom-0 left-4 right-4 rounded-t-full"
+        style={{ height: '3px', background: cfg.bar, opacity: 0.85 }}
       />
     </div>
   );
@@ -147,7 +172,7 @@ export const Dashboard = () => {
   const [salesSearch, setSalesSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
-  const searchTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleSearchChange = (value: string) => {
     setSalesSearch(value);
@@ -239,25 +264,27 @@ export const Dashboard = () => {
     fetchData();
   }, [fetchData]);
 
-  // ─── Shared font family
   const ff = "'Plus Jakarta Sans', sans-serif";
 
-  // ─── Product filter button helper
   const prodBtn = (id: string, label: string) => {
     const active = selectedProduct === id;
     return (
       <button
         key={id}
         onClick={() => handleProductFilter(id)}
-        className="px-4 py-2 rounded-2xl text-sm font-semibold transition-all duration-200"
+        className="px-3 py-1.5 rounded-2xl font-semibold transition-all duration-200"
         style={{
           fontFamily: ff,
+          fontSize: 'clamp(10px, 1.8vw, 13px)',
           background: active
             ? 'linear-gradient(135deg, #0d9488, #0891b2)'
             : 'rgba(255,255,255,0.75)',
           color: active ? '#fff' : '#374151',
           border: active ? 'none' : '1px solid rgba(0,0,0,0.08)',
-          boxShadow: active ? '0 4px 14px rgba(13,148,136,0.3)' : '0 1px 4px rgba(0,0,0,0.06)',
+          boxShadow: active
+            ? '0 4px 14px rgba(13,148,136,0.3)'
+            : '0 1px 4px rgba(0,0,0,0.06)',
+          whiteSpace: 'nowrap',
         }}
       >
         {label}
@@ -266,7 +293,7 @@ export const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen relative" style={{ fontFamily: ff }}>
+    <div className="min-h-screen relative mt-4 sm:mt-6 px-2 sm:px-0" style={{ fontFamily: ff }}>
       <BackgroundIcons type="dashboard" />
 
       <AlertSnackbar
@@ -277,53 +304,92 @@ export const Dashboard = () => {
       />
 
       {/* ─── Page Header ─────────────────────────────────────────────────── */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-7">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5 sm:mb-7">
         <h1
-          className="text-3xl md:text-4xl font-black"
-          style={{ color: '#0E626E', letterSpacing: '-0.5px', fontFamily: ff }}
+          className="font-black"
+          style={{
+            color: '#0E626E',
+            letterSpacing: '-0.5px',
+            fontFamily: 'Inter',
+            fontWeight: 'bold',
+            fontSize: 'clamp(22px, 5vw, 36px)',
+          }}
         >
           Welcome Back !
         </h1>
 
-        <div className="flex flex-wrap gap-2">
+        {/* Product filter — horizontally scrollable on mobile */}
+        <div
+          className="flex gap-2 overflow-x-auto pb-1"
+          style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
+        >
           {prodBtn('all', 'All Products')}
           {prodBtn('sugar', 'SUGAR END')}
-          {prodBtn('vac', 'ANI')}
+          {prodBtn('vac', 'VAC')}
           {prodBtn('medani', 'MEDANI')}
         </div>
       </div>
 
-      {/* ─── Stats Row ───────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-7">
-        <StatCard
-          icon={Package}
-          label="Total Monthly Packs"
-          value={loading ? '...' : stats.total_order}
-          accentColor="teal"
-        />
-        <StatCard
-          icon={Package}
-          label="Today Packs"
-          value={loading ? '...' : stats.todayOrders}
-          accentColor="yellow"
-        />
-        <StatCard
-          icon={Truck}
-          label="Delivered Packs"
-          value={loading ? '...' : stats.confirmedOrders}
-          accentColor="emerald"
-        />
-        <StatCard
-          icon={XCircle}
-          label="Canceled/Returned Packs"
-          value={loading ? '...' : stats.cancelledOrders}
-          accentColor="pink"
-        />
+      {/* ─── Stats Grid ──────────────────────────────────────────────────── */}
+      {/*
+        Mobile  : 2 cols, 5th card spans full width
+        Tablet  : 3 cols
+        Desktop : 5 cols
+      */}
+      <div className="mb-5 sm:mb-7">
+        <style>{`
+          .stats-grid {
+            display: grid;
+            gap: 12px;
+            grid-template-columns: repeat(2, 1fr);
+          }
+          @media (max-width: 639px) {
+            .stats-grid > *:last-child { grid-column: span 2; }
+          }
+          @media (min-width: 640px) {
+            .stats-grid { grid-template-columns: repeat(3, 1fr); }
+          }
+          @media (min-width: 1024px) {
+            .stats-grid { grid-template-columns: repeat(5, 1fr); }
+          }
+        `}</style>
+        <div className="stats-grid">
+          <StatCard
+            icon={Package}
+            label="Total Monthly Packs"
+            value={loading ? '...' : stats.total_order}
+            accentColor="teal"
+          />
+          <StatCard
+            icon={Package}
+            label="Processing Packs"
+            value={loading ? '...' : stats.todayOrders}
+            accentColor="blue"
+          />
+          <StatCard
+            icon={Package}
+            label="Today Packs"
+            value={loading ? '...' : stats.todayOrders}
+            accentColor="yellow"
+          />
+          <StatCard
+            icon={Truck}
+            label="Delivered Packs"
+            value={loading ? '...' : stats.confirmedOrders}
+            accentColor="emerald"
+          />
+          <StatCard
+            icon={XCircle}
+            label="Canceled / Returned"
+            value={loading ? '...' : stats.cancelledOrders}
+            accentColor="pink"
+          />
+        </div>
       </div>
 
       {/* ─── Sales Section ───────────────────────────────────────────────── */}
       <div
-        className="rounded-3xl overflow-hidden"
+        className="rounded-2xl sm:rounded-3xl overflow-hidden"
         style={{
           background: 'rgba(255,255,255,0.7)',
           backdropFilter: 'blur(20px)',
@@ -332,54 +398,13 @@ export const Dashboard = () => {
           boxShadow: '0 8px 40px rgba(0,0,0,0.06)',
         }}
       >
-        {/* Sales section top-bar (outside the teal header) */}
+        {/* Top-bar */}
         <div
-          className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-6 py-4"
+          className="flex flex-col gap-3 px-4 sm:px-6 py-3 sm:py-4"
           style={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}
         >
-          <p className="text-base font-bold text-gray-800">Sales</p>
-
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Search */}
-            <input
-              type="text"
-              value={salesSearch}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              placeholder="Search name, contact, waybill"
-              className="text-sm focus:outline-none focus:ring-2 focus:ring-teal-300/50 transition-all"
-              style={{
-                background: 'rgba(255,255,255,0.9)',
-                border: '1px solid rgba(0,0,0,0.09)',
-                borderRadius: '12px',
-                padding: '7px 14px',
-                width: '210px',
-                fontFamily: ff,
-              }}
-            />
-
-            {/* Status */}
-            <select
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
-                setCurrentPage(0);
-              }}
-              className="text-sm focus:outline-none focus:ring-2 focus:ring-teal-300/50"
-              style={{
-                background: 'rgba(255,255,255,0.9)',
-                border: '1px solid rgba(0,0,0,0.09)',
-                borderRadius: '12px',
-                padding: '7px 12px',
-                fontFamily: ff,
-                color: '#374151',
-              }}
-            >
-              {statusOptions.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
+          <div className="flex items-center justify-between">
+            <p className="text-sm sm:text-base font-bold text-gray-800">Sales</p>
 
             {/* Today / All toggle */}
             <div
@@ -396,7 +421,7 @@ export const Dashboard = () => {
                   <button
                     key={lbl}
                     onClick={() => setShowTodayOnly(isToday)}
-                    className="px-3 py-1 rounded-lg text-sm font-semibold transition-all duration-200"
+                    className="px-3 py-1 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200"
                     style={{
                       fontFamily: ff,
                       background: active
@@ -411,69 +436,47 @@ export const Dashboard = () => {
               })}
             </div>
           </div>
-        </div>
 
-        {/* Teal inner header (Sales Entries) */}
-        <div
-          className="flex items-center justify-between px-6 py-4"
-          style={{
-            background: 'linear-gradient(135deg, #0d9488, #0a7f8a)',
-          }}
-        >
-          <div>
-            <p className="text-white font-bold text-lg leading-tight">Sales Entries</p>
-            <p className="text-teal-200 text-xs mt-0.5">
-              {loading ? '...' : totalCount.toLocaleString()} entries
-            </p>
-          </div>
+          {/* Search + Status filter */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <input
+              type="text"
+              value={salesSearch}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              placeholder="Search name, contact, waybill"
+              className="text-sm focus:outline-none focus:ring-2 focus:ring-teal-300/50 transition-all flex-1"
+              style={{
+                background: 'rgba(255,255,255,0.9)',
+                border: '1px solid rgba(0,0,0,0.09)',
+                borderRadius: '12px',
+                padding: '8px 14px',
+                fontFamily: ff,
+                minWidth: 0,
+              }}
+            />
 
-          {/* Inner search + refresh */}
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <input
-                type="text"
-                value={salesSearch}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                placeholder="Search..."
-                className="text-sm focus:outline-none"
-                style={{
-                  background: 'rgba(255,255,255,0.15)',
-                  border: '1px solid rgba(255,255,255,0.25)',
-                  borderRadius: '10px',
-                  padding: '6px 12px 6px 30px',
-                  color: '#fff',
-                  fontFamily: ff,
-                  width: '160px',
-                }}
-              />
-              <svg
-                className="absolute left-2.5 top-1/2 -translate-y-1/2"
-                width="13"
-                height="13"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="rgba(255,255,255,0.7)"
-                strokeWidth="2.5"
-              >
-                <circle cx="11" cy="11" r="8" />
-                <path d="m21 21-4.35-4.35" />
-              </svg>
-            </div>
-            <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/15 hover:bg-white/25 transition-colors">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="white"
-                strokeWidth="2.5"
-              >
-                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
-                <path d="M21 3v5h-5" />
-                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
-                <path d="M8 16H3v5" />
-              </svg>
-            </button>
+            <select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(0);
+              }}
+              className="text-sm focus:outline-none focus:ring-2 focus:ring-teal-300/50"
+              style={{
+                background: 'rgba(255,255,255,0.9)',
+                border: '1px solid rgba(0,0,0,0.09)',
+                borderRadius: '12px',
+                padding: '8px 12px',
+                fontFamily: ff,
+                color: '#374151',
+              }}
+            >
+              {statusOptions.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -513,8 +516,7 @@ export const Dashboard = () => {
                 totalPages,
                 pageSizeOptions: [5, 10, 20],
                 onPrev: () => setCurrentPage((p) => Math.max(0, p - 1)),
-                onNext: () =>
-                  setCurrentPage((p) => Math.min(totalPages - 1, p + 1)),
+                onNext: () => setCurrentPage((p) => Math.min(totalPages - 1, p + 1)),
                 onPageSizeChange: (size) => {
                   setPageSize(size);
                   setCurrentPage(0);

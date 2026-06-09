@@ -67,7 +67,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick, onSettingsClick, he
       <div className="flex items-center justify-between gap-2 sm:gap-6 px-4 sm:px-8 py-5">
 
         {/* LEFT */}
-        <div className="flex items-center gap-3 sm:gap-6 flex-1 min-w-0">
+        <div className="my-2 flex items-center gap-3 sm:gap-6 flex-1 min-w-0">
           <button
             onClick={onMenuClick}
             className="md:hidden p-2 bg-white bg-opacity-30 hover:bg-opacity-50 rounded-lg transition-all"
@@ -77,11 +77,11 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick, onSettingsClick, he
 
           <div className="hidden sm:block flex-1 max-w-xs lg:max-w-sm">
             <div className="relative">
-              <SearchIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <SearchIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#045f69]" />
               <input
                 type="text"
                 placeholder="Search here..."
-                className="w-full pl-10 pr-4 py-2 bg-white bg-opacity-80 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-cyan-300 text-sm"
+                className="w-full pl-10 pr-4 py-2 bg-white bg-opacity-80 border text-[#045f69] border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-cyan-300 text-sm"
               />
             </div>
           </div>

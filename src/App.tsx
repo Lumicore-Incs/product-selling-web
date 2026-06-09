@@ -17,6 +17,8 @@ import UserProfile from './pages/UserProfile';
 import { Users } from './pages/Users';
 import { Reports } from './pages/Reports';
 import { SalesSummary } from './pages/SalesSummary';
+import { MonthlyReport } from './pages/MonthlyReport';
+import { MyOrders } from './pages/MyOrders';
 import { getToken } from './services/authUtils';
 
 // Simple loader component
@@ -115,12 +117,14 @@ export function App() {
             <Route index element={<Dashboard />} />
             <Route path="sale" element={<SalesManagement />} />
             <Route path="sale/duplicate" element={<DuplicateSales />} />
+            <Route path="my-orders" element={<MyOrders />} />
             <Route path="sale/settings" element={<SalesManagement />} />
             <Route path="export-orders" element={<ExportOrder />} />
             <Route path="product" element={<ProductManagement />} />
             <Route path="users" element={<Users />} />
             <Route path="user-orders" element={<UserOrders />} />
             <Route path="daily-report" element={<DailyReport />} />
+            <Route path="monthly-report" element={<MonthlyReport />} />
             <Route path="profile" element={<UserProfile />} />
             <Route path="settings" element={<Settings />} />
             <Route path="stock" element={<StockManagement />} />
