@@ -121,6 +121,7 @@ const getHelpSettingsItems = (userRole: string): NavItem[] => {
       icon: FileBarChart2Icon,
       label: 'Reports',
       children: [
+        { icon: FileBarChart2Icon, label: 'Monthly Report', to: '/monthly-report' },
         { icon: FileBarChart2Icon, label: 'Sales Summary', to: '/reports' },
         { icon: BarChart3Icon, label: 'Daily Report', to: '/daily-report' },
       ],

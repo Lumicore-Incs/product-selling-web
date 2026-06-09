@@ -17,6 +17,7 @@ import UserProfile from './pages/UserProfile';
 import { Users } from './pages/Users';
 import { Reports } from './pages/Reports';
 import { SalesSummary } from './pages/SalesSummary';
+import { MonthlyReport } from './pages/MonthlyReport';
 import { MyOrders } from './pages/MyOrders';
 import { getToken } from './services/authUtils';
 
@@ -123,6 +124,7 @@ export function App() {
             <Route path="users" element={<Users />} />
             <Route path="user-orders" element={<UserOrders />} />
             <Route path="daily-report" element={<DailyReport />} />
+            <Route path="monthly-report" element={<MonthlyReport />} />
             <Route path="profile" element={<UserProfile />} />
             <Route path="settings" element={<Settings />} />
             <Route path="stock" element={<StockManagement />} />

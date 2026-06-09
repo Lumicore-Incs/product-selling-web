@@ -318,7 +318,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
   return (
     <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden font-inter">
       {/* Header with Search & Refresh */}
-      <div className="bg-gray-50 border-b border-gray-200 p-4 sm:p-4" style={{backgroundColor:'#0E626E', font:'plus-jakarta-sans'}}>
+      <div className="bg-gray-50 border-b border-gray-200 p-4 sm:p-4" style={{backgroundColor:'#147989', font:'plus-jakarta-sans'}}>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h2 className="text-xl sm:text-2xl font-bold text-white">Sales Entries</h2>
@@ -329,9 +329,9 @@ export const SalesTable: React.FC<SalesTableProps> = ({
             </p>
           </div>
 
-          <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="flex items-center w-full sm:w-auto">
             <div className="relative flex-1 sm:flex-none sm:w-72">
-              <SearchIcon className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+              <SearchIcon className="absolute left-3 top-2.5 w-4 h-4 text-white" />
               <input
                 type="text"
                 placeholder="Search by serial, customer, waybill, address..."
@@ -344,7 +344,15 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                     setCurrentPage(1);
                   }
                 }}
-                className="w-full pl-10 pr-10 py-1.5 bg-white border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
+               className="text-sm focus:outline-none"
+                style={{
+                  background: 'rgba(255,255,255,0.15)',
+                  border: '1px solid rgba(255,255,255,0.25)',
+                  borderRadius: '10px',
+                  padding: '6px 12px 6px 30px',
+                  color: '#fff',
+                  width: '270px',
+                }}
               />
               {searchTerm && (
                 <button
@@ -703,7 +711,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                                 value={sale.waybillId || ''}
                                 onChange={(e) => onWaybillChange(sale.id, e.target.value)}
                                 onBlur={() => onWaybillSave && onWaybillSave(sale.id)}
-                                className="px-2 py-0.5 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 w-24"
+                                className="px-5 py-0.5 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 w-24"
                                 placeholder="Waybill..."
                               />
                             ) : (

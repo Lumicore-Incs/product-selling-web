@@ -128,7 +128,7 @@ export const MyOrders: React.FC = () => {
     setIsLoading(true);
 
     try {
-      await orderService.updateCustomerOrder(updatedSale.id, updatedSale);
+      await orderService.updateDuplicateOrder(updatedSale.id, updatedSale as any);
       setSnackbar({ open: true, message: 'Order updated successfully', type: 'success' });
       await loadOrders();
     } catch (err: unknown) {
@@ -167,7 +167,7 @@ export const MyOrders: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-full sm:max-w-full md:max-w-7xl lg:max-w-screen-2xl  relative overflow-x-hidden">
+    <div className="w-full max-w-full  relative overflow-x-hidden">
       <BackgroundIcons type="sales" />
       <AlertSnackbar
         message={snackbar.message}
@@ -327,7 +327,7 @@ export const MyOrders: React.FC = () => {
             />
           </div>
         )}
-        <div className={isEditing ? 'opacity-50 pointer-events-none' : ''}>
+        <div className={isEditing ? 'opacity-50 pointer-events-none p-2' : ''}>
           <SalesTable
             sales={sales}
             onEdit={
