@@ -1,4 +1,4 @@
-import { Package, Truck, XCircle } from 'lucide-react';
+import { Briefcase, ShoppingBag, Truck, XCircle } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertSnackbar } from '../components/AlertSnackbar';
 import { BackgroundIcons } from '../components/BackgroundIcons';
@@ -83,49 +83,50 @@ const StatCard = ({ icon: Icon, label, value, accentColor = 'teal' }: StatCardPr
         fontFamily: "'Plus Jakarta Sans', sans-serif",
       }}
     >
-      <div className="flex items-start justify-between gap-1">
-        <div className="flex-1 min-w-0">
-          <p
-            style={{
-              color: '#050505',
-              marginBottom: 'clamp(6px, 1.2vw, 10px)',
-              fontFamily: 'sans-serif',
-              fontSize: 'clamp(9px, 1.8vw, 13px)',
-              wordBreak: 'break-word',
-              lineHeight: '1.3',
-            }}
-          >
-            {label}
-          </p>
+      <div className="flex flex-col h-full">
+        <p
+          style={{
+            color: '#6b7280',
+            marginBottom: 'clamp(10px, 2vw, 16px)',
+            fontFamily: 'sans-serif',
+            fontSize: 'clamp(11px, 1.8vw, 14px)',
+            fontWeight: 500,
+            wordBreak: 'break-word',
+            lineHeight: '1.3',
+          }}
+        >
+          {label}
+        </p>
+        <div className="flex items-end justify-between mt-auto">
           <p
             className="font-black leading-none"
             style={{
               color: cfg.value,
               letterSpacing: '-0.5px',
-              fontSize: 'clamp(18px, 3.5vw, 30px)',
+              fontSize: 'clamp(24px, 4.5vw, 36px)',
             }}
           >
             {value}
           </p>
-        </div>
 
-        {/* Icon box */}
-        <div
-          className="flex items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110 flex-shrink-0"
-          style={{
-            width: 'clamp(32px, 5vw, 44px)',
-            height: 'clamp(32px, 5vw, 44px)',
-            background: `${cfg.icon}18`,
-          }}
-        >
-          <Icon
+          {/* Icon box */}
+          <div
+            className="flex items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110 flex-shrink-0"
             style={{
-              color: cfg.icon,
-              width: 'clamp(14px, 2.5vw, 22px)',
-              height: 'clamp(14px, 2.5vw, 22px)',
+              width: 'clamp(32px, 5vw, 44px)',
+              height: 'clamp(32px, 5vw, 44px)',
+              background: `${cfg.icon}18`,
             }}
-            strokeWidth={2.2}
-          />
+          >
+            <Icon
+              style={{
+                color: cfg.icon,
+                width: 'clamp(16px, 2.5vw, 24px)',
+                height: 'clamp(16px, 2.5vw, 24px)',
+              }}
+              strokeWidth={2.2}
+            />
+          </div>
         </div>
       </div>
 
@@ -166,7 +167,7 @@ export const Dashboard = () => {
   const [totalPages, setTotalPages] = useState(0);
 
   const [user, setUser] = useState<{ role: string } | null>(null);
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [salesSearch, setSalesSearch] = useState('');
@@ -189,38 +190,43 @@ export const Dashboard = () => {
   };
 
   const fetchData = useCallback(async () => {
+    const filters: OrderFilterParams = {
+      search: debouncedSearch,
+      status: statusFilter === 'all' ? undefined : statusFilter,
+      productId: selectedProduct === 'all' ? undefined : selectedProduct,
+    };
+
+    // Fetch stats
     try {
       setLoading(true);
-      setSalesLoading(true);
-
-      const filters: OrderFilterParams = {
-        search: debouncedSearch,
-        status: statusFilter === 'all' ? undefined : statusFilter,
-        productId: selectedProduct === 'all' ? undefined : selectedProduct,
-      };
-
-      const [statsData, salesResult] = await Promise.all([
-        getDashboardStats(),
-        showTodayOnly
-          ? getOrdersPaginated(currentPage, pageSize, filters)
-          : getAllCustomerOrdersPaginated(currentPage, pageSize, filters),
-      ]);
-
+      const statsData = await getDashboardStats();
       setStats({
         total_order: String(statsData.total_order || 0),
         todayOrders: String(statsData.today_order || 0),
         confirmedOrders: String(statsData.conform_order || 0),
         cancelledOrders: String(statsData.cancel_order || 0),
       });
+    } catch (err) {
+      console.error('Failed to fetch dashboard stats:', err);
+    } finally {
+      setLoading(false);
+    }
 
+    // Fetch sales
+    try {
+      setSalesLoading(true);
+      const salesResult = await (
+        showTodayOnly
+          ? getOrdersPaginated(currentPage, pageSize, filters)
+          : getAllCustomerOrdersPaginated(currentPage, pageSize, filters)
+      );
       setSales((salesResult as PaginatedResult<Sale>).data);
       setTotalCount((salesResult as PaginatedResult<Sale>).total);
       setTotalPages((salesResult as PaginatedResult<Sale>).totalPages);
     } catch (err) {
-      console.error('Failed to fetch dashboard data:', err);
-      setSnackbar({ open: true, message: 'Failed to load dashboard data', type: 'error' });
+      console.error('Failed to fetch sales data:', err);
+      setSnackbar({ open: true, message: 'Failed to load sales data', type: 'error' });
     } finally {
-      setLoading(false);
       setSalesLoading(false);
     }
   }, [showTodayOnly, currentPage, pageSize, debouncedSearch, statusFilter, selectedProduct]);
@@ -252,7 +258,14 @@ export const Dashboard = () => {
           getAllProducts(),
         ]);
         setUser(userData);
-        setProducts(productsData as any[]);
+        // Map products to { id, name } — backend may return array of objects or strings
+        const mapped = Array.isArray(productsData)
+          ? (productsData as any[]).map((p: any) => ({
+              id: String(p?.productId ?? p?.id ?? p?.product_id ?? p),
+              name: String(p?.name ?? p?.productName ?? p?.product_name ?? p),
+            }))
+          : [];
+        setProducts(mapped);
       } catch (err) {
         console.error(err);
       }
@@ -318,15 +331,13 @@ export const Dashboard = () => {
           Welcome Back !
         </h1>
 
-        {/* Product filter — horizontally scrollable on mobile */}
+        {/* Product filter — dynamically loaded from API */}
         <div
           className="flex gap-2 overflow-x-auto pb-1"
           style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
         >
           {prodBtn('all', 'All Products')}
-          {prodBtn('sugar', 'SUGAR END')}
-          {prodBtn('vac', 'VAC')}
-          {prodBtn('medani', 'MEDANI')}
+          {products.map((p) => prodBtn(p.id, p.name))}
         </div>
       </div>
 
@@ -350,24 +361,18 @@ export const Dashboard = () => {
             .stats-grid { grid-template-columns: repeat(3, 1fr); }
           }
           @media (min-width: 1024px) {
-            .stats-grid { grid-template-columns: repeat(5, 1fr); }
+            .stats-grid { grid-template-columns: repeat(4, 1fr); }
           }
         `}</style>
         <div className="stats-grid">
           <StatCard
-            icon={Package}
+            icon={Briefcase}
             label="Total Monthly Packs"
             value={loading ? '...' : stats.total_order}
             accentColor="teal"
           />
           <StatCard
-            icon={Package}
-            label="Processing Packs"
-            value={loading ? '...' : stats.todayOrders}
-            accentColor="blue"
-          />
-          <StatCard
-            icon={Package}
+            icon={ShoppingBag}
             label="Today Packs"
             value={loading ? '...' : stats.todayOrders}
             accentColor="yellow"
@@ -380,7 +385,7 @@ export const Dashboard = () => {
           />
           <StatCard
             icon={XCircle}
-            label="Canceled / Returned"
+            label="Canceled/Retuned Packs"
             value={loading ? '...' : stats.cancelledOrders}
             accentColor="pink"
           />
@@ -482,16 +487,14 @@ export const Dashboard = () => {
 
         {/* Table area */}
         <div className="p-2">
-          {salesLoading && (
-            <p className="text-center py-10 text-gray-400 text-sm">Loading sales...</p>
-          )}
           {salesError && (
             <p className="text-red-500 text-center py-10 text-sm">{salesError}</p>
           )}
 
-          {!salesLoading && !salesError && (
+          {!salesError && (
             <SalesTable
               sales={sales}
+              isLoading={salesLoading}
               onEdit={() => {}}
               onDelete={async (id) => {
                 try {
