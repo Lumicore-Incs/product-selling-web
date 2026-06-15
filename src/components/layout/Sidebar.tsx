@@ -206,9 +206,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <button
           key={item.to}
           onClick={handleSettingsClick}
-          className="w-full flex items-center px-4 py-2.5 mx-6 rounded-lg text-[#0B818D] hover:bg-[#0B818D]/10 hover:text-[#065f69] transition font-medium"
+          className="w-full flex items-center px-4 py-2 mx-6 rounded-md text-[#0B818D] hover:bg-[#0B818D]/10 hover:text-[#065f69] transition"
+          style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '13px', fontWeight: 400, lineHeight: '16px' }}
         >
-          <item.icon size={18} className="mr-3" />
+          <item.icon size={20} className="mr-3" />
           {item.label}
         </button>
       );
@@ -221,10 +222,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div key={item.label} className="mx-6 ">
           <button
             onClick={() => toggleExpand(item.label)}
-            className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-[#0B818D] hover:bg-[#0B818D]/10 hover:text-[#065f69] transition font-medium"
+            className="w-full flex items-center justify-between px-4 py-2 rounded-md text-[#0B818D] hover:bg-[#0B818D]/10 hover:text-[#065f69] transition"
+            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '13px', fontWeight: 400, lineHeight: '16px' }}
           >
             <div className="flex items-center">
-              <item.icon size={18} className="mr-3" />
+              <item.icon size={20} className="mr-3" />
               {item.label}
             </div>
             <ChevronDownIcon
@@ -242,12 +244,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onClick={onClose}
                   end={child.end}
                   className={({ isActive }) =>
-                    `block px-4 py-2 text-sm rounded-md transition font-medium ${
+                    `block px-4 py-2 rounded-md transition ${
                       isActive
-                        ? 'bg-[#0B818D]/20 text-[#065f69]'
+                        ? 'bg-[#0B818D] text-white'
                         : 'hover:bg-[#0B818D]/10 hover:text-[#065f69] text-[#0B818D]'
                     }`
                   }
+                  style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '13px', fontWeight: 400, lineHeight: '16px' }}
                 >
                   {child.label}
                 </NavLink>
@@ -265,14 +268,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
         onClick={onClose}
         end={item.end}
         className={({ isActive }) =>
-          `flex items-center px-5 py-2.5 mx-6 rounded-lg transition font-medium ${
+          `flex items-center px-4 py-2 mx-6 rounded-md transition ${
             isActive
-              ? 'bg-[#0f766e] text-white shadow-md shadow-teal-900/20'
+              ? 'bg-[#0B818D] text-white'
               : 'hover:bg-[#0B818D]/10 hover:text-[#065f69] text-[#0B818D]'
           }`
         }
+        style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '13px', fontWeight: 400, lineHeight: '16px' }}
       >
-        <item.icon size={18} className="mr-3" />
+        <item.icon size={20} className="mr-3" />
         {item.label}
       </NavLink>
     );
@@ -302,12 +306,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
       >
         {/* 🔹 Header */}
         <div className="flex items-center justify-between p-5 pt-8 pl-8">
-          <div className="flex items-center gap-3">
-            <img
-              src={new URL('../../assets/Logo.PNG', import.meta.url).href}
-              className="h-12"
-              alt="Logo"
-            />
+          <div className="flex items-center justify-between gap-2 w-full pr-4">
+            <div className="relative w-[150px] h-[50px] overflow-hidden flex-shrink-0">
+              <img
+                src={new URL('../../assets/Logo.PNG', import.meta.url).href}
+                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+                style={{ height: '160px', maxWidth: 'none' }}
+                alt="Logo"
+              />
+            </div>
             <div
               className="flex items-center justify-center cursor-pointer hover:bg-[#0B818D]/10 transition"
               style={{
@@ -331,12 +338,36 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* 🔹 Content */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden">
           <div className="mt-4">
-            <p className="px-8 pb-4 text-sm font-semibold text-[#0B818D]">Main menu</p>
-            {getNavItems(user?.role || '').map(renderNavItem)}
+            <h3
+              className="pl-6 mb-3 text-[#0B818D]"
+              style={{
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                fontWeight: 400,
+                fontSize: '13px',
+                lineHeight: '16px',
+              }}
+            >
+              Main menu
+            </h3>
+
+            <div className="flex-1 overflow-y-auto space-y-1 custom-scrollbar">
+              {getNavItems(user?.role || '').map(renderNavItem)}
+            </div>
           </div>
 
-          <div className="mt-6 pt-4">
-            <p className="px-8 pb-4 text-sm font-semibold text-[#0B818D]">Help & Settings</p>
+          {/* 🔹 Help & Settings Section */}
+          <div className="pb-6">
+            <h3
+              className="pl-6 mb-3 text-[#0B818D]"
+              style={{
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                fontWeight: 400,
+                fontSize: '13px',
+                lineHeight: '16px',
+              }}
+            >
+              Help & Settings
+            </h3>
             {getHelpSettingsItems(user?.role || '').map(renderNavItem)}
           </div>
         </div>

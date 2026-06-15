@@ -86,24 +86,25 @@ const StatCard = ({ icon: Icon, label, value, accentColor = 'teal' }: StatCardPr
       <div className="flex flex-col h-full">
         <p
           style={{
-            color: '#6b7280',
+            color: '#5C626E',
             marginBottom: 'clamp(10px, 2vw, 16px)',
-            fontFamily: 'sans-serif',
-            fontSize: 'clamp(11px, 1.8vw, 14px)',
-            fontWeight: 500,
+            fontFamily: 'Inter, sans-serif',
+            fontSize: '16px',
+            fontWeight: 400,
+            lineHeight: '19px',
             wordBreak: 'break-word',
-            lineHeight: '1.3',
           }}
         >
           {label}
         </p>
         <div className="flex items-end justify-between mt-auto">
           <p
-            className="font-black leading-none"
             style={{
               color: cfg.value,
-              letterSpacing: '-0.5px',
-              fontSize: 'clamp(24px, 4.5vw, 36px)',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '30px',
+              fontWeight: 700,
+              lineHeight: '36px',
             }}
           >
             {value}
@@ -285,18 +286,17 @@ export const Dashboard = () => {
       <button
         key={id}
         onClick={() => handleProductFilter(id)}
-        className="px-3 py-1.5 rounded-2xl font-semibold transition-all duration-200"
+        className="px-4 py-2 rounded-xl transition-all duration-200"
         style={{
-          fontFamily: ff,
-          fontSize: 'clamp(10px, 1.8vw, 13px)',
+          fontFamily: 'Inter, sans-serif',
+          fontWeight: 500,
+          fontSize: '16px',
+          lineHeight: '19px',
           background: active
-            ? 'linear-gradient(135deg, #0d9488, #0891b2)'
-            : 'rgba(255,255,255,0.75)',
-          color: active ? '#fff' : '#374151',
-          border: active ? 'none' : '1px solid rgba(0,0,0,0.08)',
-          boxShadow: active
-            ? '0 4px 14px rgba(13,148,136,0.3)'
-            : '0 1px 4px rgba(0,0,0,0.06)',
+            ? '#0B818D'
+            : 'rgba(122, 188, 195, 0.5)',
+          color: active ? '#FFFFFF' : '#0B818D',
+          border: 'none',
           whiteSpace: 'nowrap',
         }}
       >
@@ -319,13 +319,12 @@ export const Dashboard = () => {
       {/* ─── Page Header ─────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5 sm:mb-7">
         <h1
-          className="font-black"
           style={{
             color: '#0E626E',
-            letterSpacing: '-0.5px',
-            fontFamily: 'Inter',
-            fontWeight: 'bold',
-            fontSize: 'clamp(22px, 5vw, 36px)',
+            fontFamily: "'Plus Jakarta Sans', sans-serif",
+            fontWeight: 700,
+            fontSize: '28px',
+            lineHeight: '35px',
           }}
         >
           Welcome Back !
