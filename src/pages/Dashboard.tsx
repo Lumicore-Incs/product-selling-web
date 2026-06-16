@@ -1,4 +1,4 @@
-import { Briefcase, ShoppingBag, Truck, XCircle } from 'lucide-react';
+import { Briefcase, ShoppingBag, Truck, XCircle, Loader } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertSnackbar } from '../components/AlertSnackbar';
 import { BackgroundIcons } from '../components/BackgroundIcons';
@@ -150,6 +150,7 @@ export const Dashboard = () => {
     todayOrders: '0',
     confirmedOrders: '0',
     cancelledOrders: '0',
+    processingOrders: '0',
   });
   const [loading, setLoading] = useState(true);
   const [snackbar, setSnackbar] = useState<{
@@ -206,6 +207,7 @@ export const Dashboard = () => {
         todayOrders: String(statsData.today_order || 0),
         confirmedOrders: String(statsData.conform_order || 0),
         cancelledOrders: String(statsData.cancel_order || 0),
+        processingOrders: String(statsData.processing_order || 0),
       });
     } catch (err) {
       console.error('Failed to fetch dashboard stats:', err);
@@ -360,7 +362,7 @@ export const Dashboard = () => {
             .stats-grid { grid-template-columns: repeat(3, 1fr); }
           }
           @media (min-width: 1024px) {
-            .stats-grid { grid-template-columns: repeat(4, 1fr); }
+            .stats-grid { grid-template-columns: repeat(5, 1fr); }
           }
         `}</style>
         <div className="stats-grid">
@@ -375,6 +377,12 @@ export const Dashboard = () => {
             label="Today Packs"
             value={loading ? '...' : stats.todayOrders}
             accentColor="yellow"
+          />
+          <StatCard
+            icon={Loader}
+            label="Processing Packs"
+            value={loading ? '...' : stats.processingOrders}
+            accentColor="blue"
           />
           <StatCard
             icon={Truck}
