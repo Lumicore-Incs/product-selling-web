@@ -94,7 +94,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick, onSettingsClick, he
           <button 
             onClick={handleRefreshStatus}
             disabled={refreshLoading}
-            className={`p-2 bg-white bg-opacity-30 hover:bg-opacity-50 rounded-lg transition-all ${
+            className={`w-10 h-10 flex items-center justify-center bg-white border border-gray-100 shadow-sm hover:bg-gray-50 rounded-full transition-all ${
               refreshLoading ? 'animate-spin' : ''
             }`}
           >
@@ -105,11 +105,11 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick, onSettingsClick, he
           <div className="relative group">
             <button
               onClick={() => setShowNotifications(!showNotifications)}
-              className="p-2 bg-gray-100 bg-opacity-30 hover:bg-opacity-50 rounded-xl transition-all relative"
+              className="w-10 h-10 flex items-center justify-center bg-white border border-gray-100 shadow-sm hover:bg-gray-50 rounded-full transition-all relative"
             >
-              <BellIcon size={18} className={`text-green-600 ${notifications.length > 0 ? 'animate-bounce' : ''}`} />
+              <BellIcon size={18} className={`text-teal-700 ${notifications.length > 0 ? 'animate-bounce' : ''}`} />
               {notifications.length > 0 && (
-                <span className="absolute top-0 right-0 w-5 h-5 bg-red-500 text-white text-xs rounded-xl flex items-center justify-center">
+                <span className="absolute top-0 right-0 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white">
                   {notifications.length}
                 </span>
               )}
@@ -153,16 +153,8 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick, onSettingsClick, he
             </div>
           </div>
 
-          {/* SETTINGS - OPEN SETTINGS PANEL */}
-          <button 
-            onClick={onSettingsClick}
-            className="p-2 bg-white bg-opacity-30 hover:bg-opacity-50 rounded-xl transition-all"
-          >
-            <Settings size={18} className="text-green-600" />
-          </button>
-
           {/* PROFILE */}
-          <div className="flex items-center gap-2 border-l pl-3">
+          <div className="flex items-center gap-3 ml-2">
             <button
               onClick={() => navigate('/profile')}
               className="w-9 h-9 rounded-full bg-gradient-to-br from-pink-300 to-cyan-300 flex items-center justify-center"
