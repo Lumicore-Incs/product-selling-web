@@ -227,6 +227,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         : 'text-[#0B818D] hover:bg-[#0B818D]/15'
                     }`
                   }
+                  style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '13px', fontWeight: 400, lineHeight: '16px' }}
                 >
                   {child.label}
                 </NavLink>
