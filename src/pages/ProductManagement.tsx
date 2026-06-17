@@ -218,7 +218,7 @@ export const ProductManagement = () => {
   };
 
   return (
-    <div className="min-h-screen relative" style={{ fontFamily: 'Inter, sans-serif' }}>
+    <div className="min-h-screen relative" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <BackgroundIcons type="product" />
       <ToastContainer
         position="top-right"
@@ -245,7 +245,7 @@ export const ProductManagement = () => {
         {/* Loading Banner */}
         {loading && (
           <div className="mb-4 p-3 text-sm rounded-xl text-center"
-            style={{ background: 'rgba(11,129,141,0.1)', color: '#0B818D', fontFamily: 'Inter, sans-serif' }}
+            style={{ background: 'rgba(11,129,141,0.1)', color: '#0B818D', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
             Loading products...
           </div>

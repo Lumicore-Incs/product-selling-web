@@ -327,9 +327,12 @@ export const Dashboard = () => {
           style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
         >
           {prodBtn('all', 'All Products')}
-          {prodBtn('sugar', 'SUGAR END')}
-          {prodBtn('vac', 'VAC')}
-          {prodBtn('medani', 'MEDANI')}
+          {products.map((p: any) =>
+            prodBtn(
+              String(p.productId ?? p.id ?? p.name),
+              p.shortName || p.name || `Product ${p.productId}`
+            )
+          )}
         </div>
       </div>
 

@@ -46,7 +46,7 @@ export function Header({
             </button>
           )}
 
-          {/* + Add button — matches Figma: #0B818D bg, Inter 16px, white text */}
+          {/* + Add button — matches Figma: #0B818D bg, Plus Jakarta Sans 14px, white text */}
           <button
             onClick={onAddClick}
             className="flex items-center justify-center gap-2 transition hover:opacity-90"
@@ -55,9 +55,9 @@ export function Header({
               borderRadius: '10px',
               padding: '6px 16px',
               height: '42px',
-              fontFamily: 'Inter, sans-serif',
+              fontFamily: "'Plus Jakarta Sans', sans-serif",
               fontWeight: 500,
-              fontSize: '16px',
+              fontSize: '14px',
               lineHeight: '19px',
               color: '#FFFFFF',
               whiteSpace: 'nowrap',

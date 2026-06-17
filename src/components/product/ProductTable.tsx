@@ -14,22 +14,21 @@ interface ProductTableProps {
 }
 
 const cellStyle: React.CSSProperties = {
-  fontFamily: 'Inter, sans-serif',
+  fontFamily: "'Plus Jakarta Sans', sans-serif",
   fontWeight: 500,
-  fontSize: '16px',
-  lineHeight: '19px',
-  color: '#414141',
-  padding: '20px 16px',
-  borderBottom: '1px solid #FFFFFF',
+  fontSize: '14px',
+  lineHeight: '18px',
+  color: '#374151',
+  padding: '20px 24px',
 };
 
 const headerCellStyle: React.CSSProperties = {
-  fontFamily: 'Inter, sans-serif',
+  fontFamily: "'Plus Jakarta Sans', sans-serif",
   fontWeight: 500,
-  fontSize: '16px',
-  lineHeight: '19px',
-  color: '#414141',
-  padding: '22px 16px',
+  fontSize: '14px',
+  lineHeight: '18px',
+  color: '#757B87',
+  padding: '20px 24px',
   textAlign: 'left' as const,
   background: 'transparent',
 };
@@ -51,7 +50,7 @@ export function ProductTable({
         className="flex flex-col items-center justify-center py-16 rounded-[18px]"
         style={{ background: 'rgba(255, 255, 255, 0.49)' }}
       >
-        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '16px', color: '#5C626E' }}>
+        <p style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '14px', color: '#5C626E' }}>
           No products found.
         </p>
       </div>
@@ -115,7 +114,7 @@ export function ProductTable({
                             product.status === 'inactive'
                               ? 'rgba(255, 100, 100, 0.25)'
                               : 'rgba(137, 250, 154, 0.46)',
-                          fontFamily: 'Inter, sans-serif',
+                          fontFamily: "'Plus Jakarta Sans', sans-serif",
                           fontWeight: 500,
                           fontSize: '12px',
                           lineHeight: '15px',
@@ -159,7 +158,7 @@ export function ProductTable({
           <div className="flex items-center justify-between px-6 py-4">
             <p
               style={{
-                fontFamily: 'Inter, sans-serif',
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
                 fontWeight: 400,
                 fontSize: '12px',
                 lineHeight: '15px',
@@ -181,7 +180,7 @@ export function ProductTable({
               </button>
               <span
                 style={{
-                  fontFamily: 'Inter, sans-serif',
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
                   fontWeight: 300,
                   fontSize: '15px',
                   lineHeight: '18px',
@@ -217,14 +216,14 @@ export function ProductTable({
           >
             <div className="flex items-start justify-between mb-2">
               <div>
-                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#5C626E' }}>
+                <p style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '12px', color: '#5C626E' }}>
                   #{product.productId}
                 </p>
                 <h3
                   style={{
-                    fontFamily: 'Inter, sans-serif',
+                    fontFamily: "'Plus Jakarta Sans', sans-serif",
                     fontWeight: 600,
-                    fontSize: '16px',
+                    fontSize: '14px',
                     color: '#414141',
                   }}
                 >
@@ -239,7 +238,7 @@ export function ProductTable({
                     product.status === 'inactive'
                       ? 'rgba(255, 100, 100, 0.25)'
                       : 'rgba(137, 250, 154, 0.46)',
-                  fontFamily: 'Inter, sans-serif',
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
                   fontWeight: 500,
                   fontSize: '12px',
                   color: product.status === 'inactive' ? '#9B0000' : '#016D18',
@@ -256,13 +255,13 @@ export function ProductTable({
               ].map(([label, val]) => (
                 <div key={label} className="flex justify-between">
                   <span
-                    style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#5C626E' }}
+                    style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '13px', color: '#5C626E' }}
                   >
                     {label}:
                   </span>
                   <span
                     style={{
-                      fontFamily: 'Inter, sans-serif',
+                      fontFamily: "'Plus Jakarta Sans', sans-serif",
                       fontSize: '13px',
                       fontWeight: 500,
                       color: '#414141',
@@ -277,14 +276,14 @@ export function ProductTable({
               <button
                 onClick={() => onEdit(product)}
                 className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg hover:bg-blue-50 transition"
-                style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#2348CD' }}
+                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '14px', color: '#2348CD' }}
               >
                 <Edit2Icon className="w-4 h-4" /> Edit
               </button>
               <button
                 onClick={() => onDelete(product.productId)}
                 className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg hover:bg-red-50 transition"
-                style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#E0090C' }}
+                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '14px', color: '#E0090C' }}
               >
                 <TrashIcon className="w-4 h-4" /> Delete
               </button>
