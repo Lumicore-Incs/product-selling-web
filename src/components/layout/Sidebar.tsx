@@ -293,11 +293,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
         style={{ height: '100vh', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
       >
         {/* 🔹 Header */}
-        <div className="flex items-center justify-between p-5">
-          <img
-            src={new URL('../../assets/Logo.PNG', import.meta.url).href}
-            className="h-10 pl-8"
-          />
+        <div className="flex items-center justify-between p-5 pt-8">
+          <div className="pl-6 w-[180px]">
+            <img
+              src={new URL('../../assets/Logo.PNG', import.meta.url).href}
+              className="w-full h-auto max-h-12 object-contain"
+              alt="Logo"
+            />
+          </div>
 
           <div className="flex gap-2">
             <button onClick={handleLogout}>

@@ -218,7 +218,7 @@ export const ProductManagement = () => {
   };
 
   return (
-    <div className="min-h-screen mx-6 relative">
+    <div className="min-h-screen relative" style={{ fontFamily: 'Inter, sans-serif' }}>
       <BackgroundIcons type="product" />
       <ToastContainer
         position="top-right"
@@ -232,82 +232,50 @@ export const ProductManagement = () => {
         pauseOnHover
       />
 
-      <Header
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        onAddClick={handleAddClick}
-        onRefresh={handleRefresh}
-        loading={loading}
-      />
+      <div className="px-4 sm:px-6 py-6">
+        {/* Page Header */}
+        <Header
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          onAddClick={handleAddClick}
+          onRefresh={handleRefresh}
+          loading={loading}
+        />
 
-      <main className="container mx-auto px-2 sm:px-4 py-6 sm:py-8">
-        {/* Loading State */}
+        {/* Loading Banner */}
         {loading && (
-          <div className="mb-4 p-3 sm:p-4 bg-blue-100 border border-blue-400 text-blue-700 text-sm sm:text-base rounded">
+          <div className="mb-4 p-3 text-sm rounded-xl text-center"
+            style={{ background: 'rgba(11,129,141,0.1)', color: '#0B818D', fontFamily: 'Inter, sans-serif' }}
+          >
             Loading products...
           </div>
         )}
 
-        {/* Authentication Check */}
-        {!isAuthenticated() && (
-          <div className="mb-4 p-3 sm:p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 text-sm sm:text-base rounded">
-            Please log in to manage products. Some features may not work without authentication.
-          </div>
-        )}
-
+        {/* Table */}
         <ProductTable
           products={paginatedProducts}
           onEdit={handleEditClick}
           onDelete={handleDeleteProduct}
           loading={loading}
+          totalCount={filteredProducts.length}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPrev={() => setCurrentPage((p) => Math.max(1, p - 1))}
+          onNext={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
         />
+      </div>
 
-        {/* Pagination Controls */}
-        <div className="mt-4 sm:mt-2 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-xs sm:text-sm text-gray-500 order-2 sm:order-1">
-            Showing {paginatedProducts.length} of {filteredProducts.length} entries
-          </p>
-          <div className="flex items-center gap-2 order-1 sm:order-2 flex-wrap justify-center">
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className={`px-2 sm:px-3 py-1 sm:py-2 rounded border text-xs sm:text-sm font-medium transition-colors ${
-                currentPage === 1
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
-                  : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'
-              }`}
-            >
-              Prev
-            </button>
-            <span className="text-xs sm:text-sm text-gray-700 px-2 sm:px-3 py-1 sm:py-2 bg-gray-50 border border-gray-200 rounded">
-              {currentPage}/{totalPages}
-            </span>
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className={`px-2 sm:px-3 py-1 sm:py-2 rounded border text-xs sm:text-sm font-medium transition-colors ${
-                currentPage === totalPages
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
-                  : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'
-              }`}
-            >
-              Next
-            </button>
-          </div>
-        </div>
-
-        <ProductModal
-          isOpen={isModalOpen}
-          onClose={() => {
-            setIsModalOpen(false);
-            setCurrentProduct(null);
-          }}
-          product={currentProduct}
-          onAdd={handleAddProduct}
-          onUpdate={handleUpdateProduct}
-          loading={loading}
-        />
-      </main>
+      <ProductModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setCurrentProduct(null);
+        }}
+        product={currentProduct}
+        onAdd={handleAddProduct}
+        onUpdate={handleUpdateProduct}
+        loading={loading}
+      />
     </div>
   );
 };

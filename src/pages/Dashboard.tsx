@@ -87,12 +87,13 @@ const StatCard = ({ icon: Icon, label, value, accentColor = 'teal' }: StatCardPr
         <div className="flex-1 min-w-0">
           <p
             style={{
-              color: '#050505',
-              marginBottom: 'clamp(6px, 1.2vw, 10px)',
-              fontFamily: 'sans-serif',
-              fontSize: 'clamp(9px, 1.8vw, 13px)',
+              color: '#5C626E',
+              marginBottom: '10px',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '16px',
+              fontWeight: 400,
               wordBreak: 'break-word',
-              lineHeight: '1.3',
+              lineHeight: '19px',
             }}
           >
             {label}
@@ -101,8 +102,10 @@ const StatCard = ({ icon: Icon, label, value, accentColor = 'teal' }: StatCardPr
             className="font-black leading-none"
             style={{
               color: cfg.value,
-              letterSpacing: '-0.5px',
-              fontSize: 'clamp(18px, 3.5vw, 30px)',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '30px',
+              fontWeight: 700,
+              lineHeight: '36px',
             }}
           >
             {value}
