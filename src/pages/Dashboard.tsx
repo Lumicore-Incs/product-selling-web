@@ -6,8 +6,7 @@ import { SalesTable } from '../components/SalesTable';
 import { Sale } from '../models/sales';
 import { getCurrentUser } from '../service/auth';
 import { getDashboardStats } from '../service/dashboard';
-import { getAllProducts } from '../service/product';
-import { useNotification } from '../context/NotificationContext';
+
 import {
   getAllCustomerOrdersPaginated,
   getOrdersPaginated,
@@ -141,7 +140,7 @@ const StatCard = ({ icon: Icon, label, value, accentColor = 'teal' }: StatCardPr
 // ─── Dashboard ───────────────────────────────────────────────────────────────
 
 export const Dashboard = () => {
-  const { addNotification } = useNotification();
+
 
   const [stats, setStats] = useState({
     total_order: '0',
@@ -166,7 +165,7 @@ export const Dashboard = () => {
   const [totalPages, setTotalPages] = useState(0);
 
   const [user, setUser] = useState<{ role: string } | null>(null);
-  const [products, setProducts] = useState<any[]>([]);
+
   const [selectedProduct, setSelectedProduct] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [salesSearch, setSalesSearch] = useState('');
@@ -192,6 +191,7 @@ export const Dashboard = () => {
     try {
       setLoading(true);
       setSalesLoading(true);
+      setSalesError('');
 
       const filters: OrderFilterParams = {
         search: debouncedSearch,
@@ -218,6 +218,7 @@ export const Dashboard = () => {
       setTotalPages((salesResult as PaginatedResult<Sale>).totalPages);
     } catch (err) {
       console.error('Failed to fetch dashboard data:', err);
+      setSalesError('Failed to load dashboard data');
       setSnackbar({ open: true, message: 'Failed to load dashboard data', type: 'error' });
     } finally {
       setLoading(false);
@@ -247,12 +248,8 @@ export const Dashboard = () => {
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
-        const [userData, productsData] = await Promise.all([
-          getCurrentUser(),
-          getAllProducts(),
-        ]);
+        const userData = await getCurrentUser();
         setUser(userData);
-        setProducts(productsData as any[]);
       } catch (err) {
         console.error(err);
       }

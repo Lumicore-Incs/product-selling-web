@@ -25,8 +25,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { BackgroundIcons } from '../components/BackgroundIcons';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { InputField } from '../components/InputField';
-import { productApi } from '../services/api';
-import { userService } from '../services/users/userService';
+import { userService, type User as ServiceUser } from '../services/users/userService';
 
 type User = ServiceUser & { productName?: string };
 
@@ -306,7 +305,7 @@ export const Users = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [products, setProducts] = useState<{ productId: number; name: string }[]>([]);
+
   const [isLoading, setIsLoading] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [passwordResetDialog, setPasswordResetDialog] = useState<{ open: boolean; userId: string; userName: string }>({
@@ -502,12 +501,11 @@ export const Users = () => {
     }
   };
 
-  // Fetch users and products from API on mount
+  // Fetch users from API on mount
   useEffect(() => {
-    Promise.all([userService.getAllUsers(), productApi.getAllProducts()])
-      .then(([usersData, productsData]) => {
+    userService.getAllUsers()
+      .then((usersData) => {
         setUsers(usersData);
-        setProducts(productsData.map((p) => ({ productId: p.productId || 0, name: p.name })));
       })
       .catch((err) => console.error('Failed to fetch data', err));
   }, []);
@@ -642,8 +640,7 @@ export const Users = () => {
           <div className="flex gap-2 mt-4">
             <button
               onClick={() => {
-                const firstProduct = products[0];
-                setNewUser((prev) => ({
+                setNewUser((prev: User) => ({
                   ...prev,
                   name: 'Sample User',
                   email: `sample${Date.now() % 1000}@example.com`,

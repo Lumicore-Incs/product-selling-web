@@ -111,6 +111,14 @@ export const UserOrders = () => {
 
   const selectedUser = usersWithOrders.find(u => u.id === selectedUserId);
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#afdbe0] flex items-center justify-center p-4">
+        <div className="text-gray-600 font-bold text-xl">Loading dashboard...</div>
+      </div>
+    );
+  }
+
   if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'SUPER USER')) {
     return (
       <div className="p-10 text-center text-red-500 text-xl font-bold">

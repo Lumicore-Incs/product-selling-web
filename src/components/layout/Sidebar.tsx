@@ -111,7 +111,6 @@ const getHelpSettingsItems = (userRole: string): NavItem[] => {
     normalized === 'SUPER_USER' ||
     normalized === 'SUPERUSER';
   const isAdmin = normalized === 'ADMIN';
-  const isUser = normalized === 'USER';
 
   const items: NavItem[] = [];
 

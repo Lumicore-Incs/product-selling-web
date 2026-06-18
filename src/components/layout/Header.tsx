@@ -62,7 +62,10 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick, onSettingsClick, he
   };
 
   return (
-      <header className="w-full bg-opacity-70 backdrop-filter backdrop-blur-lg border-b border-white sticky top-0 z-10">
+      <header
+        className="w-full bg-opacity-70 backdrop-filter backdrop-blur-lg border-b border-white sticky top-0 z-10"
+        style={{ backgroundColor: headerColor }}
+      >
 
       <div className="flex items-center justify-between gap-2 sm:gap-6 px-4 sm:px-8 py-5">
 
