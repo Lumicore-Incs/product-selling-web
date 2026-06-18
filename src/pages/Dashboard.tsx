@@ -83,21 +83,21 @@ const StatCard = ({ icon: Icon, label, value, accentColor = 'teal' }: StatCardPr
         fontFamily: "'Plus Jakarta Sans', sans-serif",
       }}
     >
-      <div className="flex flex-col h-full">
-        <p
-          style={{
-            color: '#5C626E',
-            marginBottom: 'clamp(10px, 2vw, 16px)',
-            fontFamily: 'Inter, sans-serif',
-            fontSize: '16px',
-            fontWeight: 400,
-            lineHeight: '19px',
-            wordBreak: 'break-word',
-          }}
-        >
-          {label}
-        </p>
-        <div className="flex items-end justify-between mt-auto">
+      <div className="flex items-start justify-between gap-1">
+        <div className="flex-1 min-w-0">
+          <p
+            style={{
+              color: '#5C626E',
+              marginBottom: '10px',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '16px',
+              fontWeight: 400,
+              wordBreak: 'break-word',
+              lineHeight: '19px',
+            }}
+          >
+            {label}
+          </p>
           <p
             style={{
               color: cfg.value,
@@ -338,7 +338,12 @@ export const Dashboard = () => {
           style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
         >
           {prodBtn('all', 'All Products')}
-          {products.map((p) => prodBtn(p.id, p.name))}
+          {products.map((p: any) =>
+            prodBtn(
+              String(p.productId ?? p.id ?? p.name),
+              p.shortName || p.name || `Product ${p.productId}`
+            )
+          )}
         </div>
       </div>
 

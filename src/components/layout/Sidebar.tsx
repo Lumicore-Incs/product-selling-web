@@ -1,28 +1,23 @@
 import {
-  BarChart3Icon,
   ChevronDownIcon,
-  FileBarChart2Icon,
-  HomeIcon,
-  LogOutIcon,
-  PackageIcon,
-  SettingsIcon,
-  ShoppingCartIcon,
-  StoreIcon,
   UsersIcon,
-  TruckIcon,
-  ClipboardListIcon,
   XIcon,
   Copy,
-  BadgeDollarSign,
+  LayoutGrid,
+  FileUp,
+  MapPin,
+  Package,
+  Layers,
+  Settings,
+  BarChart3,
   PanelLeftClose
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { getCurrentUser } from '../../service/auth';
-import { logout } from '../../services/authUtils';
 
 interface NavItem {
-  icon: any;
+  icon?: any;
   label: string;
   to?: string;
   isSettings?: boolean;
@@ -45,25 +40,23 @@ const getNavItems = (userRole: string): NavItem[] => {
   const items: NavItem[] = [];
 
   // DASHBOARD - All roles
-  items.push({ icon: HomeIcon, label: 'Dashboard', to: '/', end: true });
+  items.push({ icon: LayoutGrid, label: 'Dashboard', to: '/', end: true });
 
   // USER Specific items
   if (isUser) {
-    items.push({ icon: ClipboardListIcon, label: 'Add New Order', to: '/sale', end: true });
-    items.push({
-      icon: BadgeDollarSign,
-      label: 'Orders',
-      children: [
-        { icon: Copy, label: 'Duplicate Orders', to: '/sale/duplicate' },
-        { icon: ShoppingCartIcon, label: 'My Orders', to: '/my-orders' },
-      ],
-    });
+    items.push({ icon: FileUp, label: 'Add New Order', to: '/sale', end: true });
+    items.push({ icon: Copy, label: 'Duplicate Orders', to: '/sale/duplicate' });
   }
 
   // SUPER USER Specific items
   if (isSuperUser) {
-    items.push({ icon: ClipboardListIcon, label: 'Export Orders', to: '/export-orders' });
-    items.push({ icon: TruckIcon, label: 'Tracking ID', to: '/tracking-id' });
+    items.push({ icon: FileUp, label: 'Export orders', to: '/export-orders' });
+    items.push({ icon: MapPin, label: 'Tracking Id', to: '/tracking-id' });
+  }
+
+  // PRODUCT - Super User only
+  if (isSuperUser) {
+    items.push({ icon: Package, label: 'Product', to: '/product' });
   }
 
   // USERS category - Super User and Admin
@@ -72,32 +65,20 @@ const getNavItems = (userRole: string): NavItem[] => {
       icon: UsersIcon,
       label: 'Users',
       children: [
-        { icon: UsersIcon, label: 'User List', to: '/users' },
-        { icon: ShoppingCartIcon, label: 'User Orders', to: '/user-orders' },
+        { label: 'User List', to: '/users' },
+        { label: 'User orders', to: '/user-orders' },
       ],
     });
-  }
-
-  // PRODUCT - Super User only
-  if (isSuperUser) {
-    items.push({ icon: PackageIcon, label: 'Product', to: '/product' });
   }
 
   // STOCK - Super User and Admin
   if (isSuperUser || isAdmin) {
-    items.push({ icon: StoreIcon, label: 'Stock', to: '/stock' });
+    items.push({ icon: Layers, label: 'Stock', to: '/stock' });
   }
 
   // DUPLICATE ORDERS - Super User and Admin (User already added above)
   if (isSuperUser || isAdmin) {
-    items.push({
-      icon: BadgeDollarSign,
-      label: 'Orders',
-      children: [
-        { icon: Copy, label: 'Duplicate Orders', to: '/sale/duplicate' },
-        { icon: ShoppingCartIcon, label: 'My Orders', to: '/my-orders' },
-      ],
-    });
+    items.push({ icon: Copy, label: 'Duplicate orders', to: '/sale/duplicate' });
   }
 
   return items;
@@ -112,25 +93,24 @@ const getHelpSettingsItems = (userRole: string): NavItem[] => {
     normalized === 'SUPER_USER' ||
     normalized === 'SUPERUSER';
   const isAdmin = normalized === 'ADMIN';
-  const isUser = normalized === 'USER';
 
   const items: NavItem[] = [];
+
+  // SETTINGS - All roles
+  items.push({ icon: Settings, label: 'Settings', to: '/sale/settings', isSettings: true });
 
   // REPORTS - Super User and Admin
   if (isSuperUser || isAdmin) {
     items.push({
-      icon: FileBarChart2Icon,
+      icon: BarChart3,
       label: 'Reports',
       children: [
-        { icon: FileBarChart2Icon, label: 'Monthly Report', to: '/monthly-report' },
-        { icon: FileBarChart2Icon, label: 'Sales Summary', to: '/reports' },
-        { icon: BarChart3Icon, label: 'Daily Report', to: '/daily-report' },
+        { label: 'Monthly Report', to: '/monthly-report' },
+        { label: 'Sales Summary', to: '/reports' },
+        { label: 'Daily Report', to: '/daily-report' },
       ],
     });
   }
-
-  // SETTINGS - All roles
-  items.push({ icon: SettingsIcon, label: 'Settings', to: '/sale/settings', isSettings: true });
 
   return items;
 };
@@ -152,7 +132,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
 
   const location = useLocation();
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -189,11 +168,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     setExpandedItems(newSet);
   };
 
-  const handleLogout = async () => {
-    await logout();
-    navigate('/login');
-  };
-
   const handleSettingsClick = (e: React.MouseEvent) => {
     e.preventDefault();
     setShowSettings?.(!showSettings);
@@ -206,28 +180,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <button
           key={item.to}
           onClick={handleSettingsClick}
-          className="w-full flex items-center px-4 py-2 mx-6 rounded-md text-[#0B818D] hover:bg-[#0B818D]/10 hover:text-[#065f69] transition"
-          style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '13px', fontWeight: 400, lineHeight: '16px' }}
+          className="w-full flex items-center px-4 py-2.5 mx-4 my-0.5 rounded-xl text-[#0B818D] hover:bg-[#0B818D]/10 hover:text-[#0B818D] transition text-left"
         >
-          <item.icon size={20} className="mr-3" />
-          {item.label}
+          <item.icon size={18} className="mr-3" />
+          <span className="text-[14px] font-medium">{item.label}</span>
         </button>
       );
     }
 
     if (item.children) {
       const isExpanded = expandedItems.has(item.label);
+      const isChildActive = item.children.some(child => location.pathname === child.to);
 
       return (
-        <div key={item.label} className="mx-6 ">
+        <div key={item.label} className="w-full">
           <button
             onClick={() => toggleExpand(item.label)}
-            className="w-full flex items-center justify-between px-4 py-2 rounded-md text-[#0B818D] hover:bg-[#0B818D]/10 hover:text-[#065f69] transition"
-            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '13px', fontWeight: 400, lineHeight: '16px' }}
+            className={`w-full flex items-center justify-between px-4 py-2.5 mx-4 my-0.5 rounded-xl transition text-left ${
+              isChildActive && !isExpanded
+                ? 'bg-[#0B818D] text-white shadow-sm'
+                : 'text-[#0B818D] hover:bg-[#0B818D]/10'
+            }`}
+            style={{ width: 'calc(100% - 32px)' }}
           >
             <div className="flex items-center">
-              <item.icon size={20} className="mr-3" />
-              {item.label}
+              <item.icon size={18} className="mr-3" />
+              <span className="text-[14px] font-medium">{item.label}</span>
             </div>
             <ChevronDownIcon
               size={16}
@@ -236,18 +214,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </button>
 
           {isExpanded && (
-            <div className="ml-4 pl-2">
+            <div className="mt-1 space-y-1 mx-4" style={{ width: 'calc(100% - 32px)' }}>
               {item.children.map((child) => (
                 <NavLink
                   key={child.to}
                   to={child.to || '#'}
                   onClick={onClose}
-                  end={child.end}
                   className={({ isActive }) =>
-                    `block px-4 py-2 rounded-md transition ${
+                    `block px-4 py-2 pl-11 text-[14px] font-medium rounded-xl transition ${
                       isActive
-                        ? 'bg-[#0B818D] text-white'
-                        : 'hover:bg-[#0B818D]/10 hover:text-[#065f69] text-[#0B818D]'
+                        ? 'bg-[#0B818D] text-white shadow-sm'
+                        : 'text-[#0B818D] hover:bg-[#0B818D]/15'
                     }`
                   }
                   style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '13px', fontWeight: 400, lineHeight: '16px' }}
@@ -268,16 +245,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
         onClick={onClose}
         end={item.end}
         className={({ isActive }) =>
-          `flex items-center px-4 py-2 mx-6 rounded-md transition ${
+          `flex items-center px-4 py-2.5 mx-4 my-0.5 rounded-xl font-medium transition ${
             isActive
-              ? 'bg-[#0B818D] text-white'
-              : 'hover:bg-[#0B818D]/10 hover:text-[#065f69] text-[#0B818D]'
+              ? 'bg-[#0B818D] text-white shadow-sm'
+              : 'text-[#0B818D] hover:bg-[#0B818D]/10 hover:text-[#0B818D]'
           }`
         }
-        style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '13px', fontWeight: 400, lineHeight: '16px' }}
+        style={{ width: 'calc(100% - 32px)' }}
       >
-        <item.icon size={20} className="mr-3" />
-        {item.label}
+        <item.icon size={18} className="mr-3" />
+        <span className="text-[14px]">{item.label}</span>
       </NavLink>
     );
   };
@@ -292,83 +269,57 @@ export const Sidebar: React.FC<SidebarProps> = ({
       )}
 
       <aside
-        className={`fixed md:static z-30 w-64 transition overflow-x-hidden ${
+        className={`fixed md:static z-30 w-64 border-r transition overflow-x-hidden ${
           isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         } flex flex-col`}
         style={{
           height: '100vh',
           fontFamily: "'Plus Jakarta Sans', sans-serif",
-          background: 'rgba(200, 235, 238, 0.55)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          borderRight: '1px solid rgba(11,129,141,0.12)',
+          backgroundColor: '#E1F0F3',
+          borderColor: '#FFFFFF',
         }}
       >
         {/* 🔹 Header */}
-        <div className="flex items-center justify-between p-5 pt-8 pl-8">
-          <div className="flex items-center justify-between gap-2 w-full pr-4">
-            <div className="relative w-[150px] h-[50px] overflow-hidden flex-shrink-0">
-              <img
-                src={new URL('../../assets/Logo.PNG', import.meta.url).href}
-                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
-                style={{ height: '160px', maxWidth: 'none' }}
-                alt="Logo"
-              />
-            </div>
-            <div
-              className="flex items-center justify-center cursor-pointer hover:bg-[#0B818D]/10 transition"
-              style={{
-                width: 44,
-                height: 44,
-                border: '2.5px solid #5aabb5',
-                borderRadius: '14px',
-              }}
-            >
-              <PanelLeftClose size={22} className="text-[#5aabb5]" />
-            </div>
+        <div className="flex items-center justify-between p-5 pt-8 mb-6">
+          <div className="pl-4 w-[140px]">
+            <img
+              src={new URL('../../assets/Logo.PNG', import.meta.url).href}
+              className="w-full h-auto max-h-10 object-contain"
+              alt="Logo"
+            />
           </div>
 
-          <div className="flex gap-2">
-            <button onClick={onClose} className="md:hidden">
-              <XIcon size={18} className="text-gray-500" />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onClose}
+              className="p-1.5 bg-[#D2EBEF] hover:bg-[#c0e0e5] rounded-lg text-[#0B818D] transition md:hidden"
+              title="Close Menu"
+            >
+              <XIcon size={18} />
+            </button>
+            <button
+              className="p-1.5 bg-[#D2EBEF] hover:bg-[#c0e0e5] rounded-lg text-[#0B818D] transition hidden md:block"
+              title="Collapse sidebar"
+            >
+              <PanelLeftClose size={18} />
             </button>
           </div>
         </div>
 
         {/* 🔹 Content */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden">
-          <div className="mt-4">
-            <h3
-              className="pl-6 mb-3 text-[#0B818D]"
-              style={{
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
-                fontWeight: 400,
-                fontSize: '13px',
-                lineHeight: '16px',
-              }}
-            >
-              Main menu
-            </h3>
-
-            <div className="flex-1 overflow-y-auto space-y-1 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden space-y-6 pb-6 scrollbar-hide">
+          <div>
+            <p className="px-8 pb-2 text-[12px] font-semibold uppercase tracking-wider text-[#0B818D]/60 font-['Inter']">Main menu</p>
+            <div className="space-y-0.5">
               {getNavItems(user?.role || '').map(renderNavItem)}
             </div>
           </div>
 
-          {/* 🔹 Help & Settings Section */}
-          <div className="pb-6">
-            <h3
-              className="pl-6 mb-3 text-[#0B818D]"
-              style={{
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
-                fontWeight: 400,
-                fontSize: '13px',
-                lineHeight: '16px',
-              }}
-            >
-              Help & Settings
-            </h3>
-            {getHelpSettingsItems(user?.role || '').map(renderNavItem)}
+          <div>
+            <p className="px-8 pb-2 text-[12px] font-semibold uppercase tracking-wider text-[#0B818D]/60 font-['Inter']">Help & Settings</p>
+            <div className="space-y-0.5">
+              {getHelpSettingsItems(user?.role || '').map(renderNavItem)}
+            </div>
           </div>
         </div>
       </aside>
