@@ -88,6 +88,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
         'Collected from Warehouse',
         'Dispatched To Destination',
         'Received At Destination',
+        'Received by Client',
         'Out For Delivery',
         'Failed To Deliver',
         'Returned to HO',
@@ -203,7 +204,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
         return 'bg-red-500 text-white border-red-400';
       case 'Returned to Branch':
         return 'bg-red-300 text-white border-red-400';
-      case 'Returned to Client':
+      case 'Received by Client':
         return 'bg-red-500 text-white border-red-400';
       case 'Delivered':
         return 'bg-green-600 text-white border-green-600';

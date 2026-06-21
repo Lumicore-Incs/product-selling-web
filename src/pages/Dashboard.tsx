@@ -233,6 +233,7 @@ export const Dashboard = () => {
     { value: 'Dispatched to Destination', label: 'DISPATCHED TO DESTINATION' },
     { value: 'Received at Destination', label: 'RECEIVED AT DESTINATION' },
     { value: 'Out for Delivery', label: 'OUT FOR DELIVERY' },
+    { value: 'Received by Client', label: 'RECEIVED BY CLIENT' },
     { value: 'Returned to Branch Rescheduled', label: 'RETURNED TO BRANCH RESCHEDULED' },
     { value: 'Returned to Branch Failed', label: 'RETURNED TO BRANCH FAILED' },
     { value: 'Returned to Branch', label: 'RETURNED TO BRANCH' },
