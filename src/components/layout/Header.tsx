@@ -3,14 +3,12 @@ import {
   SearchIcon,
   BellIcon,
   MenuIcon,
-  User2Icon,
   CheckCircleIcon,
   AlertCircleIcon,
   InfoIcon,
   AlertTriangleIcon,
   XIcon,
-  RefreshCcwDot,
-  Settings 
+  RefreshCcwDot
 } from 'lucide-react';
 import { getCurrentUser } from '../../service/auth';
 import { useNavigate } from 'react-router-dom';
@@ -20,10 +18,9 @@ import { orderService } from '../../services/orders/orderService';
 interface HeaderProps {
   onMenuClick: () => void;
   onSettingsClick?: () => void;
-  headerColor?: string;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onMenuClick, onSettingsClick, headerColor = '#2a98a4' }) => {
+export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any | null>(null);
   const [userLoading, setUserLoading] = useState(true);
@@ -62,7 +59,10 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick, onSettingsClick, he
   };
 
   return (
-      <header className="w-full bg-opacity-70 backdrop-filter backdrop-blur-lg border-b border-white sticky top-0 z-10">
+      <header
+        className="w-full bg-opacity-70 backdrop-filter backdrop-blur-lg border-b border-white sticky top-0 z-10"
+        style={{ backgroundColor: headerColor }}
+      >
 
       <div className="flex items-center justify-between gap-2 sm:gap-6 px-4 sm:px-8 py-5">
 
@@ -77,11 +77,11 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick, onSettingsClick, he
 
           <div className="hidden sm:block flex-1 max-w-xs lg:max-w-sm">
             <div className="relative">
-              <SearchIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#045f69]" />
+              <SearchIcon size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#0B818D]" />
               <input
                 type="text"
                 placeholder="Search here..."
-                className="w-full pl-10 pr-4 py-2 bg-white bg-opacity-80 border text-[#045f69] border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-cyan-300 text-sm"
+                className="w-full pl-11 pr-4 py-2.5 bg-white shadow-sm border border-transparent text-[#0B818D] rounded-full focus:outline-none focus:ring-2 focus:ring-cyan-200/50 text-sm placeholder:text-gray-400"
               />
             </div>
           </div>
@@ -94,24 +94,22 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick, onSettingsClick, he
           <button 
             onClick={handleRefreshStatus}
             disabled={refreshLoading}
-            className={`p-2 bg-white bg-opacity-30 hover:bg-opacity-50 rounded-lg transition-all ${
+            className={`w-[38px] h-[38px] flex items-center justify-center bg-white hover:bg-gray-50 border border-white/50 rounded-full shadow-sm transition-all flex-shrink-0 ${
               refreshLoading ? 'animate-spin' : ''
             }`}
           >
-            <RefreshCcwDot size={18} className="text-gray-600" />
+            <RefreshCcwDot size={18} className="text-[#0B818D]" />
           </button>
 
           {/* NOTIFICATIONS */}
           <div className="relative group">
             <button
               onClick={() => setShowNotifications(!showNotifications)}
-              className="p-2 bg-gray-100 bg-opacity-30 hover:bg-opacity-50 rounded-xl transition-all relative"
+              className="w-[38px] h-[38px] flex items-center justify-center bg-white hover:bg-gray-50 border border-white/50 rounded-full shadow-sm transition-all relative flex-shrink-0"
             >
-              <BellIcon size={18} className={`text-green-600 ${notifications.length > 0 ? 'animate-bounce' : ''}`} />
+              <BellIcon size={18} className={`text-[#0B818D] ${notifications.length > 0 ? 'animate-bounce' : ''}`} />
               {notifications.length > 0 && (
-                <span className="absolute top-0 right-0 w-5 h-5 bg-red-500 text-white text-xs rounded-xl flex items-center justify-center">
-                  {notifications.length}
-                </span>
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
               )}
             </button>
 
@@ -153,25 +151,21 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick, onSettingsClick, he
             </div>
           </div>
 
-          {/* SETTINGS - OPEN SETTINGS PANEL */}
-          <button 
-            onClick={onSettingsClick}
-            className="p-2 bg-white bg-opacity-30 hover:bg-opacity-50 rounded-xl transition-all"
-          >
-            <Settings size={18} className="text-green-600" />
-          </button>
-
           {/* PROFILE */}
-          <div className="flex items-center gap-2 border-l pl-3">
+          <div className="flex items-center gap-3 border-l border-gray-200/50 pl-4">
             <button
               onClick={() => navigate('/profile')}
-              className="w-9 h-9 rounded-full bg-gradient-to-br from-pink-300 to-cyan-300 flex items-center justify-center"
+              className="w-9 h-9 rounded-full overflow-hidden border border-white shadow-sm flex items-center justify-center flex-shrink-0"
             >
-              <User2Icon size={18} className="text-white" />
+              <img 
+                src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&h=100&q=80" 
+                alt="Profile"
+                className="w-full h-full object-cover"
+              />
             </button>
 
             <div onClick={() => navigate('/profile')} className="hidden sm:block cursor-pointer">
-              <p className="text-sm font-bold">
+              <p className="text-sm font-semibold text-gray-700 hover:text-[#0B818D] transition-colors">
                 {userLoading ? 'Loading...' : user?.name || 'Piyumal'}
               </p>
             </div>
