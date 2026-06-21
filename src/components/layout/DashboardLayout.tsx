@@ -5,7 +5,7 @@ import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 
 export const DashboardLayout = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 768);
   const [showSettings, setShowSettings] = useState(false);
   const [salesTitle, setSalesTitle] = useState('Sales Management');
   const [salesBackgroundColor, setSalesBackgroundColor] = useState('#ffffff');
@@ -106,6 +106,7 @@ export const DashboardLayout = () => {
             <Settings
               onTitleChange={handleTitleChange}
               onBackgroundColorChange={handleBackgroundColorChange}
+              onHeaderColorChange={handleHeaderColorChange}
             />
           </div>
         </div>
@@ -134,6 +135,7 @@ export const DashboardLayout = () => {
               <Settings
                 onTitleChange={handleTitleChange}
                 onBackgroundColorChange={handleBackgroundColorChange}
+                onHeaderColorChange={handleHeaderColorChange}
               />
             </div>
           </div>

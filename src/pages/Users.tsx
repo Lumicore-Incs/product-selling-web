@@ -452,6 +452,27 @@ export const Users = () => {
     }
   };
 
+  // Get status color and icon
+  const getStatusDisplay = (status: string) => {
+    switch (status) {
+      case 'active':
+        return { color: 'bg-green-100 text-green-800', icon: <CheckCircle className="w-4 h-4" /> };
+      case 'inactive':
+        return { color: 'bg-red-100 text-red-800', icon: <XCircle className="w-4 h-4" /> };
+      case 'pending':
+        return { color: 'bg-yellow-100 text-yellow-800', icon: <Clock className="w-4 h-4" /> };
+      default:
+        return { color: 'bg-gray-100 text-gray-800', icon: <Clock className="w-4 h-4" /> };
+    }
+  };
+
+  // Fetch users from API on mount
+  useEffect(() => {
+    userService.getAllUsers()
+      .then((usersData) => {
+        setUsers(usersData);
+      })
+      .catch((err) => console.error('Failed to fetch data', err));
   // Fetch users and products on mount
   useEffect(() => {
     userService.getAllUsers()
@@ -536,6 +557,44 @@ export const Users = () => {
               className="w-full pl-11 pr-4 py-2.5 border border-gray-100 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#0B818D] text-sm bg-white"
               style={{ color: '#5C626E' }}
             />
+          </div>
+          <div className="flex gap-2 mt-4">
+            <button
+              onClick={() => {
+                setNewUser((prev: User) => ({
+                  ...prev,
+                  name: 'Sample User',
+                  email: `sample${Date.now() % 1000}@example.com`,
+                  contact: '0123456789',
+                  password: 'TempPass123!',
+                  role: 'User',
+                  type: '',
+                  status: 'pending',
+                  serialPrefix: 'SAMPLE',
+                }));
+              }}
+              disabled={isLoading}
+              className="bg-yellow-400 text-white px-4 py-2 rounded-lg hover:bg-yellow-500 transition-colors"
+            >
+              Fill Sample
+            </button>
+            <button
+              onClick={handleAddUser}
+              disabled={isLoading}
+              aria-busy={isLoading}
+              className={`px-4 py-2 rounded-lg transition-colors ${isLoading
+                  ? 'bg-green-300 text-white cursor-wait'
+                  : 'bg-green-500 text-white hover:bg-green-600'
+                }`}
+            >
+              {isLoading ? 'Adding…' : 'Add User'}
+            </button>
+            <button
+              onClick={() => setShowAddForm(false)}
+              className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
+            >
+              Cancel
+            </button>
           </div>
         </div>
 

@@ -117,6 +117,13 @@ export const UserOrders = () => {
 
   const selectedUser = usersWithOrders.find(u => u.id === selectedUserId);
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#afdbe0] flex items-center justify-center p-4">
+        <div className="text-gray-600 font-bold text-xl">Loading dashboard...</div>
+      </div>
+    );
+  }
   // Filter user directory based on search input
   const filteredDirectoryUsers = usersWithOrders
     .filter(user => user.role !== 'ADMIN')

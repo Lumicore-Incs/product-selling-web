@@ -6,8 +6,7 @@ import { SalesTable } from '../components/SalesTable';
 import { Sale } from '../models/sales';
 import { getCurrentUser } from '../service/auth';
 import { getDashboardStats } from '../service/dashboard';
-import { getAllProducts } from '../service/product';
-import { useNotification } from '../context/NotificationContext';
+
 import {
   getAllCustomerOrdersPaginated,
   getOrdersPaginated,
@@ -143,7 +142,7 @@ const StatCard = ({ icon: Icon, label, value, accentColor = 'teal' }: StatCardPr
 // ─── Dashboard ───────────────────────────────────────────────────────────────
 
 export const Dashboard = () => {
-  const { addNotification } = useNotification();
+
 
   const [stats, setStats] = useState({
     total_order: '0',
@@ -201,7 +200,22 @@ export const Dashboard = () => {
     // Fetch stats
     try {
       setLoading(true);
-      const statsData = await getDashboardStats();
+      setSalesLoading(true);
+      setSalesError('');
+
+      const filters: OrderFilterParams = {
+        search: debouncedSearch,
+        status: statusFilter === 'all' ? undefined : statusFilter,
+        productId: selectedProduct === 'all' ? undefined : selectedProduct,
+      };
+
+      const [statsData, salesResult] = await Promise.all([
+        getDashboardStats(),
+        showTodayOnly
+          ? getOrdersPaginated(currentPage, pageSize, filters)
+          : getAllCustomerOrdersPaginated(currentPage, pageSize, filters),
+      ]);
+
       setStats({
         total_order: String(statsData.total_order || 0),
         todayOrders: String(statsData.today_order || 0),
@@ -256,10 +270,7 @@ export const Dashboard = () => {
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
-        const [userData, productsData] = await Promise.all([
-          getCurrentUser(),
-          getAllProducts(),
-        ]);
+        const userData = await getCurrentUser();
         setUser(userData);
         // Map products to { id, name } — backend may return array of objects or strings
         const mapped = Array.isArray(productsData)
