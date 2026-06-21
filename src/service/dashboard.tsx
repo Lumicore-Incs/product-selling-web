@@ -5,6 +5,7 @@ interface DashboardStats {
   today_order: number;
   conform_order: number;
   cancel_order: number;
+  processing_order?: number;
   totalOrdersTrend: string;
   todayOrdersTrend: string;
   confirmedOrdersTrend: string;

@@ -5,7 +5,8 @@
 /* Global Font Weight Styles */
 @layer base {
   body {
-    font-weight: 400;
+    @apply font-normal;
+    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
   }
 
   h1, h2, h3, h4, h5, h6 {
