@@ -90,7 +90,6 @@ const PasswordStrengthIndicator = ({ password }: { password: string }) => {
 const PasswordChangeDialog = ({
   open,
   onClose,
-  userId,
   userName,
   onSuccess,
 }: {
@@ -402,10 +401,10 @@ export const UserProfile = () => {
         if (resp) {
           const updated = {
             ...formData,
-            name: resp.name || formData.name,
-            email: resp.email || formData.email,
-            telephone: resp.telephone || formData.telephone,
-            role: resp.role || formData.role,
+            name: (resp as any).name || formData.name,
+            email: (resp as any).email || formData.email,
+            telephone: (resp as any).telephone || formData.telephone,
+            role: (resp as any).role || formData.role,
             address: (resp as any).address || formData.address,
             nic: (resp as any).nic || formData.nic,
             userName: (resp as any).userName || formData.userName,

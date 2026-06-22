@@ -26,7 +26,7 @@ export const UserOrders = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [usersWithOrders, setUsersWithOrders] = useState<UserWithOrders[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [paymentDetails, setPaymentDetails] = useState<PaymentDetail[]>([]);
   const [paymentDetailsLoading, setPaymentDetailsLoading] = useState(false);
