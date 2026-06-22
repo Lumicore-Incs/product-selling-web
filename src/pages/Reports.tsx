@@ -34,7 +34,7 @@ export const Reports = () => {
       bg: 'from-green-50 to-green-100',
       border: 'border-green-200',
       textColor: 'text-green-600',
-      route: '/user-orders',
+      route: '/my-orders',
     },
     {
       icon: TrendingUp,

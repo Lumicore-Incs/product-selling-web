@@ -7,7 +7,6 @@ import { Sale } from '../models/sales';
 import { getCurrentUser } from '../service/auth';
 import { getDashboardStats } from '../service/dashboard';
 import { getAllProducts } from '../service/product';
-import { useNotification } from '../context/NotificationContext';
 import {
   getAllCustomerOrdersPaginated,
   getOrdersPaginated,
@@ -141,7 +140,6 @@ const StatCard = ({ icon: Icon, label, value, accentColor = 'teal' }: StatCardPr
 // ─── Dashboard ───────────────────────────────────────────────────────────────
 
 export const Dashboard = () => {
-  const { addNotification } = useNotification();
 
   const [stats, setStats] = useState({
     total_order: '0',
@@ -192,6 +190,7 @@ export const Dashboard = () => {
     try {
       setLoading(true);
       setSalesLoading(true);
+      setSalesError('');
 
       const filters: OrderFilterParams = {
         search: debouncedSearch,
@@ -219,6 +218,7 @@ export const Dashboard = () => {
     } catch (err) {
       console.error('Failed to fetch dashboard data:', err);
       setSnackbar({ open: true, message: 'Failed to load dashboard data', type: 'error' });
+      setSalesError('Failed to load sales data.');
     } finally {
       setLoading(false);
       setSalesLoading(false);
@@ -324,9 +324,8 @@ export const Dashboard = () => {
           style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
         >
           {prodBtn('all', 'All Products')}
-          {prodBtn('sugar', 'SUGAR END')}
-          {prodBtn('vac', 'VAC')}
-          {prodBtn('medani', 'MEDANI')}
+          {Array.isArray(products) &&
+            products.map((p) => p.productId !== undefined && prodBtn(String(p.productId), p.name))}
         </div>
       </div>
 
