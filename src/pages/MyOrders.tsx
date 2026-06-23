@@ -41,6 +41,7 @@ export const MyOrders: React.FC = () => {
     { value: 'Processing', label: 'PROCESSING' },
     { value: 'Dispatched to Destination', label: 'DISPATCHED TO DESTINATION' },
     { value: 'Received at Destination', label: 'RECEIVED AT DESTINATION' },
+    { value: 'Received by Client', label: 'RECEIVED BY CLIENT' },
     { value: 'Out for Delivery', label: 'OUT FOR DELIVERY' },
     { value: 'Returned to Branch Rescheduled', label: 'RETURNED TO BRANCH RESCHEDULED' },
     { value: 'Returned to Branch Failed', label: 'RETURNED TO BRANCH FAILED' },

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { BackgroundIcons } from '../components/BackgroundIcons';
 
 interface SettingsProps {
@@ -7,11 +8,22 @@ interface SettingsProps {
   onHeaderColorChange?: (color: string) => void;
 }
 
+interface SettingsContext {
+  onTitleChange?: (title: string) => void;
+  onBackgroundColorChange?: (color: string) => void;
+  onHeaderColorChange?: (color: string) => void;
+}
+
 export const Settings: React.FC<SettingsProps> = ({ 
-  onTitleChange, 
-  onBackgroundColorChange,
-  onHeaderColorChange
+  onTitleChange: propOnTitleChange, 
+  onBackgroundColorChange: propOnBackgroundColorChange,
+  onHeaderColorChange: propOnHeaderColorChange
 }) => {
+  const context = useOutletContext<SettingsContext>() || {};
+  const onTitleChange = propOnTitleChange || context.onTitleChange;
+  const onBackgroundColorChange = propOnBackgroundColorChange || context.onBackgroundColorChange;
+  const onHeaderColorChange = propOnHeaderColorChange || context.onHeaderColorChange;
+
   const [title, setTitle] = useState('Sales Management');
   const [backgroundColor, setBackgroundColor] = useState('#e0f2fe');
   const [headerColor, setHeaderColor] = useState('#2a98a4');

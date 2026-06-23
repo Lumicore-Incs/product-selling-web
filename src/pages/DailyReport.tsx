@@ -2,7 +2,6 @@ import { useEffect, useState, useMemo } from 'react';
 import {
   PieChart,
   Calendar,
-  Package,
   TrendingUp,
   Download,
   RefreshCw,
