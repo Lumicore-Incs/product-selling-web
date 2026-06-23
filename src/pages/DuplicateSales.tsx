@@ -17,7 +17,6 @@ export const DuplicateSales: React.FC = () => {
   const [currentSale, setCurrentSale] = useState<Sale | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-
   const [user, setUser] = useState<{ role: string } | null>(null);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -98,7 +97,6 @@ export const DuplicateSales: React.FC = () => {
 
       const buffer = await blob.arrayBuffer();
       const workbook = XLSX.read(buffer, { type: 'array' });
-
 
       const fileName = `All_Sales_${new Date().toISOString().split('T')[0]}.xlsx`;
       XLSX.writeFile(workbook, fileName);

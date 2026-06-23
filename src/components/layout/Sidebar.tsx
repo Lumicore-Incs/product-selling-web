@@ -1,5 +1,12 @@
 import {
   ChevronDownIcon,
+  FileBarChart2Icon,
+  LayoutDashboardIcon,
+  LogOutIcon,
+  PackageIcon,
+  SettingsIcon,
+  ShoppingCartIcon,
+  StoreIcon,
   UsersIcon,
   XIcon,
   Copy,
@@ -40,7 +47,7 @@ const getNavItems = (userRole: string): NavItem[] => {
   const items: NavItem[] = [];
 
   // DASHBOARD - All roles
-  items.push({ icon: LayoutGrid, label: 'Dashboard', to: '/', end: true });
+  items.push({ icon: LayoutDashboardIcon, label: 'Dashboard', to: '/', end: true });
 
   // USER Specific items
   if (isUser) {
@@ -111,6 +118,9 @@ const getHelpSettingsItems = (userRole: string): NavItem[] => {
       ],
     });
   }
+
+  // SETTINGS - All roles
+  items.push({ icon: SettingsIcon, label: 'Settings', to: '/settings' });
 
   return items;
 };

@@ -6,7 +6,7 @@ import { SalesTable } from '../components/SalesTable';
 import { Sale } from '../models/sales';
 import { getCurrentUser } from '../service/auth';
 import { getDashboardStats } from '../service/dashboard';
-
+import { getAllProducts } from '../service/product';
 import {
   getAllCustomerOrdersPaginated,
   getOrdersPaginated,
@@ -143,7 +143,6 @@ const StatCard = ({ icon: Icon, label, value, accentColor = 'teal' }: StatCardPr
 
 export const Dashboard = () => {
 
-
   const [stats, setStats] = useState({
     total_order: '0',
     todayOrders: '0',
@@ -241,8 +240,9 @@ export const Dashboard = () => {
       setTotalCount((salesResult as PaginatedResult<Sale>).total);
       setTotalPages((salesResult as PaginatedResult<Sale>).totalPages);
     } catch (err) {
-      console.error('Failed to fetch sales data:', err);
-      setSnackbar({ open: true, message: 'Failed to load sales data', type: 'error' });
+      console.error('Failed to fetch dashboard data:', err);
+      setSnackbar({ open: true, message: 'Failed to load dashboard data', type: 'error' });
+      setSalesError('Failed to load sales data.');
     } finally {
       setSalesLoading(false);
     }
