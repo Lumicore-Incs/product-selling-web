@@ -24,6 +24,7 @@ export interface OrderItem {
 }
 
 export interface CustomerRequestDTO {
+  customerName: string;
   name: string;
   address: string;
   contact01: string;
@@ -37,6 +38,7 @@ export interface CustomerRequestDTO {
 export interface CustomerDtoGet {
   customerId: number;
   name: string;
+  customerName: string;
   address: string;
   contact01: string;
   contact02?: string;
@@ -50,6 +52,7 @@ export interface OrderDtoGet {
   orderId: number;
   customerId: number;
   name: string;
+  customerName: string;
   address: string;
   contact01: string;
   contact02?: string;
@@ -68,6 +71,11 @@ export interface OrderDetailsDto {
   total: number;
   productId: number;
   orderId?: number;
+}
+
+export interface ProductQtyDto {
+  totalQty: number;
+  productName: string;
 }
 
 // API service functions
@@ -218,6 +226,41 @@ export const dashboardApi = {
       return response.data;
     } catch (error) {
       console.error('Error exporting sales as Excel:', error);
+      throw error;
+    }
+  },
+};
+
+export const dashboardApiReturnData = {
+  exportSalesExcel: async (productName: string): Promise<Blob> => {
+    try {
+      const encodedName = encodeURIComponent(productName);
+      const response = await api.get<Blob>(`/dashboard/exportData/${encodedName}`, {
+        responseType: 'blob',
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error exporting sales as Excel:', error);
+      throw error;
+    }
+  },
+
+  conformExport: async (serialNumbers: string[]): Promise<string> => {
+    try {
+      const response = await api.put<string>('/dashboard/conform', serialNumbers);
+      return response.data;
+    } catch (error) {
+      console.error('Error confirming export:', error);
+      throw error;
+    }
+  },
+
+  getOrderQtySummary: async (): Promise<ProductQtyDto[]> => {
+    try {
+      const response = await api.get<ProductQtyDto[]>('/dashboard/exportDataQty');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching order quantity summary:', error);
       throw error;
     }
   },

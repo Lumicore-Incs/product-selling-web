@@ -8,4 +8,5 @@ export interface UserApiDto {
   registration_date: string;
   status: string;
   type?: string | null;
+  serialPrefix?: string;
 }

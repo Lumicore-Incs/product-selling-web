@@ -1,15 +1,24 @@
 import { useEffect, useState } from 'react';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthCard } from './components/AuthCard';
 import { DashboardLayout } from './components/layout/DashboardLayout';
+import { NotificationProvider } from './context/NotificationContext';
+import { DailyReport } from './pages/DailyReport';
 import { Dashboard } from './pages/Dashboard';
 import { DuplicateSales } from './pages/DuplicateSales';
+import { ExportOrder } from './pages/ExportOrder';
 import { ProductManagement } from './pages/ProductManagement';
 import { SalesManagement } from './pages/SalesManagement';
+import { Settings } from './pages/Settings';
 import { StockManagement } from './pages/StockManagement';
-import { Users } from './pages/Users';
-import UserProfile from './pages/UserProfile';
 import { TrackingId } from './pages/TrackingId';
+import { UserOrders } from './pages/UserOrders';
+import UserProfile from './pages/UserProfile';
+import { Users } from './pages/Users';
+import { Reports } from './pages/Reports';
+import { SalesSummary } from './pages/SalesSummary';
+import { MonthlyReport } from './pages/MonthlyReport';
+import { MyOrders } from './pages/MyOrders';
 import { getToken } from './services/authUtils';
 
 // Simple loader component
@@ -84,10 +93,11 @@ export function App() {
   }
 
   return (
-    <BrowserRouter>
-      <BackgroundShapes />
-      <div className="w-full min-h-screen" style={{ position: 'relative', zIndex: 1 }}>
-        <Routes>
+    <NotificationProvider>
+      <HashRouter>
+        <BackgroundShapes />
+        <div className="w-full min-h-screen" style={{ position: 'relative', zIndex: 1 }}>
+          <Routes>
           <Route
             path="/auth"
             element={
@@ -107,18 +117,27 @@ export function App() {
             <Route index element={<Dashboard />} />
             <Route path="sale" element={<SalesManagement />} />
             <Route path="sale/duplicate" element={<DuplicateSales />} />
+            <Route path="my-orders" element={<MyOrders />} />
             <Route path="sale/settings" element={<SalesManagement />} />
+            <Route path="export-orders" element={<ExportOrder />} />
             <Route path="product" element={<ProductManagement />} />
             <Route path="users" element={<Users />} />
+            <Route path="user-orders" element={<UserOrders />} />
+            <Route path="daily-report" element={<DailyReport />} />
+            <Route path="monthly-report" element={<MonthlyReport />} />
             <Route path="profile" element={<UserProfile />} />
+            <Route path="settings" element={<Settings />} />
             <Route path="stock" element={<StockManagement />} />
             <Route path="tracking-id" element={<TrackingId />} />
+            <Route path="reports" element={<Reports />} />
+            <Route path="sales-summary" element={<SalesSummary />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
           {/* Backward compatibility: redirect old /dashboard path to root */}
           <Route path="/dashboard" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
-    </BrowserRouter>
+    </HashRouter>
+    </NotificationProvider>
   );
 }

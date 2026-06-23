@@ -84,17 +84,17 @@ export const TrackingId: React.FC = () => {
   };
 
   return (
-    <div className=" w-full mx-auto p-6 rounded-lg relative">
+    <div className="w-full mx-auto p-3 sm:p-6 rounded-lg relative">
       <AlertSnackbar
         message={alert.message}
         type={alert.type}
         open={alert.open}
         onClose={() => setAlert(a => ({ ...a, open: false }))}
       />
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Tracking ID</h1>
-        <div className="flex items-center gap-2">
-          <label className="inline-block">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Tracking ID</h1>
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+          <label className="inline-block flex-1 sm:flex-none">
             <input
               type="file"
               accept=".xlsx,.xls"
@@ -103,15 +103,15 @@ export const TrackingId: React.FC = () => {
               ref={fileInputRef}
               disabled={isLoading}
             />
-            <span className={`px-4 py-2 ${!rows.length ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-400'} text-white rounded-md cursor-pointer transition ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}>
-              Upload Excel
+            <span className={`block w-full sm:w-auto text-center px-3 sm:px-4 py-2 ${!rows.length ? 'bg-[#0B818D] hover:bg-[#045f69]' : 'bg-gray-400'} text-white rounded-md cursor-pointer transition text-sm sm:text-base ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+              Upload
             </span>
           </label>
           {rows.length > 0 && (
             <>
               <button
                 type="button"
-                className={`px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-[#0B818D] text-white rounded-md hover:bg-[#045f69]  transition text-sm sm:text-base ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 onClick={handleSubmit}
                 disabled={isLoading}
               >
@@ -119,7 +119,7 @@ export const TrackingId: React.FC = () => {
               </button>
               <button
                 type="button"
-                className={`px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition text-sm sm:text-base ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 onClick={handleClear}
                 disabled={isLoading}
               >
@@ -131,16 +131,16 @@ export const TrackingId: React.FC = () => {
       </div>
       {/* Responsive Table/Card View */}
       {!isMobile ? (
-        <div className="overflow-x-auto bg-white rounded-xl shadow border border-gray-200">
+        <div className="overflow-x-auto rounded-xl shadow border border-gray-200 rounded-lg bg-[#FFFFFF7D]" style={{ backdropFilter: 'border-radius(18px)' }}>
           <table className="min-w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Order Date</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Waybill Id</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Order ID</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Customer Name</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Phone Number</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
+                <th className="px-4 py-5 text-left text-xs font-bold uppercase tracking-wider flex items-center justify-center">Order Date</th>
+                <th className="px-4 py-5 text-left text-xs font-bold uppercase tracking-wider">Waybill Id</th>
+                <th className="px-4 py-5 text-left text-xs font-bold uppercase tracking-wider">Order ID</th>
+                <th className="px-4 py-5 text-left text-xs font-bold uppercase tracking-wider flex items-center justify-center">Customer Name</th>
+                <th className="px-4 py-5 text-left text-xs font-bold uppercase tracking-wider">Phone Number</th>
+                <th className="px-4 py-5 text-left text-xs font-bold uppercase tracking-wider">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">

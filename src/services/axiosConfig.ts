@@ -13,8 +13,8 @@ const explicit = viteEnv.VITE_API_BASE_URL ?? '';
 const mode = viteEnv.MODE ?? 'development';
 
 const modeDefaults: Record<string, string> = {
-  // production: 'https://api.weadits.com/demo-0.0.1-SNAPSHOT',
-  development: 'http://localhost:8080',
+  production: 'https://api.weadits.com/demo-0.0.1-SNAPSHOT',
+  development: 'http://localhost:8081',
   // development: 'https://api.weadits.com/demo-0.0.1-SNAPSHOT'
 };
 
@@ -36,7 +36,7 @@ const http = axios.create({
 
 // Allow the app to provide a custom unauthorized handler (SPA-friendly)
 let onUnauthorized: () => void = () => {
-  window.location.href = '/auth';
+  window.location.href = '/';
 };
 export const setUnauthorizedHandler = (fn: () => void) => {
   onUnauthorized = fn;

@@ -11,13 +11,14 @@ import { AlertSnackbar } from '../components/AlertSnackbar';
 export const StockManagement = () => {
   const [items, setItems] = useState<StockItem[]>([]);
   const [editItem, setEditItem] = useState<StockItem | null>(null);
-  const [filters, setFilters] = useState({ type: 'All', date: '' });
+  const [filters, setFilters] = useState({ type: 'All', date: '', status: 'All' });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmTarget, setConfirmTarget] = useState<number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', type: 'success' as 'success' | 'error' });
+  const [formMode, setFormMode] = useState<'add' | 'damage'>('add');
 
   useEffect(() => {
     fetchStockData();
@@ -68,6 +69,7 @@ export const StockManagement = () => {
   };
 
   const handleEdit = (item: StockItem) => {
+    setFormMode('add');
     setEditItem(item);
   };
 
@@ -96,9 +98,12 @@ export const StockManagement = () => {
     }
   };
 
-  const handleFilterChange = ({ type, date }: { type: string; date: string }) => {
-    setFilters({ type, date });
+  const handleFilterChange = ({ type, date, status }: { type: string; date: string; status: string }) => {
+    setFilters({ type, date, status });
   };
+
+  const damageItems = items.filter((item) => item.status === 'DAMAGE');
+  const totalDamaged = damageItems.reduce((sum, item) => sum + Math.abs(item.quantity), 0);
 
   return (
     <div className="space-y-6 mx-6 relative">
@@ -106,6 +111,38 @@ export const StockManagement = () => {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Stock Management</h1>
         {isLoading && <Spinner size={24} colorClass="text-blue-600" />}
+      </div>
+
+      <div className="flex flex-wrap gap-3">
+        <button
+          onClick={() => {
+            setFormMode('add');
+            setEditItem(null);
+          }}
+          className={`px-4 py-2 rounded-lg font-medium transition ${formMode === 'add'
+            ? 'bg-blue-600 text-white'
+            : 'bg-gray-100 text-blue-600 hover:bg-gray-200'
+          }`}
+        >
+          Add Stock
+        </button>
+        <button
+          onClick={() => {
+            setFormMode('damage');
+            setEditItem(null);
+          }}
+          className={`px-4 py-2 rounded-lg font-medium transition ${formMode === 'damage'
+            ? 'bg-red-600 text-white'
+            : 'bg-gray-100 text-red-600 hover:bg-gray-200'
+          }`}
+        >
+          Log Damage
+        </button>
+        {formMode === 'damage' && (
+          <span className="px-3 py-2 rounded-full bg-red-50 text-red-600 border border-red-100 text-sm">
+            Logging damaged inventory will set the status to Damage and capture the reason.
+          </span>
+        )}
       </div>
 
       {error && (
@@ -123,14 +160,40 @@ export const StockManagement = () => {
         </div>
       )}
 
-      <StockForm onSubmit={handleSave} initialValues={editItem} existingItems={items} />
+      <StockForm onSubmit={handleSave} initialValues={editItem} mode={formMode} />
       <Filters onFilterChange={handleFilterChange} existingItems={items} />
+      {damageItems.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div className="bg-red-50 border border-red-100 rounded-xl p-4 space-y-2">
+            <p className="text-sm text-red-500">Total damaged records</p>
+            <p className="text-3xl font-semibold text-red-700">{damageItems.length}</p>
+            <p className="text-sm text-red-600">Quantity affected: {totalDamaged}</p>
+            
+            {/* Detailed breakdown of damaged products */}
+            <div className="mt-4 space-y-2">
+              <p className="text-xs font-medium text-red-600 uppercase tracking-wide">Product Details:</p>
+              <div className="max-h-32 overflow-y-auto space-y-1">
+                {damageItems.map((item, index) => (
+                  <div key={item.stock_id || index} className="flex justify-between items-center text-sm bg-white/50 rounded px-2 py-1">
+                    <span className="font-medium text-gray-800 truncate mr-2">{item.type}</span>
+                    <span className="text-red-600 font-semibold">Qty: {Math.abs(item.quantity)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="bg-white bg-opacity-80 border border-dashed border-red-200 rounded-xl p-4 text-sm text-gray-600">
+            Every damage entry keeps stock history clean and can be filtered via the status selector below.
+          </div>
+        </div>
+      )}
       <StockTable
         items={items}
         onEdit={handleEdit}
         onDelete={handleDeleteRequest}
         filterType={filters.type}
         filterDate={filters.date}
+        filterStatus={filters.status}
       />
       <ConfirmDialog
         open={confirmOpen}

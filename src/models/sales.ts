@@ -15,7 +15,9 @@ export interface SaleItem {
 export interface Sale {
   id: string;
   customerId?: string;
+  waybillId?: string;
   name: string;
+  customerName: string;
   address: string;
   contact01?: string;
   contact02?: string;
@@ -27,6 +29,7 @@ export interface Sale {
   // canonical sale total
   totalPrice: number;
   serialNo?: string;
+  date?: string; 
 }
 
 export default Sale;
