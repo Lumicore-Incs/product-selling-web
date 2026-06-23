@@ -326,11 +326,6 @@ export const SalesForm: React.FC<SalesFormProps> = ({
     }
   };
 
-  // Normalize phone comparison by removing an optional leading 0 from user input
-  // const normalizePhoneForCompare = (phone: string) => {
-  //   if (!phone) return '';
-  //   return phone.startsWith('0') ? phone.slice(1) : phone;
-  // };
 
   const ensureLeadingZero = (phone?: string) => {
     if (!phone) return '';
