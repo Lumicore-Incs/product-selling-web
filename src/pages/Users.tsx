@@ -466,13 +466,6 @@ export const Users = () => {
     }
   };
 
-  // Fetch users from API on mount
-  useEffect(() => {
-    userService.getAllUsers()
-      .then((usersData) => {
-        setUsers(usersData);
-      })
-      .catch((err) => console.error('Failed to fetch data', err));
   // Fetch users and products on mount
   useEffect(() => {
     userService.getAllUsers()
