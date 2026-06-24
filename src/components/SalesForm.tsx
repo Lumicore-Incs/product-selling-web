@@ -45,6 +45,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
   }>({ open: false, message: '', type: 'success' });
   const [defaultProduct, setDefaultProduct] = useState<ProductDto | null>(null);
   const [allCustomers, setAllCustomers] = useState<CustomerDtoGet[] | null>(null);
+
   const [customerInfoText, setCustomerInfoText] = useState('');
   const [manualTotalAmount, setManualTotalAmount] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');

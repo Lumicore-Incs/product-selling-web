@@ -29,7 +29,7 @@ export const UserOrders = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [usersWithOrders, setUsersWithOrders] = useState<UserWithOrders[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const [_loading, setLoading] = useState(true);
+
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [paymentDetails, setPaymentDetails] = useState<PaymentDetail[]>([]);
   const [paymentDetailsLoading, setPaymentDetailsLoading] = useState(false);
@@ -54,7 +54,6 @@ export const UserOrders = () => {
     setCurrentUser(user);
 
     if (!user || (user.role !== 'ADMIN' && user.role !== 'SUPER USER')) {
-      setLoading(false);
       return;
     }
 
@@ -62,8 +61,6 @@ export const UserOrders = () => {
   };
 
   const fetchUserOrders = async () => {
-    setLoading(true);
-
     try {
       const users = await userService.getAllUsers();
       const usersArray: UserWithOrders[] = users.map((u: any) => ({
@@ -82,8 +79,6 @@ export const UserOrders = () => {
       }
     } catch (err) {
       console.error('Failed to fetch users:', err);
-    } finally {
-      setLoading(false);
     }
   };
 

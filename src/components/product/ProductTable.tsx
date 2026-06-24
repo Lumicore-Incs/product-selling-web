@@ -61,32 +61,41 @@ export function ProductTable({
     <>
       {/* Desktop Table */}
       <div className="hidden lg:block">
-        <div
-          className="overflow-hidden"
-          style={{
-            background: 'rgba(255, 255, 255, 0.49)',
-            borderRadius: '18px',
-          }}
-        >
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              {/* Header Row */}
+        <div className="rounded-[21px] overflow-hidden bg-[rgba(255,255,255,0.49)] shadow-sm">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full font-plus-jakarta-sans">
+              {/* Header */}
               <thead>
-                <tr
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.42)',
-                    borderBottom: '1px solid #FFFFFF',
-                  }}
-                >
-                  <th style={headerCellStyle}>Id</th>
-                  <th style={headerCellStyle}>Name</th>
-                  <th style={headerCellStyle}>Short Name</th>
-                  <th style={headerCellStyle}>Serial Prefix</th>
-                  <th style={headerCellStyle}>Price</th>
-                  <th style={headerCellStyle}>Status</th>
-                  <th style={{ ...headerCellStyle, textAlign: 'center' }}>Actions</th>
+                <tr className="bg-[rgba(255,255,255,0.42)]">
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#414141]">Id</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#414141]">Name</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#414141]">Short Name</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#414141]">Serial Prefix</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#414141]">Price</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#414141]">Status</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#414141]">Actions</th>
                 </tr>
               </thead>
+
+                {/* Body */}
+                <tbody>
+                  {products.map((product) => {
+                    return (
+                      <tr
+                        key={product.productId}
+                        className="transition even:bg-[rgba(255,255,255,0.2)] hover:bg-white/30"
+                      >
+                        <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                          {product.productId}
+                        </td>
+
+                        <td className="px-6 py-4 text-sm text-gray-700">
+                          {product.name}
+                        </td>
+
+                        <td className="px-6 py-4 text-sm text-gray-700">
+                          {product.shortName}
+                        </td>
 
               <tbody>
                 {products.map((product) => (
@@ -125,86 +134,54 @@ export function ProductTable({
                       </span>
                     </td>
 
-                    {/* Action Buttons */}
-                    <td style={{ ...cellStyle, textAlign: 'center' }}>
-                      <div className="flex items-center justify-center gap-3">
-                        <button
-                          onClick={() => onEdit(product)}
-                          title="Edit"
-                          className="hover:opacity-70 transition-opacity"
-                        >
-                          <Edit2Icon
-                            style={{ width: '20px', height: '20px', color: '#2348CD' }}
-                          />
-                        </button>
-                        <button
-                          onClick={() => onDelete(product.productId)}
-                          title="Delete"
-                          className="hover:opacity-70 transition-opacity"
-                        >
-                          <TrashIcon
-                            style={{ width: '22px', height: '22px', color: '#E0090C' }}
-                          />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                        <td className="px-6 py-4 text-sm text-gray-700">
+                          {product.status?.toLowerCase() === 'active' ? (
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#89FA9A]/46 text-[#016D18]">
+                              Active
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-200 text-gray-700">
+                              {product.status || 'Inactive'}
+                            </span>
+                          )}
+                        </td>
 
-          {/* Pagination Footer */}
-          <div className="flex items-center justify-between px-6 py-4">
-            <p
-              style={{
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
-                fontWeight: 400,
-                fontSize: '12px',
-                lineHeight: '15px',
-                color: '#5C626E',
-              }}
-            >
-              Showing {products.length} of {totalCount ?? products.length} entries
-            </p>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={onPrev}
-                disabled={currentPage <= 1}
-                className="w-[15px] h-[15px] flex items-center justify-center rounded-sm disabled:opacity-30 hover:opacity-70 transition"
-                style={{ background: 'rgba(255,255,255,0.75)' }}
-              >
-                <svg width="8" height="10" viewBox="0 0 8 10" fill="none">
-                  <path d="M6 1L2 5L6 9" stroke="#757B87" strokeWidth="1.5" />
-                </svg>
-              </button>
-              <span
-                style={{
-                  fontFamily: "'Plus Jakarta Sans', sans-serif",
-                  fontWeight: 300,
-                  fontSize: '15px',
-                  lineHeight: '18px',
-                  color: '#5C626E',
-                  minWidth: '20px',
-                  textAlign: 'center',
-                }}
-              >
-                {currentPage}
-              </span>
-              <button
-                onClick={onNext}
-                disabled={currentPage >= totalPages}
-                className="w-[15px] h-[15px] flex items-center justify-center rounded-sm disabled:opacity-30 hover:opacity-70 transition"
-                style={{ background: 'rgba(255,255,255,0.75)' }}
-              >
-                <svg width="8" height="10" viewBox="0 0 8 10" fill="none">
-                  <path d="M2 1L6 5L2 9" stroke="#757B87" strokeWidth="1.5" />
-                </svg>
-              </button>
+                        {/* Actions */}
+                        <td className="px-6 py-4 text-left">
+                          <div className="flex justify-start items-center gap-3">
+                            <button
+                              onClick={() => onEdit(product)}
+                              className="p-1 rounded-lg transition hover:bg-white/50"
+                              title="Edit"
+                            >
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="#2563EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                <path d="M18.5 2.50001C18.8978 2.10219 19.4374 1.87869 20 1.87869C20.5626 1.87869 21.1022 2.10219 21.5 2.50001C21.8978 2.89784 22.1213 3.4374 22.1213 4.00001C22.1213 4.56262 21.8978 5.10219 21.5 5.50001L12 15L8 16L9 12L18.5 2.50001Z" stroke="#2563EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            </button>
+
+                            <button
+                              onClick={() => onDelete(product.productId)}
+                              className="p-1 rounded-lg transition hover:bg-white/50"
+                              title="Delete"
+                            >
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M3 6H5H21" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                <path d="M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                <path d="M10 11V17" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                <path d="M14 11V17" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
-      </div>
 
       {/* Mobile Card View */}
       <div className="lg:hidden space-y-3">

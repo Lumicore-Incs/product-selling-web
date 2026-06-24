@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast, ToastContainer } from 'react-toastify';
 import { BackgroundIcons } from '../components/BackgroundIcons';
 import { Header } from '../components/product/Header';
@@ -212,10 +213,7 @@ export const ProductManagement = () => {
     setIsModalOpen(true);
   };
 
-  // Handler for refresh
-  const handleRefresh = () => {
-    loadProducts();
-  };
+
 
   return (
     <div className="min-h-screen relative" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
@@ -232,15 +230,11 @@ export const ProductManagement = () => {
         pauseOnHover
       />
 
-      <div className="px-4 sm:px-6 py-6">
-        {/* Page Header */}
-        <Header
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          onAddClick={handleAddClick}
-          onRefresh={handleRefresh}
-          loading={loading}
-        />
+      <Header
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        onAddClick={handleAddClick}
+      />
 
         {/* Loading Banner */}
         {loading && (
@@ -265,17 +259,52 @@ export const ProductManagement = () => {
         />
       </div>
 
-      <ProductModal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setCurrentProduct(null);
-        }}
-        product={currentProduct}
-        onAdd={handleAddProduct}
-        onUpdate={handleUpdateProduct}
-        loading={loading}
-      />
+        {/* Pagination Controls */}
+        <div className="mt-4 sm:mt-2 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-xs sm:text-sm text-gray-500 order-2 sm:order-1">
+            Showing {paginatedProducts.length} of {filteredProducts.length} entries
+          </p>
+          <div className="flex items-center gap-2 order-1 sm:order-2 flex-wrap justify-center">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className={`flex items-center justify-center w-[15px] h-[15px] rounded-sm border transition-all ${
+                currentPage === 1
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
+                  : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-300 hover:border-gray-400 shadow-sm'
+              }`}
+            >
+              <ChevronLeft className="w-3 h-3" />
+            </button>
+            <span className="text-sm font-medium text-gray-600 px-2">
+              {currentPage}
+            </span>
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className={`flex items-center justify-center w-[15px] h-[15px] rounded-sm border transition-all ${
+                currentPage === totalPages
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
+                  : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-300 hover:border-gray-400 shadow-sm'
+              }`}
+            >
+              <ChevronRight className="w-3 h-3" />
+            </button>
+          </div>
+        </div>
+
+        <ProductModal
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setCurrentProduct(null);
+          }}
+          product={currentProduct}
+          onAdd={handleAddProduct}
+          onUpdate={handleUpdateProduct}
+          loading={loading}
+        />
+      </main>
     </div>
   );
 };

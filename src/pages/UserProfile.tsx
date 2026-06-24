@@ -90,7 +90,6 @@ const PasswordStrengthIndicator = ({ password }: { password: string }) => {
 const PasswordChangeDialog = ({
   open,
   onClose,
-  userId: _userId,
   userName,
   onSuccess,
 }: {

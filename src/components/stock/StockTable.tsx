@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { StockItem } from './StockForm';
 import { Product } from '../../models/product';
 
@@ -211,27 +212,27 @@ const StockTable: React.FC<Props> = ({ items, products, onEdit, onDelete, filter
             <button
               onClick={handlePrev}
               disabled={currentPage === 1}
-              className={`px-4 py-2 rounded-[8px] text-[14px] font-medium transition-colors ${
+              className={`flex items-center justify-center w-8 h-8 rounded-md border transition-colors ${
                 currentPage === 1
-                  ? 'bg-transparent text-gray-400 cursor-not-allowed'
-                  : 'bg-white/50 text-[#414141] hover:bg-white/70'
+                  ? 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed'
+                  : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-300 shadow-sm'
               }`}
             >
-              Prev
+              <ChevronLeft className="w-4 h-4" />
             </button>
-            <div className="px-4 py-2 text-[14px] font-medium text-[#414141] bg-white/50 rounded-[8px]">
-              {currentPage}/{totalPages || 1}
+            <div className="text-sm font-medium text-gray-600 px-2">
+              {currentPage}
             </div>
             <button
               onClick={handleNext}
-              disabled={currentPage === totalPages || totalPages === 0}
-              className={`px-4 py-2 rounded-[8px] text-[14px] font-medium transition-colors ${
-                currentPage === totalPages || totalPages === 0
-                  ? 'bg-transparent text-gray-400 cursor-not-allowed'
-                  : 'bg-white/50 text-[#414141] hover:bg-white/70'
+              disabled={currentPage === totalPages}
+              className={`flex items-center justify-center w-8 h-8 rounded-md border transition-colors ${
+                currentPage === totalPages
+                  ? 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed'
+                  : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-300 shadow-sm'
               }`}
             >
-              Next
+              <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         </div>

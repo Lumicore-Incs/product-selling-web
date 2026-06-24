@@ -11,6 +11,9 @@ import {
   Shield,
   Trash2,
   X,
+  XCircle,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
@@ -725,21 +728,29 @@ export const Users = () => {
             <p className="text-[12px] font-['Inter'] font-normal text-[#5C626E] leading-[15px]">
               Showing {paginatedUsers.length} of {filteredUsers.length} entries
             </p>
-            <div className="flex items-center gap-3">
-              <button 
-                onClick={handlePrev} 
-                disabled={currentPage === 1} 
-                className="w-[15px] h-[15px] flex items-center justify-center rounded-[2px] disabled:opacity-40 hover:bg-white/90 active:bg-white shadow-sm transition-all bg-white/75"
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handlePrev}
+                disabled={currentPage === 1}
+                className={`flex items-center justify-center w-8 h-8 rounded-md border transition-all ${currentPage === 1
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
+                    : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-300 shadow-sm'
+                  }`}
               >
-                <svg width="4" height="6" viewBox="0 0 8 10" fill="none"><path d="M6 1L2 5L6 9" stroke="#757B87" strokeWidth="2.5" /></svg>
+                <ChevronLeft className="w-4 h-4" />
               </button>
-              <span className="text-[#5C626E] font-light font-['Inter'] text-[15px] leading-[18px] min-w-[10px] text-center">{currentPage}</span>
-              <button 
-                onClick={handleNext} 
-                disabled={currentPage === totalPages || totalPages === 0} 
-                className="w-[15px] h-[15px] flex items-center justify-center rounded-[2px] disabled:opacity-40 hover:bg-white/90 active:bg-white shadow-sm transition-all bg-white/75"
+              <div className="text-sm font-medium text-gray-600 px-2">
+                {currentPage}
+              </div>
+              <button
+                onClick={handleNext}
+                disabled={currentPage === totalPages}
+                className={`flex items-center justify-center w-8 h-8 rounded-md border transition-all ${currentPage === totalPages
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
+                    : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-300 shadow-sm'
+                  }`}
               >
-                <svg width="4" height="6" viewBox="0 0 8 10" fill="none"><path d="M2 1L6 5L2 9" stroke="#757B87" strokeWidth="2.5" /></svg>
+                <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -813,6 +824,42 @@ export const Users = () => {
               <span className="text-[13px] text-[#5C626E]">{currentPage} / {totalPages || 1}</span>
               <button onClick={handleNext} disabled={currentPage === totalPages || totalPages === 0} className="px-3 py-1 rounded-lg text-sm border border-gray-200 disabled:opacity-50 bg-white text-[#5C626E]">Next</button>
             </div>
+          ))
+        ) : (
+          <div className="bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl shadow-sm p-6 text-center text-gray-500">
+            No users found
+          </div>
+        )}
+
+        {/* Mobile Pagination */}
+        <div className="flex flex-col gap-3 items-center pt-2">
+          <p className="text-sm text-gray-500">
+            Showing {paginatedUsers.length} of {filteredUsers.length} entries
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handlePrev}
+              disabled={currentPage === 1}
+              className={`flex items-center justify-center w-8 h-8 rounded-md border transition-all ${currentPage === 1
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
+                  : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-300 shadow-sm'
+                }`}
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <div className="text-sm font-medium text-gray-600 px-2">
+              {currentPage}
+            </div>
+            <button
+              onClick={handleNext}
+              disabled={currentPage === totalPages}
+              className={`flex items-center justify-center w-8 h-8 rounded-md border transition-all ${currentPage === totalPages
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
+                  : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-300 shadow-sm'
+                }`}
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </div>
