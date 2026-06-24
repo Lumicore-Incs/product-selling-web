@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { StockItem } from './StockForm';
 
 interface Props {
@@ -208,27 +209,27 @@ const StockTable: React.FC<Props> = ({ items, onEdit, onDelete, filterType, filt
             <button
               onClick={handlePrev}
               disabled={currentPage === 1}
-              className={`px-3 sm:px-4 py-2 rounded-md border text-xs sm:text-sm font-medium transition-colors ${
+              className={`flex items-center justify-center w-8 h-8 rounded-md border transition-colors ${
                 currentPage === 1
                   ? 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed'
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                  : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-300 shadow-sm'
               }`}
             >
-              Prev
+              <ChevronLeft className="w-4 h-4" />
             </button>
-            <div className="px-3 py-2 text-xs sm:text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md">
-              {currentPage}/{totalPages}
+            <div className="text-sm font-medium text-gray-600 px-2">
+              {currentPage}
             </div>
             <button
               onClick={handleNext}
               disabled={currentPage === totalPages}
-              className={`px-3 sm:px-4 py-2 rounded-md border text-xs sm:text-sm font-medium transition-colors ${
+              className={`flex items-center justify-center w-8 h-8 rounded-md border transition-colors ${
                 currentPage === totalPages
                   ? 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed'
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                  : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-300 shadow-sm'
               }`}
             >
-              Next
+              <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         </div>

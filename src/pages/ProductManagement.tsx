@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast, ToastContainer } from 'react-toastify';
 import { BackgroundIcons } from '../components/BackgroundIcons';
 import { Header } from '../components/product/Header';
@@ -212,10 +213,7 @@ export const ProductManagement = () => {
     setIsModalOpen(true);
   };
 
-  // Handler for refresh
-  const handleRefresh = () => {
-    loadProducts();
-  };
+
 
   return (
     <div className="min-h-screen mx-6 relative">
@@ -236,8 +234,6 @@ export const ProductManagement = () => {
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         onAddClick={handleAddClick}
-        onRefresh={handleRefresh}
-        loading={loading}
       />
 
       <main className="container mx-auto px-2 sm:px-4 py-6 sm:py-8">
@@ -271,27 +267,27 @@ export const ProductManagement = () => {
             <button
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className={`px-2 sm:px-3 py-1 sm:py-2 rounded border text-xs sm:text-sm font-medium transition-colors ${
+              className={`flex items-center justify-center w-[15px] h-[15px] rounded-sm border transition-all ${
                 currentPage === 1
                   ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
-                  : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'
+                  : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-300 hover:border-gray-400 shadow-sm'
               }`}
             >
-              Prev
+              <ChevronLeft className="w-3 h-3" />
             </button>
-            <span className="text-xs sm:text-sm text-gray-700 px-2 sm:px-3 py-1 sm:py-2 bg-gray-50 border border-gray-200 rounded">
-              {currentPage}/{totalPages}
+            <span className="text-sm font-medium text-gray-600 px-2">
+              {currentPage}
             </span>
             <button
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
-              className={`px-2 sm:px-3 py-1 sm:py-2 rounded border text-xs sm:text-sm font-medium transition-colors ${
+              className={`flex items-center justify-center w-[15px] h-[15px] rounded-sm border transition-all ${
                 currentPage === totalPages
                   ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
-                  : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'
+                  : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-300 hover:border-gray-400 shadow-sm'
               }`}
             >
-              Next
+              <ChevronRight className="w-3 h-3" />
             </button>
           </div>
         </div>

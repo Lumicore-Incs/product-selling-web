@@ -18,6 +18,8 @@ import {
   User,
   X,
   XCircle,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
@@ -906,25 +908,25 @@ export const Users = () => {
               <button
                 onClick={handlePrev}
                 disabled={currentPage === 1}
-                className={`px-3 py-1 rounded border ${currentPage === 1
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                className={`flex items-center justify-center w-8 h-8 rounded-md border transition-all ${currentPage === 1
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
+                    : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-300 shadow-sm'
                   }`}
               >
-                Prev
+                <ChevronLeft className="w-4 h-4" />
               </button>
-              <span className="text-sm text-gray-700">
-                Page {currentPage} of {totalPages}
-              </span>
+              <div className="text-sm font-medium text-gray-600 px-2">
+                {currentPage}
+              </div>
               <button
                 onClick={handleNext}
                 disabled={currentPage === totalPages}
-                className={`px-3 py-1 rounded border ${currentPage === totalPages
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                className={`flex items-center justify-center w-8 h-8 rounded-md border transition-all ${currentPage === totalPages
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
+                    : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-300 shadow-sm'
                   }`}
               >
-                Next
+                <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -1146,25 +1148,25 @@ export const Users = () => {
             <button
               onClick={handlePrev}
               disabled={currentPage === 1}
-              className={`px-3 py-1 rounded border text-sm ${currentPage === 1
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
+              className={`flex items-center justify-center w-8 h-8 rounded-md border transition-all ${currentPage === 1
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
+                  : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-300 shadow-sm'
                 }`}
             >
-              Prev
+              <ChevronLeft className="w-4 h-4" />
             </button>
-            <span className="text-sm text-gray-700">
-              Page {currentPage} of {totalPages}
-            </span>
+            <div className="text-sm font-medium text-gray-600 px-2">
+              {currentPage}
+            </div>
             <button
               onClick={handleNext}
               disabled={currentPage === totalPages}
-              className={`px-3 py-1 rounded border text-sm ${currentPage === totalPages
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
+              className={`flex items-center justify-center w-8 h-8 rounded-md border transition-all ${currentPage === totalPages
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
+                  : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-300 shadow-sm'
                 }`}
             >
-              Next
+              <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         </div>

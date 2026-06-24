@@ -10,10 +10,12 @@ import {
   SearchIcon,
   Trash2Icon,
   XIcon,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
-import { Sale, SaleItem } from '../models/sales';
+import { Sale } from '../models/sales';
 import { ConfirmDialog } from './ConfirmDialog';
 import { SalesViewModal } from './SalesViewModal';
 import Spinner from './Spinner';
@@ -68,7 +70,6 @@ export const SalesTable: React.FC<SalesTableProps> = ({
   isLoading,
   onEdit,
   onDelete,
-  userRole,
   onRefresh,
   onStatusChange,
   alwaysEditableStatus,
@@ -212,9 +213,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
     }
   };
 
-  const getTotalAmount = (items: SaleItem[]) => {
-    return items.reduce((sum, item) => sum + item.qty * item.price, 0);
-  };
+
 
   // Filter sales based on search term (bypassed when server-side pagination is active)
   const filteredSales = serverPagination
@@ -855,29 +854,29 @@ export const SalesTable: React.FC<SalesTableProps> = ({
               <button
                 onClick={handlePrev}
                 disabled={isPrevDisabled}
-                className={`px-4 py-2 rounded-lg border font-medium transition-all ${
+                className={`flex items-center justify-center w-8 h-8 rounded-md border transition-all ${
                   isPrevDisabled
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
-                    : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'
+                    : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-300 shadow-sm'
                 }`}
               >
-                Previous
+                <ChevronLeft className="w-4 h-4" />
               </button>
 
-              <div className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg">
-                Page {displayPage} of {totalPages}
+              <div className="text-sm font-medium text-gray-600 px-2">
+                {displayPage}
               </div>
 
               <button
                 onClick={handleNext}
                 disabled={isNextDisabled}
-                className={`px-4 py-2 rounded-lg border font-medium transition-all ${
+                className={`flex items-center justify-center w-8 h-8 rounded-md border transition-all ${
                   isNextDisabled
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
-                    : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'
+                    : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-300 shadow-sm'
                 }`}
               >
-                Next
+                <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -892,7 +891,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
         confirmLabel="Delete"
         cancelLabel="Cancel"
         onConfirm={() => {
-          if (pendingDeleteId) onDelete(pendingDeleteId);
+          if (pendingDeleteId && onDelete) onDelete(pendingDeleteId);
           setPendingDeleteId(null);
         }}
         onCancel={() => setPendingDeleteId(null)}

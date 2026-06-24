@@ -21,31 +21,29 @@ export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) 
     <>
       {/* Desktop Table View */}
       <div className="hidden lg:block">
-        <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: 'transparent' }}>
-          <div className="rounded-t-2xl overflow-hidden">
-            <div className="overflow-x-auto w-full">
-              <table className="w-full" style={{fontFamily:'inter'}}>
-                {/* Header */}
-                <thead>
-                  <tr className="border-b border-white bg-white">
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Id</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Name</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Short Name</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Serial Prefix</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Price</th>
-                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Actions</th>
-                  </tr>
-                </thead>
+        <div className="rounded-[21px] overflow-hidden bg-[rgba(255,255,255,0.49)] shadow-sm">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full font-plus-jakarta-sans">
+              {/* Header */}
+              <thead>
+                <tr className="bg-[rgba(255,255,255,0.42)]">
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#414141]">Id</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#414141]">Name</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#414141]">Short Name</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#414141]">Serial Prefix</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#414141]">Price</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#414141]">Status</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#414141]">Actions</th>
+                </tr>
+              </thead>
 
                 {/* Body */}
                 <tbody>
-                  {products.map((product, index) => {
+                  {products.map((product) => {
                     return (
                       <tr
                         key={product.productId}
-                        className={`border-b-2 border-white transition hover:bg-blue-100 ${
-                          index % 2 === 0 ? 'bg-blue-50' : 'bg-blue-50'
-                        } hover:bg-blue-100`}
+                        className="transition even:bg-[rgba(255,255,255,0.2)] hover:bg-white/30"
                       >
                         <td className="px-6 py-4 text-sm font-medium text-gray-900">
                           {product.productId}
@@ -67,23 +65,43 @@ export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) 
                           LKR {product.price.toFixed(2)}
                         </td>
 
+                        <td className="px-6 py-4 text-sm text-gray-700">
+                          {product.status?.toLowerCase() === 'active' ? (
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#89FA9A]/46 text-[#016D18]">
+                              Active
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-200 text-gray-700">
+                              {product.status || 'Inactive'}
+                            </span>
+                          )}
+                        </td>
+
                         {/* Actions */}
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex justify-end items-center gap-3">
+                        <td className="px-6 py-4 text-left">
+                          <div className="flex justify-start items-center gap-3">
                             <button
                               onClick={() => onEdit(product)}
-                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-100 p-2 rounded-lg transition"
+                              className="p-1 rounded-lg transition hover:bg-white/50"
                               title="Edit"
                             >
-                              <Edit2Icon className="w-5 h-5" />
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="#2563EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                <path d="M18.5 2.50001C18.8978 2.10219 19.4374 1.87869 20 1.87869C20.5626 1.87869 21.1022 2.10219 21.5 2.50001C21.8978 2.89784 22.1213 3.4374 22.1213 4.00001C22.1213 4.56262 21.8978 5.10219 21.5 5.50001L12 15L8 16L9 12L18.5 2.50001Z" stroke="#2563EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
                             </button>
 
                             <button
                               onClick={() => onDelete(product.productId)}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-100 p-2 rounded-lg transition"
+                              className="p-1 rounded-lg transition hover:bg-white/50"
                               title="Delete"
                             >
-                              <TrashIcon className="w-5 h-5" />
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M3 6H5H21" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                <path d="M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                <path d="M10 11V17" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                <path d="M14 11V17" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
                             </button>
                           </div>
                         </td>
@@ -94,9 +112,7 @@ export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) 
               </table>
             </div>
           </div>
-          <div className="h-2" style={{ backgroundColor: '#E8EEF5' }} />
         </div>
-      </div>
 
       {/* Mobile Card View */}
       <div className="lg:hidden">
