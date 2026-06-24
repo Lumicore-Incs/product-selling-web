@@ -216,7 +216,7 @@ export const ProductManagement = () => {
 
 
   return (
-    <div className="min-h-screen mx-6 relative">
+    <div className="min-h-screen relative" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <BackgroundIcons type="product" />
       <ToastContainer
         position="top-right"
@@ -236,27 +236,28 @@ export const ProductManagement = () => {
         onAddClick={handleAddClick}
       />
 
-      <main className="container mx-auto px-2 sm:px-4 py-6 sm:py-8">
-        {/* Loading State */}
+        {/* Loading Banner */}
         {loading && (
-          <div className="mb-4 p-3 sm:p-4 bg-blue-100 border border-blue-400 text-blue-700 text-sm sm:text-base rounded">
+          <div className="mb-4 p-3 text-sm rounded-xl text-center"
+            style={{ background: 'rgba(11,129,141,0.1)', color: '#0B818D', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+          >
             Loading products...
           </div>
         )}
 
-        {/* Authentication Check */}
-        {!isAuthenticated() && (
-          <div className="mb-4 p-3 sm:p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 text-sm sm:text-base rounded">
-            Please log in to manage products. Some features may not work without authentication.
-          </div>
-        )}
-
+        {/* Table */}
         <ProductTable
           products={paginatedProducts}
           onEdit={handleEditClick}
           onDelete={handleDeleteProduct}
           loading={loading}
+          totalCount={filteredProducts.length}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPrev={() => setCurrentPage((p) => Math.max(1, p - 1))}
+          onNext={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
         />
+      </div>
 
         {/* Pagination Controls */}
         <div className="mt-4 sm:mt-2 flex flex-col sm:flex-row items-center justify-between gap-3">

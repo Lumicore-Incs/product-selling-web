@@ -6,20 +6,60 @@ interface ProductTableProps {
   onEdit: (product: Product) => void;
   onDelete: (productId: string | number) => void;
   loading?: boolean;
+  totalCount?: number;
+  currentPage?: number;
+  totalPages?: number;
+  onPrev?: () => void;
+  onNext?: () => void;
 }
 
-export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) {
-  if (products.length === 0) {
+const cellStyle: React.CSSProperties = {
+  fontFamily: "'Plus Jakarta Sans', sans-serif",
+  fontWeight: 500,
+  fontSize: '14px',
+  lineHeight: '18px',
+  color: '#374151',
+  padding: '20px 24px',
+};
+
+const headerCellStyle: React.CSSProperties = {
+  fontFamily: "'Plus Jakarta Sans', sans-serif",
+  fontWeight: 500,
+  fontSize: '14px',
+  lineHeight: '18px',
+  color: '#757B87',
+  padding: '20px 24px',
+  textAlign: 'left' as const,
+  background: 'transparent',
+};
+
+export function ProductTable({
+  products,
+  onEdit,
+  onDelete,
+  loading,
+  totalCount,
+  currentPage = 1,
+  totalPages = 1,
+  onPrev,
+  onNext,
+}: ProductTableProps) {
+  if (!loading && products.length === 0) {
     return (
-      <div className="bg-white rounded-2xl p-6 text-center text-gray-500">
-        No products found.
+      <div
+        className="flex flex-col items-center justify-center py-16 rounded-[18px]"
+        style={{ background: 'rgba(255, 255, 255, 0.49)' }}
+      >
+        <p style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '14px', color: '#5C626E' }}>
+          No products found.
+        </p>
       </div>
     );
   }
 
   return (
     <>
-      {/* Desktop Table View */}
+      {/* Desktop Table */}
       <div className="hidden lg:block">
         <div className="rounded-[21px] overflow-hidden bg-[rgba(255,255,255,0.49)] shadow-sm">
           <div className="overflow-x-auto w-full">
@@ -57,13 +97,42 @@ export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) 
                           {product.shortName}
                         </td>
 
-                        <td className="px-6 py-4 text-sm text-gray-700">
-                          {product.serialPrefix}
-                        </td>
+              <tbody>
+                {products.map((product) => (
+                  <tr
+                    key={product.productId}
+                    className="hover:bg-white/30 transition-colors"
+                    style={{ borderBottom: '1px solid #FFFFFF' }}
+                  >
+                    <td style={cellStyle}>{product.productId}</td>
+                    <td style={cellStyle}>{product.name}</td>
+                    <td style={cellStyle}>{product.shortName}</td>
+                    <td style={cellStyle}>{product.serialPrefix}</td>
+                    <td style={cellStyle}>LKR {Number(product.price).toFixed(2)}</td>
 
-                        <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                          LKR {product.price.toFixed(2)}
-                        </td>
+                    {/* Status Badge */}
+                    <td style={{ ...cellStyle }}>
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          padding: '2px 8px',
+                          borderRadius: '17px',
+                          background:
+                            product.status === 'inactive'
+                              ? 'rgba(255, 100, 100, 0.25)'
+                              : 'rgba(137, 250, 154, 0.46)',
+                          fontFamily: "'Plus Jakarta Sans', sans-serif",
+                          fontWeight: 500,
+                          fontSize: '12px',
+                          lineHeight: '15px',
+                          color: product.status === 'inactive' ? '#9B0000' : '#016D18',
+                        }}
+                      >
+                        {product.status === 'inactive' ? 'Inactive' : 'Active'}
+                      </span>
+                    </td>
 
                         <td className="px-6 py-4 text-sm text-gray-700">
                           {product.status?.toLowerCase() === 'active' ? (
@@ -115,65 +184,89 @@ export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) 
         </div>
 
       {/* Mobile Card View */}
-      <div className="lg:hidden">
-        <div className="space-y-4">
-          {products.map((product) => (
-            <div
-              key={product.productId}
-              className="rounded-lg border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition"
-            >
-              <div className="p-4">
-                {/* Header Row */}
-                <div className="flex items-start justify-between mb-3 font-family-inter">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        #{product.productId}
-                      </span>
-                    </div>
-                    <h3 className="text-base font-semibold text-gray-900 break-words">
-                      {product.name}
-                    </h3>
-                  </div>
-                </div>
-
-                {/* Product Details */}
-                <div className="space-y-2 mb-4" style={{fontFamily:'Inter'}}>
-                  <div className="flex justify-between items-start text-sm">
-                    <span className="text-gray-600">Short Name:</span>
-                    <span className="text-gray-900 font-medium text-right">{product.shortName}</span>
-                  </div>
-                  <div className="flex justify-between items-start text-sm">
-                    <span className="text-gray-600">Serial Prefix:</span>
-                    <span className="text-gray-900 font-medium text-right">{product.serialPrefix}</span>
-                  </div>
-                  <div className="flex justify-between items-start text-sm border-t pt-2">
-                    <span className="text-gray-600">Price:</span>
-                    <span className="text-lg font-bold text-green-600">LKR {product.price.toFixed(2)}</span>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-2 pt-3 border-t">
-                  <button
-                    onClick={() => onEdit(product)}
-                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                  >
-                    <Edit2Icon className="w-4 h-4" />
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => onDelete(product.productId)}
-                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition"
-                  >
-                    <TrashIcon className="w-4 h-4" />
-                    Delete
-                  </button>
-                </div>
+      <div className="lg:hidden space-y-3">
+        {products.map((product) => (
+          <div
+            key={product.productId}
+            className="rounded-2xl p-4"
+            style={{ background: 'rgba(255, 255, 255, 0.6)' }}
+          >
+            <div className="flex items-start justify-between mb-2">
+              <div>
+                <p style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '12px', color: '#5C626E' }}>
+                  #{product.productId}
+                </p>
+                <h3
+                  style={{
+                    fontFamily: "'Plus Jakarta Sans', sans-serif",
+                    fontWeight: 600,
+                    fontSize: '14px',
+                    color: '#414141',
+                  }}
+                >
+                  {product.name}
+                </h3>
               </div>
+              <span
+                style={{
+                  padding: '2px 8px',
+                  borderRadius: '17px',
+                  background:
+                    product.status === 'inactive'
+                      ? 'rgba(255, 100, 100, 0.25)'
+                      : 'rgba(137, 250, 154, 0.46)',
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  fontWeight: 500,
+                  fontSize: '12px',
+                  color: product.status === 'inactive' ? '#9B0000' : '#016D18',
+                }}
+              >
+                {product.status === 'inactive' ? 'Inactive' : 'Active'}
+              </span>
             </div>
-          ))}
-        </div>
+            <div className="space-y-1 mb-3">
+              {[
+                ['Short Name', product.shortName],
+                ['Serial Prefix', product.serialPrefix],
+                ['Price', `LKR ${Number(product.price).toFixed(2)}`],
+              ].map(([label, val]) => (
+                <div key={label} className="flex justify-between">
+                  <span
+                    style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '13px', color: '#5C626E' }}
+                  >
+                    {label}:
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: "'Plus Jakarta Sans', sans-serif",
+                      fontSize: '13px',
+                      fontWeight: 500,
+                      color: '#414141',
+                    }}
+                  >
+                    {val}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-3 pt-2 border-t border-white/50">
+              <button
+                onClick={() => onEdit(product)}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg hover:bg-blue-50 transition"
+                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '14px', color: '#2348CD' }}
+              >
+                <Edit2Icon className="w-4 h-4" /> Edit
+              </button>
+              <button
+                onClick={() => onDelete(product.productId)}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg hover:bg-red-50 transition"
+                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '14px', color: '#E0090C' }}
+              >
+                <TrashIcon className="w-4 h-4" /> Delete
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
     </>
   );

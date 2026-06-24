@@ -17,7 +17,6 @@ export const DuplicateSales: React.FC = () => {
   const [currentSale, setCurrentSale] = useState<Sale | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<{ role: string } | null>(null);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -50,7 +49,6 @@ export const DuplicateSales: React.FC = () => {
       setSales(response as Sale[]);
     } catch (err: any) {
       const msg = err?.message || 'Failed to load orders';
-      setError(msg);
       setSnackbar({ open: true, message: msg, type: 'error' });
       setSales([]);
     } finally {
@@ -99,8 +97,6 @@ export const DuplicateSales: React.FC = () => {
 
       const buffer = await blob.arrayBuffer();
       const workbook = XLSX.read(buffer, { type: 'array' });
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
       const fileName = `All_Sales_${new Date().toISOString().split('T')[0]}.xlsx`;
       XLSX.writeFile(workbook, fileName);

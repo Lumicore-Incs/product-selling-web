@@ -1,10 +1,11 @@
-import axios from '../services/axiosConfig';
+
 
 interface DashboardStats {
   total_order: number;
   today_order: number;
   conform_order: number;
   cancel_order: number;
+  processing_order?: number;
   totalOrdersTrend: string;
   todayOrdersTrend: string;
   confirmedOrdersTrend: string;
@@ -12,6 +13,18 @@ interface DashboardStats {
 }
 
 export async function getDashboardStats(): Promise<DashboardStats> {
-  const response = await axios.get<DashboardStats>('/dashboard');
-  return response.data;
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({
+        total_order: 1250,
+        today_order: 45,
+        conform_order: 1180,
+        cancel_order: 25,
+        totalOrdersTrend: '+5%',
+        todayOrdersTrend: '+12%',
+        confirmedOrdersTrend: '+8%',
+        cancelledOrdersTrend: '-2%',
+      });
+    }, 500);
+  });
 }

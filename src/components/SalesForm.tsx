@@ -225,6 +225,10 @@ export const SalesForm: React.FC<SalesFormProps> = ({
       items: matchedItems.length > 0 ? matchedItems : prev.items,
     }));
 
+    if (totalAmount) {
+      setManualTotalAmount(totalAmount);
+    }
+
     let message = 'Customer details parsed successfully!';
     if (matchedEntries > 0) {
       message += ` ${matchedEntries} item${matchedEntries === 1 ? '' : 's'} matched.`;
@@ -322,7 +326,6 @@ export const SalesForm: React.FC<SalesFormProps> = ({
       }));
     }
   };
-
 
 
   const ensureLeadingZero = (phone?: string) => {

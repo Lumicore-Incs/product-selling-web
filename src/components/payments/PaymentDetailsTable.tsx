@@ -113,10 +113,8 @@ export const PaymentDetailsTable: React.FC<PaymentDetailsTableProps> = ({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between px-2">
-        <h3 className="text-xl font-bold text-gray-800 flex items-center gap-3">
-          <div className="p-2 bg-blue-50 rounded-xl text-blue-600">
-            <Receipt className="w-5 h-5" />
-          </div>
+        <h3 className="text-[18px] font-medium text-[#323232] flex items-center gap-2 font-['Inter']">
+          <Receipt className="w-[20px] h-[20px] text-[#323232]" />
           Payment Settlements
         </h3>
         
@@ -136,108 +134,90 @@ export const PaymentDetailsTable: React.FC<PaymentDetailsTableProps> = ({
             onClick={handleRefresh}
             disabled={isRefreshing || parentLoading || !userId}
             className={`
-              flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all
+              flex items-center justify-center gap-1 w-[77px] h-[22px] rounded-[6px] border-[0.2px] border-[#0B818D] shadow-[0_0_14px_rgba(0,0,0,0.08)] transition-all
               ${isRefreshing || parentLoading
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-white text-blue-600 border border-blue-100 hover:bg-blue-50 shadow-sm active:scale-95'
+                ? 'bg-gray-100/50 text-gray-400 cursor-not-allowed'
+                : 'bg-white/74 hover:bg-white text-[#0B818D] active:scale-95'
               }
             `}
           >
             {isRefreshing || parentLoading ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <Loader2 className="w-[14px] h-[14px] animate-spin text-[#0B818D]" />
             ) : (
-              <RefreshCw className="w-3.5 h-3.5" />
+              <RefreshCw className="w-[14px] h-[14px] text-[#0B818D]" />
             )}
-            {isRefreshing ? 'Refreshing...' : 'Refresh'}
+            <span className="text-[11px] font-normal text-[#0B818D] font-['Inter']">Refresh</span>
           </button>
-          <div className="hidden sm:block text-sm font-semibold text-gray-400 uppercase tracking-widest pl-4 border-l border-gray-100">
+          <div className="hidden sm:block text-xs font-semibold text-gray-400 uppercase tracking-widest pl-4 border-l border-gray-100">
             {localDetails.length} Records
           </div>
         </div>
       </div>
 
       {/* DESKTOP VIEW */}
-      <div className={`hidden md:block bg-white rounded-[2rem] shadow-xl shadow-gray-100/50 border border-gray-100 overflow-hidden transition-all duration-500 ${isRefreshing ? 'opacity-60 grayscale-[0.5]' : 'opacity-100'}`}>
+      <div className={`hidden md:block overflow-hidden transition-all duration-500 ${isRefreshing ? 'opacity-60 grayscale-[0.5]' : 'opacity-100'}`}>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left border-separate border-spacing-0">
+          <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-gray-50/50">
-                <th className="px-6 py-5 font-bold text-gray-400 border-b border-gray-100">
-                  <div className="flex items-center gap-2">
-                    <Hash className="w-4 h-4" /> ID
-                  </div>
-                </th>
-                <th className="px-6 py-5 font-bold text-gray-400 border-b border-gray-100">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4" /> Date
-                  </div>
-                </th>
-                <th className="px-6 py-5 font-bold text-gray-400 border-b border-gray-100 text-center">
-                  Qty
-                </th>
-                <th className="px-6 py-5 font-bold text-gray-400 border-b border-gray-100 text-right">
-                  Commission
-                </th>
-                <th className="px-6 py-5 font-bold text-gray-800 border-b border-gray-100 text-right">
-                  Total
-                </th>
-                <th className="px-6 py-5 font-bold text-gray-400 border-b border-gray-100 text-center">
-                  Status
-                </th>
-                <th className="px-6 py-5 font-bold text-gray-400 border-b border-gray-100 text-right">
-                   Actions
-                </th>
+              <tr style={{ background: 'rgba(255, 255, 255, 0.42)' }} className="h-[66px] border-b border-white">
+                <th className="px-6 text-[16px] font-medium text-[#414141] font-['Inter']">ID</th>
+                <th className="px-6 text-[16px] font-medium text-[#414141] font-['Inter']">Date</th>
+                <th className="px-6 text-[16px] font-medium text-[#414141] font-['Inter'] text-center">Qty</th>
+                <th className="px-6 text-[16px] font-medium text-[#414141] font-['Inter'] text-right">Commission</th>
+                <th className="px-6 text-[16px] font-medium text-[#414141] font-['Inter'] text-right">Total</th>
+                <th className="px-6 text-[16px] font-medium text-[#414141] font-['Inter'] text-center">Status</th>
+                <th className="px-6 text-[16px] font-medium text-[#414141] font-['Inter'] text-center">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody>
               {hasDetails ? (
-                localDetails.map((detail) => (
-                  <tr key={detail.id} className="hover:bg-blue-50/30 transition-all duration-300 group cursor-default">
-                    <td className="px-6 py-5 font-bold text-gray-400 group-hover:text-blue-600 transition-colors">
+                localDetails.map((detail, index) => (
+                  <tr 
+                    key={detail.id} 
+                    className="hover:bg-white/50 transition-colors h-[60px] border-b border-white"
+                    style={{ background: index % 2 === 0 ? 'rgba(255, 255, 255, 0.45)' : 'transparent' }}
+                  >
+                    <td className="px-6 text-[16px] font-medium text-[#414141] font-['Inter']">
                       #{detail.id}
                     </td>
-                    <td className="px-6 py-5 text-gray-700 font-medium">
+                    <td className="px-6 text-[16px] font-medium text-[#414141] font-['Inter']">
                       {detail.date || 'N/A'}
                     </td>
-                    <td className="px-6 py-5 text-center">
-                      <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-lg font-bold text-xs">
+                    <td className="px-6 text-center">
+                      <span className="px-2 py-0.5 bg-white/40 text-[#414141] rounded-[6px] font-medium text-[16px] font-['Inter']">
                         {detail.monthlyQty}
                       </span>
                     </td>
-                    <td className="px-6 py-5 text-right font-semibold text-gray-600">
-                      {detail.totalCommission.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    <td className="px-6 text-right text-[16px] font-medium text-[#414141] font-['Inter']">
+                      LKR {detail.totalCommission.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
-                    <td className="px-6 py-5 text-right">
-                      <span className="font-black text-gray-800">
-                        {detail.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                      </span>
+                    <td className="px-6 text-right text-[16px] font-bold text-[#016D18] font-['Inter']">
+                      LKR {detail.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
-                    <td className="px-6 py-5 text-center">
-                       <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${
-                         detail.status?.toLowerCase() === 'paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
-                       }`}>
+                    <td className="px-6 text-center">
+                       <span className="inline-flex items-center justify-center px-2 py-[2px] rounded-[17px] font-medium text-[12px] leading-none font-['Inter']" style={{ background: detail.status?.toLowerCase() === 'paid' ? 'rgba(137, 250, 154, 0.46)' : 'rgba(254, 243, 199, 0.5)', color: detail.status?.toLowerCase() === 'paid' ? '#016D18' : '#92400E' }}>
                          {detail.status || 'Pending'}
                        </span>
                     </td>
-                    <td className="px-6 py-5 text-right">
-                      <div className="flex justify-end items-center gap-2 opacity-0 opacity-100 ">
+                    <td className="px-6 text-center">
+                      <div className="flex justify-center items-center gap-3">
                         <button 
                           onClick={() => openEditModal(detail)}
-                          className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                          className="text-[#2348CD] hover:opacity-75 transition-opacity"
                           title="Edit"
                         >
-                          <Edit2 className="w-4 h-4" />
+                          <Edit2 className="w-[20px] h-[20px]" />
                         </button>
                         <button 
                           onClick={() => handleDelete(detail.id)}
                           disabled={isDeletingId === detail.id}
-                          className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                          className="text-[#E0090C] hover:opacity-75 transition-opacity disabled:opacity-50"
                           title="Delete"
                         >
                           {isDeletingId === detail.id ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
                           ) : (
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-[22px] h-[22px]" />
                           )}
                         </button>
                       </div>

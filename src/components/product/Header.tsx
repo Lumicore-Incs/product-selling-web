@@ -6,9 +6,8 @@ interface HeaderProps {
   onRefresh?: () => void;
   loading?: boolean;
 }
+
 export function Header({
-  searchTerm,
-  onSearchChange,
   onAddClick,
 }: Readonly<HeaderProps>) {
   return (

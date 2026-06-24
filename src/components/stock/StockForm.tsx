@@ -103,67 +103,123 @@ const StockForm: React.FC<Props> = ({ onSubmit, initialValues, mode = 'add' }) =
     <>
       <form
         onSubmit={handleSubmit(handleFormSubmit)}
-        className="bg-white p-6 rounded-lg shadow-md mb-6"
+        className="bg-[rgba(255,255,255,0.49)] rounded-[8px] p-[28px] mb-6 shadow-sm border border-white/40 backdrop-blur-md"
       >
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Product</label>
-          <select
-            {...register('type')}
-            disabled={isSubmitting}
-            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
-          >
-            <option value="">Select product</option>
-            {products.map((product) => (
-              <option key={product.productId} value={product.name}>
-                {product.name}
-              </option>
-            ))}
-            <option value="Other">Other</option>
-          </select>
-          {selectedType === 'Other' && (
-            <input
-              type="text"
-              className="mt-2 block w-full border-gray-300 rounded-md shadow-sm"
-              placeholder="Enter new product/type"
-              value={newType}
-              onChange={e => setNewType(e.target.value)}
-              required
-            />
-          )}
+        <div className="flex flex-col xl:flex-row xl:items-end gap-[30px] xl:gap-[25px]">
+          <div className="flex-1 max-w-[201px]">
+            <label className="block text-[18px] font-semibold text-[#414141] mb-[5px]">Product</label>
+            <div className="relative">
+              <select
+                {...register('type')}
+                disabled={isSubmitting}
+                className="w-full h-[32px] border border-[#BCC1CB] rounded-[8px] bg-transparent pl-3 pr-8 text-[12px] text-[#949494] appearance-none outline-none"
+              >
+                <option value="">Select product</option>
+                {products.map((product) => (
+                  <option key={product.productId} value={product.name}>
+                    {product.name}
+                  </option>
+                ))}
+                <option value="Other">Other</option>
+              </select>
+              <div className="absolute right-[10px] top-[8px] pointer-events-none">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M6 9L12 15L18 9" stroke="#949494" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+            </div>
+            {selectedType === 'Other' && (
+              <input
+                type="text"
+                className="mt-2 w-full h-[32px] border border-[#BCC1CB] rounded-[8px] bg-transparent px-3 text-[12px] outline-none"
+                placeholder="Enter new product/type"
+                value={newType}
+                onChange={e => setNewType(e.target.value)}
+                required
+              />
+            )}
+          </div>
+
+          <div className="flex-1 max-w-[201px]">
+            <label className="block text-[18px] font-semibold text-[#414141] mb-[5px]">Date</label>
+            <div className="relative">
+              <input
+                type="date"
+                {...register('date')}
+                disabled={isSubmitting}
+                className="w-full h-[32px] border border-[#BCC1CB] rounded-[8px] bg-transparent pl-3 pr-8 text-[12px] text-[#949494] outline-none [color-scheme:light]"
+              />
+            </div>
+          </div>
+
+          <div className="flex-1 max-w-[201px]">
+            <label className="block text-[18px] font-semibold text-[#414141] mb-[5px]">Quantity</label>
+            <div className="relative">
+              <input
+                type="number"
+                {...register('quantity', { valueAsNumber: true })}
+                disabled={isSubmitting}
+                className="w-full h-[32px] border border-[#BCC1CB] rounded-[8px] bg-transparent pl-3 pr-8 text-[12px] text-[#949494] outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="flex-1 flex flex-col justify-end">
+            <label className="block text-[18px] font-semibold text-[#414141] mb-[5px]">Status</label>
+            <div className="flex items-center gap-[10px]">
+              <div className="flex items-center w-[213px] h-[35px] bg-[#FBFCFC] rounded-[8px] p-1 shadow-sm">
+                {(['NEW', 'DAMAGE', 'RETURN'] as const).map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    disabled={isSubmitting || mode === 'damage'}
+                    onClick={() => setValue('status', s)}
+                    className={`flex-1 h-full rounded-[18px] text-[11px] font-medium transition-colors ${
+                      watch('status') === s
+                        ? 'bg-[rgba(11,129,141,0.2)] text-[#5C626E]'
+                        : 'text-[#5C626E] hover:bg-gray-100'
+                    }`}
+                  >
+                    {s === 'NEW' ? 'New' : s === 'DAMAGE' ? 'Damage' : 'Return'}
+                  </button>
+                ))}
+              </div>
+
+              {!initialValues ? (
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-[118px] h-[37px] bg-[#0B818D] rounded-[8px] text-white font-semibold text-[16px] flex items-center justify-center hover:bg-[#096a74] transition"
+                >
+                  {isSubmitting ? <Spinner size={18} colorClass="text-white" /> : 'Save'}
+                </button>
+              ) : (
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-[100px] h-[37px] bg-yellow-500 rounded-[8px] text-white font-semibold text-[14px] flex items-center justify-center hover:bg-yellow-600 transition"
+                  >
+                    {isSubmitting ? <Spinner size={18} colorClass="text-white" /> : 'Update'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      reset();
+                      onSubmit({ type: '', date: '', quantity: 0, status: 'NEW' });
+                    }}
+                    disabled={isSubmitting}
+                    className="w-[80px] h-[37px] bg-red-500 rounded-[8px] text-white font-semibold text-[14px] flex items-center justify-center hover:bg-red-600 transition"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Date</label>
-            <input
-              type="date"
-              {...register('date')}
-              disabled={isSubmitting}
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
-            />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Quantity</label>
-          <input
-            type="number"
-            {...register('quantity', { valueAsNumber: true })}
-            disabled={isSubmitting}
-            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Status</label>
-          <select
-            {...register('status')}
-            disabled={isSubmitting || mode === 'damage'}
-            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
-          >
-            <option value="NEW">New</option>
-            <option value="RETURN">Return</option>
-            <option value="DAMAGE">Damage</option>
-          </select>
-        </div>
-      </div>
-      {mode === 'damage' && (
+
+        {mode === 'damage' && (
         <div className="mt-4">
           <label className="block text-sm font-medium text-gray-700">Damage reason</label>
           <textarea
@@ -175,45 +231,6 @@ const StockForm: React.FC<Props> = ({ onSubmit, initialValues, mode = 'add' }) =
           />
         </div>
       )}
-      <div className="mt-4 flex space-x-2">
-        {!initialValues && (
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded flex items-center gap-2"
-          >
-            {isSubmitting ? <Spinner size={18} colorClass="text-white" /> : 'Save'}
-          </button>
-        )}
-        {initialValues && (
-          <>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded flex items-center gap-2"
-            >
-              {isSubmitting ? <Spinner size={18} colorClass="text-white" /> : 'Update'}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                reset(); // Reset form to empty state
-                // Tell parent to exit edit mode
-                onSubmit({
-                  type: '',
-                  date: '',
-                  quantity: 0,
-                  status: 'NEW'
-                });
-              }}
-              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
-              disabled={isSubmitting}
-            >
-              Cancel
-            </button>
-          </>
-        )}
-      </div>
       </form>
       <AlertSnackbar
         open={snackbar.open}

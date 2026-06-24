@@ -4,12 +4,15 @@ import Filters from '../components/stock/Filters';
 import StockForm, { StockItem } from '../components/stock/StockForm';
 import StockTable from '../components/stock/StockTable';
 import { getAllStock, addStock, updateStock, deleteStock } from '../services/stock/stockService';
+import { getAllProducts } from '../service/product';
+import { Product } from '../models/product';
 import Spinner from '../components/Spinner';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { AlertSnackbar } from '../components/AlertSnackbar';
 
 export const StockManagement = () => {
   const [items, setItems] = useState<StockItem[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [editItem, setEditItem] = useState<StockItem | null>(null);
   const [filters, setFilters] = useState({ type: 'All', date: '', status: 'All' });
   const [isLoading, setIsLoading] = useState(true);
@@ -28,10 +31,14 @@ export const StockManagement = () => {
     try {
       setIsLoading(true);
       setError(null);
-      const data = await getAllStock();
-      setItems(data);
+      const [stockData, productsData] = await Promise.all([
+        getAllStock(),
+        getAllProducts()
+      ]);
+      setItems(stockData as StockItem[]);
+      setProducts(productsData as Product[]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch stock data');
+      setError(err instanceof Error ? err.message : 'Failed to fetch data');
     } finally {
       setIsLoading(false);
     }
@@ -105,45 +112,78 @@ export const StockManagement = () => {
   const damageItems = items.filter((item) => item.status === 'DAMAGE');
   const totalDamaged = damageItems.reduce((sum, item) => sum + Math.abs(item.quantity), 0);
 
+  // Product summaries for top cards
+  const productSummaries = Object.entries(
+    items.reduce((acc, item) => {
+      acc[item.type] = (acc[item.type] || 0) + Number(item.quantity);
+      return acc;
+    }, {} as Record<string, number>)
+  ).map(([name, total]) => ({ name, total }));
+
+  const summaryColors = [
+    { text: 'text-[#540863]', num: 'text-[#540863]' },
+    { text: 'text-[#D06027]', num: 'text-[#B23D03]' },
+    { text: 'text-[#016D18]', num: 'text-[#016D18]' },
+    { text: 'text-[#E0090C]', num: 'text-[#920002]' },
+    { text: 'text-[#002094]', num: 'text-[#002094]' },
+  ];
+
   return (
     <div className="space-y-6 mx-6 relative">
       <BackgroundIcons type="stock" />
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Stock Management</h1>
-        {isLoading && <Spinner size={24} colorClass="text-blue-600" />}
+        <div className="flex items-center gap-4">
+          <h1 className="text-[28px] font-bold text-[#0E626E] font-['Plus_Jakarta_Sans']">Stock Management</h1>
+          {isLoading && <Spinner size={24} colorClass="text-[#0E626E]" />}
+        </div>
+        <div className="flex gap-4">
+          <button
+            onClick={() => {
+              setFormMode('add');
+              setEditItem(null);
+            }}
+            className="px-[30px] py-[11px] rounded-[8px] font-semibold text-[18px] text-white bg-[#296BDF] transition hover:bg-[#2055b5] flex items-center justify-center min-w-[150px] h-[44px]"
+          >
+            Add Stock
+          </button>
+          <button
+            onClick={() => {
+              setFormMode('damage');
+              setEditItem(null);
+            }}
+            className="px-[30px] py-[11px] rounded-[8px] font-semibold text-[18px] text-white bg-[#C94741] transition hover:bg-[#a63934] flex items-center justify-center min-w-[169px] h-[44px]"
+          >
+            Log Damage
+          </button>
+        </div>
       </div>
 
-      <div className="flex flex-wrap gap-3">
-        <button
-          onClick={() => {
-            setFormMode('add');
-            setEditItem(null);
-          }}
-          className={`px-4 py-2 rounded-lg font-medium transition ${formMode === 'add'
-            ? 'bg-blue-600 text-white'
-            : 'bg-gray-100 text-blue-600 hover:bg-gray-200'
-          }`}
-        >
-          Add Stock
-        </button>
-        <button
-          onClick={() => {
-            setFormMode('damage');
-            setEditItem(null);
-          }}
-          className={`px-4 py-2 rounded-lg font-medium transition ${formMode === 'damage'
-            ? 'bg-red-600 text-white'
-            : 'bg-gray-100 text-red-600 hover:bg-gray-200'
-          }`}
-        >
-          Log Damage
-        </button>
-        {formMode === 'damage' && (
-          <span className="px-3 py-2 rounded-full bg-red-50 text-red-600 border border-red-100 text-sm">
+      {/* Top Product Summary Cards */}
+      {productSummaries.length > 0 && (
+        <div className="flex overflow-x-auto pb-4 gap-4 scrollbar-hide">
+          {productSummaries.map((summary, index) => {
+            const colors = summaryColors[index % summaryColors.length];
+            return (
+              <div key={summary.name} className="flex-none w-[210px] h-[95px] bg-white/35 rounded-[21px] p-[15px] relative">
+                <div className={`font-bold text-[20px] leading-[24px] truncate ${colors.text}`}>
+                  {summary.name}
+                </div>
+                <div className={`absolute bottom-[10px] font-bold text-[30px] leading-[36px] ${colors.num}`}>
+                  {summary.total}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {formMode === 'damage' && (
+        <div className="flex justify-end mb-4">
+          <span className="px-4 py-2 rounded-full bg-red-50 text-red-600 border border-red-100 text-sm">
             Logging damaged inventory will set the status to Damage and capture the reason.
           </span>
-        )}
-      </div>
+        </div>
+      )}
 
       {error && (
         <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
@@ -164,31 +204,51 @@ export const StockManagement = () => {
       <Filters onFilterChange={handleFilterChange} existingItems={items} />
       {damageItems.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div className="bg-red-50 border border-red-100 rounded-xl p-4 space-y-2">
-            <p className="text-sm text-red-500">Total damaged records</p>
-            <p className="text-3xl font-semibold text-red-700">{damageItems.length}</p>
-            <p className="text-sm text-red-600">Quantity affected: {totalDamaged}</p>
-            
-            {/* Detailed breakdown of damaged products */}
-            <div className="mt-4 space-y-2">
-              <p className="text-xs font-medium text-red-600 uppercase tracking-wide">Product Details:</p>
-              <div className="max-h-32 overflow-y-auto space-y-1">
-                {damageItems.map((item, index) => (
-                  <div key={item.stock_id || index} className="flex justify-between items-center text-sm bg-white/50 rounded px-2 py-1">
-                    <span className="font-medium text-gray-800 truncate mr-2">{item.type}</span>
-                    <span className="text-red-600 font-semibold">Qty: {Math.abs(item.quantity)}</span>
-                  </div>
-                ))}
+          {/* Left Damage Summary Card */}
+          <div className="bg-[#FDF2F4] rounded-[8px] p-6 relative min-h-[129px]">
+            <div className="flex items-start gap-4">
+              <div className="w-[75px] h-[75px] bg-[#FCDDDF] rounded-full flex items-center justify-center shrink-0">
+                <svg width="45" height="45" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 2L1 21H23L12 2Z" fill="#CB4050" fillOpacity="0.1" stroke="#CB4050" strokeWidth="2" strokeLinejoin="round"/>
+                  <path d="M12 10V14M12 17H12.01" stroke="#CB4050" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <div className="flex flex-col">
+                <h3 className="text-[20px] font-medium text-[#242424] leading-[24px]">Total damaged records</h3>
+                <div className="text-[34px] font-semibold text-[#E0090C] leading-[41px] mt-1">{damageItems.length}</div>
+                <p className="text-[14px] font-medium text-[#6A6A6A] mt-1">Quantity affected: {totalDamaged}</p>
+              </div>
+              <div className="w-[1.5px] h-[100px] bg-[rgba(224,9,12,0.29)] mx-4 self-center hidden sm:block"></div>
+              <div className="flex-1 hidden sm:block">
+                <h4 className="text-[18px] font-medium text-[#E44A5E] uppercase mb-2">PRODUCT DETAILS</h4>
+                <div className="max-h-[80px] overflow-y-auto space-y-1 scrollbar-hide">
+                  {damageItems.map((item, idx) => (
+                    <div key={item.stock_id || idx} className="flex justify-between items-center">
+                      <span className="text-[14px] font-medium text-[#414141] truncate mr-2">{item.type}</span>
+                      <span className="text-[14px] text-[#757B87]">Qty : {Math.abs(item.quantity)}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
-          <div className="bg-white bg-opacity-80 border border-dashed border-red-200 rounded-xl p-4 text-sm text-gray-600">
-            Every damage entry keeps stock history clean and can be filtered via the status selector below.
+
+          {/* Right Info Card */}
+          <div className="bg-[#E9E4FF] rounded-[8px] p-6 flex items-center gap-4 min-h-[129px]">
+            <div className="w-[75px] h-[75px] bg-[#D4CEFF] rounded-full flex items-center justify-center shrink-0">
+              <svg width="45" height="45" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM11 7H13V9H11V7ZM11 11H13V17H11V11Z" fill="#8382F0"/>
+              </svg>
+            </div>
+            <p className="text-[15px] text-[#000000] leading-[18px]">
+              Every damage entry keeps stock history clean and can be filtered via status selector below.
+            </p>
           </div>
         </div>
       )}
       <StockTable
         items={items}
+        products={products}
         onEdit={handleEdit}
         onDelete={handleDeleteRequest}
         filterType={filters.type}
