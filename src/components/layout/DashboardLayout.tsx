@@ -59,7 +59,6 @@ export const DashboardLayout = () => {
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
         <Header
           onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          onSettingsClick={() => setShowSettings(!showSettings)}
           headerColor={headerColor}
         />
 
@@ -71,6 +70,9 @@ export const DashboardLayout = () => {
                 salesBackgroundColor,
                 showSettings,
                 setShowSettings,
+                onTitleChange: handleTitleChange,
+                onBackgroundColorChange: handleBackgroundColorChange,
+                onHeaderColorChange: handleHeaderColorChange,
               }}
             />
           </div>

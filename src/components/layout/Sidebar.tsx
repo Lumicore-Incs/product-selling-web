@@ -2,7 +2,7 @@ import {
   BarChart3Icon,
   ChevronDownIcon,
   FileBarChart2Icon,
-  HomeIcon,
+  LayoutDashboardIcon,
   LogOutIcon,
   PackageIcon,
   SettingsIcon,
@@ -44,7 +44,7 @@ const getNavItems = (userRole: string): NavItem[] => {
   const items: NavItem[] = [];
 
   // DASHBOARD - All roles
-  items.push({ icon: HomeIcon, label: 'Dashboard', to: '/', end: true });
+  items.push({ icon: LayoutDashboardIcon, label: 'Dashboard', to: '/', end: true });
 
   // USER Specific items
   if (isUser) {
@@ -111,7 +111,6 @@ const getHelpSettingsItems = (userRole: string): NavItem[] => {
     normalized === 'SUPER_USER' ||
     normalized === 'SUPERUSER';
   const isAdmin = normalized === 'ADMIN';
-  const isUser = normalized === 'USER';
 
   const items: NavItem[] = [];
 
@@ -129,7 +128,7 @@ const getHelpSettingsItems = (userRole: string): NavItem[] => {
   }
 
   // SETTINGS - All roles
-  items.push({ icon: SettingsIcon, label: 'Settings', to: '/sale/settings', isSettings: true });
+  items.push({ icon: SettingsIcon, label: 'Settings', to: '/settings' });
 
   return items;
 };

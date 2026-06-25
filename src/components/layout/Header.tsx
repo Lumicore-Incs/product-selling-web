@@ -19,11 +19,10 @@ import { orderService } from '../../services/orders/orderService';
 
 interface HeaderProps {
   onMenuClick: () => void;
-  onSettingsClick?: () => void;
   headerColor?: string;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onMenuClick, onSettingsClick, headerColor = '#2a98a4' }) => {
+export const Header: React.FC<HeaderProps> = ({ onMenuClick, headerColor = '#2a98a4' }) => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any | null>(null);
   const [userLoading, setUserLoading] = useState(true);
@@ -62,7 +61,14 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick, onSettingsClick, he
   };
 
   return (
-      <header className="w-full bg-opacity-70 backdrop-filter backdrop-blur-lg border-b border-white sticky top-0 z-10">
+      <header 
+        className="w-full border-b border-white sticky top-0 z-10"
+        style={{ 
+          backgroundColor: headerColor.startsWith('#') && headerColor.length === 7 ? `${headerColor}b3` : headerColor,
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)'
+        }}
+      >
 
       <div className="flex items-center justify-between gap-2 sm:gap-6 px-4 sm:px-8 py-5">
 
@@ -153,9 +159,9 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick, onSettingsClick, he
             </div>
           </div>
 
-          {/* SETTINGS - OPEN SETTINGS PANEL */}
+          {/* SETTINGS - GO TO SETTINGS PAGE */}
           <button 
-            onClick={onSettingsClick}
+            onClick={() => navigate('/settings')}
             className="p-2 bg-white bg-opacity-30 hover:bg-opacity-50 rounded-xl transition-all"
           >
             <Settings size={18} className="text-green-600" />

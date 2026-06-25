@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
-import { Sale, SaleItem } from '../models/sales';
+import { Sale } from '../models/sales';
 import { ConfirmDialog } from './ConfirmDialog';
 import { SalesViewModal } from './SalesViewModal';
 import Spinner from './Spinner';
@@ -68,7 +68,6 @@ export const SalesTable: React.FC<SalesTableProps> = ({
   isLoading,
   onEdit,
   onDelete,
-  userRole,
   onRefresh,
   onStatusChange,
   alwaysEditableStatus,
@@ -212,9 +211,6 @@ export const SalesTable: React.FC<SalesTableProps> = ({
     }
   };
 
-  const getTotalAmount = (items: SaleItem[]) => {
-    return items.reduce((sum, item) => sum + item.qty * item.price, 0);
-  };
 
   // Filter sales based on search term (bypassed when server-side pagination is active)
   const filteredSales = serverPagination
@@ -892,7 +888,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
         confirmLabel="Delete"
         cancelLabel="Cancel"
         onConfirm={() => {
-          if (pendingDeleteId) onDelete(pendingDeleteId);
+          if (pendingDeleteId && onDelete) onDelete(pendingDeleteId);
           setPendingDeleteId(null);
         }}
         onCancel={() => setPendingDeleteId(null)}

@@ -160,23 +160,29 @@ export const UserOrders = () => {
               </div>
 
               <div className="space-y-1.5 max-h-[60vh] overflow-y-auto pr-1 custom-scrollbar">
-                {usersWithOrders
-                  .filter(user => user.role !== 'ADMIN')
-                  .map(user => (
-                    <div
-                      key={user.id}
-                      onClick={() => setSelectedUserId(user.id)}
-                      className={`px-4 py-3 rounded-2xl cursor-pointer transition-all duration-300 border ${selectedUserId === user.id
-                          ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-100'
-                          : 'bg-transparent border-transparent hover:bg-blue-50/50 hover:border-blue-100 text-gray-600 hover:text-blue-600'
-                        }`}
-                    >
-                      <div className="font-bold text-sm truncate">{user.name}</div>
-                      <div className={`text-[10px] truncate ${selectedUserId === user.id ? 'text-blue-100' : 'text-gray-400'}`}>
-                        {user.email}
+                {loading ? (
+                  <div className="text-center py-4 text-gray-500 text-xs font-bold">Loading directory...</div>
+                ) : usersWithOrders.filter(user => user.role !== 'ADMIN').length === 0 ? (
+                  <div className="text-center py-4 text-gray-400 text-xs">No users found</div>
+                ) : (
+                  usersWithOrders
+                    .filter(user => user.role !== 'ADMIN')
+                    .map(user => (
+                      <div
+                        key={user.id}
+                        onClick={() => setSelectedUserId(user.id)}
+                        className={`px-4 py-3 rounded-2xl cursor-pointer transition-all duration-300 border ${selectedUserId === user.id
+                            ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-100'
+                            : 'bg-transparent border-transparent hover:bg-blue-50/50 hover:border-blue-100 text-gray-600 hover:text-blue-600'
+                          }`}
+                      >
+                        <div className="font-bold text-sm truncate">{user.name}</div>
+                        <div className={`text-[10px] truncate ${selectedUserId === user.id ? 'text-blue-100' : 'text-gray-400'}`}>
+                          {user.email}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                )}
               </div>
             </div>
           </div>
