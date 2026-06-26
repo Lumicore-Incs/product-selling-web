@@ -1,4 +1,4 @@
-import { Edit2Icon, TrashIcon } from 'lucide-react';
+import { Edit, Trash2 } from 'lucide-react';
 import { Product } from '../../models/product';
 
 interface ProductTableProps {
@@ -21,80 +21,86 @@ export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) 
     <>
       {/* Desktop Table View */}
       <div className="hidden lg:block">
-        <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: 'transparent' }}>
-          <div className="rounded-t-2xl overflow-hidden">
-            <div className="overflow-x-auto w-full">
-              <table className="w-full" style={{fontFamily:'inter'}}>
-                {/* Header */}
-                <thead>
-                  <tr className="border-b border-white bg-white">
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Id</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Name</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Short Name</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Serial Prefix</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Price</th>
-                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Actions</th>
-                  </tr>
-                </thead>
+        <div className="bg-white/50 backdrop-blur-sm rounded-2xl overflow-hidden shadow-sm">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-sm" style={{ fontFamily: 'Inter, sans-serif' }}>
+              {/* Header */}
+              <thead>
+                <tr className="bg-white/60 text-gray-700">
+                  <th className="px-6 py-5 text-left font-semibold">Id</th>
+                  <th className="px-6 py-5 text-left font-semibold">Name</th>
+                  <th className="px-6 py-5 text-left font-semibold">Short Name</th>
+                  <th className="px-6 py-5 text-left font-semibold">Serial Prefix</th>
+                  <th className="px-6 py-5 text-left font-semibold">Price</th>
+                  <th className="px-6 py-5 text-left font-semibold">Status</th>
+                  <th className="px-6 py-5 text-center font-semibold">Actions</th>
+                </tr>
+              </thead>
 
-                {/* Body */}
-                <tbody>
-                  {products.map((product, index) => {
-                    return (
-                      <tr
-                        key={product.productId}
-                        className={`border-b-2 border-white transition hover:bg-blue-100 ${
-                          index % 2 === 0 ? 'bg-blue-50' : 'bg-blue-50'
-                        } hover:bg-blue-100`}
-                      >
-                        <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                          {product.productId}
-                        </td>
+              {/* Body */}
+              <tbody>
+                {products.map((product, index) => {
+                  return (
+                    <tr
+                      key={product.productId}
+                      className={`border-b border-white/20 transition hover:bg-white/80 ${
+                        index % 2 === 0 ? 'bg-white/50' : 'bg-transparent'
+                      }`}
+                    >
+                      <td className="px-6 py-4 font-medium text-gray-900">
+                        {product.productId}
+                      </td>
 
-                        <td className="px-6 py-4 text-sm text-gray-700">
-                          {product.name}
-                        </td>
+                      <td className="px-6 py-4 text-gray-700">
+                        {product.name}
+                      </td>
 
-                        <td className="px-6 py-4 text-sm text-gray-700">
-                          {product.shortName}
-                        </td>
+                      <td className="px-6 py-4 text-gray-700">
+                        {product.shortName}
+                      </td>
 
-                        <td className="px-6 py-4 text-sm text-gray-700">
-                          {product.serialPrefix}
-                        </td>
+                      <td className="px-6 py-4 text-gray-700">
+                        {product.serialPrefix}
+                      </td>
 
-                        <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                          LKR {product.price.toFixed(2)}
-                        </td>
+                      <td className="px-6 py-4 font-medium text-gray-900">
+                        LKR {product.price.toFixed(2)}
+                      </td>
 
-                        {/* Actions */}
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex justify-end items-center gap-3">
-                            <button
-                              onClick={() => onEdit(product)}
-                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-100 p-2 rounded-lg transition"
-                              title="Edit"
-                            >
-                              <Edit2Icon className="w-5 h-5" />
-                            </button>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+                          !product.status || product.status.toLowerCase() === 'active' ? 'bg-green-200 text-green-800' : 'bg-gray-100 text-gray-700'
+                        }`}>
+                          {!product.status || product.status.toLowerCase() === 'active' ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
 
-                            <button
-                              onClick={() => onDelete(product.productId)}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-100 p-2 rounded-lg transition"
-                              title="Delete"
-                            >
-                              <TrashIcon className="w-5 h-5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                      {/* Actions */}
+                      <td className="px-6 py-4 text-center">
+                        <div className="flex justify-center items-center gap-4">
+                          <button
+                            onClick={() => onEdit(product)}
+                            className="text-blue-600 hover:text-blue-800 transition"
+                            title="Edit"
+                          >
+                            <Edit className="w-5 h-5 stroke-[2]" />
+                          </button>
+
+                          <button
+                            onClick={() => onDelete(product.productId)}
+                            className="text-red-600 hover:text-red-800 transition"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-5 h-5 stroke-[2]" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-          <div className="h-2" style={{ backgroundColor: '#E8EEF5' }} />
         </div>
       </div>
 
@@ -143,14 +149,14 @@ export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) 
                     onClick={() => onEdit(product)}
                     className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition"
                   >
-                    <Edit2Icon className="w-4 h-4" />
+                    <Edit className="w-4 h-4" />
                     Edit
                   </button>
                   <button
                     onClick={() => onDelete(product.productId)}
                     className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition"
                   >
-                    <TrashIcon className="w-4 h-4" />
+                    <Trash2 className="w-4 h-4" />
                     Delete
                   </button>
                 </div>

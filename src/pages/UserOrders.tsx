@@ -26,7 +26,7 @@ export const UserOrders = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [usersWithOrders, setUsersWithOrders] = useState<UserWithOrders[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const [, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [paymentDetails, setPaymentDetails] = useState<PaymentDetail[]>([]);
   const [paymentDetailsLoading, setPaymentDetailsLoading] = useState(false);
@@ -47,7 +47,7 @@ export const UserOrders = () => {
     const user = await getCurrentUser();
     setCurrentUser(user);
 
-    if (!user || (user.role !== 'ADMIN' && user.role !== 'SUPER USER')) {
+    if (!user || (user.role?.toUpperCase() !== 'ADMIN' && user.role?.toUpperCase() !== 'SUPER USER')) {
       setLoading(false);
       return;
     }
@@ -65,12 +65,12 @@ export const UserOrders = () => {
         name: u.name || u.userName || 'Unknown',
         email: u.email,
         role: u.role,
-        phone: u.phone,
+        phone: u.contact || u.phone,
       }));
 
       setUsersWithOrders(usersArray);
 
-      const firstNonAdminUser = usersArray.find(u => u.role !== 'ADMIN');
+      const firstNonAdminUser = usersArray.find(u => u.role?.toUpperCase() !== 'ADMIN');
       if (firstNonAdminUser) {
         setSelectedUserId(firstNonAdminUser.id);
       }
@@ -84,9 +84,15 @@ export const UserOrders = () => {
   const fetchPaymentDetails = async (userId: string) => {
     setPaymentDetailsLoading(true);
     try {
-      const response = await paymentService.getPaymentsByUserId(userId);
-      if (response.success) {
+      const response: any = await paymentService.getPaymentsByUserId(userId);
+      if (response.success && response.data) {
         setPaymentDetails(response.data.paymentDetails || []);
+      } else if (response.paymentDetails) {
+        setPaymentDetails(response.paymentDetails);
+      } else if (Array.isArray(response)) {
+        setPaymentDetails(response);
+      } else {
+        setPaymentDetails([]);
       }
     } catch (err) {
       console.error('Failed to fetch payment details:', err);
@@ -99,9 +105,11 @@ export const UserOrders = () => {
   const fetchUserAnalytics = async (userId: string) => {
     try {
       setUserAnalytics(null);
-      const response = await getUserAnalytics(userId);
+      const response: any = await getUserAnalytics(userId);
       if (response.success && response.data) {
         setUserAnalytics(response.data);
+      } else if (response && response.todayQty !== undefined) {
+        setUserAnalytics(response);
       }
     } catch (err) {
       console.error('Failed to fetch user analytics:', err);
@@ -111,7 +119,7 @@ export const UserOrders = () => {
 
   const selectedUser = usersWithOrders.find(u => u.id === selectedUserId);
 
-  if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'SUPER USER')) {
+  if (!currentUser || (currentUser.role?.toUpperCase() !== 'ADMIN' && currentUser.role?.toUpperCase() !== 'SUPER USER')) {
     return (
       <div className="p-10 text-center text-red-500 text-xl font-bold">
         Access Denied
@@ -162,11 +170,11 @@ export const UserOrders = () => {
               <div className="space-y-1.5 max-h-[60vh] overflow-y-auto pr-1 custom-scrollbar">
                 {loading ? (
                   <div className="text-center py-4 text-gray-500 text-xs font-bold">Loading directory...</div>
-                ) : usersWithOrders.filter(user => user.role !== 'ADMIN').length === 0 ? (
+                ) : usersWithOrders.filter(user => user.role?.toUpperCase() !== 'ADMIN').length === 0 ? (
                   <div className="text-center py-4 text-gray-400 text-xs">No users found</div>
                 ) : (
                   usersWithOrders
-                    .filter(user => user.role !== 'ADMIN')
+                    .filter(user => user.role?.toUpperCase() !== 'ADMIN')
                     .map(user => (
                       <div
                         key={user.id}

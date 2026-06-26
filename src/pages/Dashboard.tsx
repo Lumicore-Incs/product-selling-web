@@ -252,7 +252,10 @@ export const Dashboard = () => {
           getAllProducts(),
         ]);
         setUser(userData);
-        setProducts(productsData as any[]);
+        const filteredProducts = (productsData as any[]).filter(
+          (p: any) => p.status?.toLowerCase() !== 'remove'
+        );
+        setProducts(filteredProducts);
       } catch (err) {
         console.error(err);
       }

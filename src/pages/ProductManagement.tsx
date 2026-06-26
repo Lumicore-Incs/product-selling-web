@@ -15,7 +15,7 @@ export type Product = ProductModel;
 export const ProductManagement = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(false);
@@ -71,14 +71,16 @@ export const ProductManagement = () => {
     try {
       const backendProducts = await productApi.getAllProducts();
 
-      const transformedProducts: Product[] = backendProducts.map((product) => ({
-        productId: product.productId || 0,
-        name: product.name,
-        shortName: product.shortName || '',
-        price: product.price,
-        serialPrefix: product.serialPrefix,
-        status: product.status || 'active',
-      }));
+      const transformedProducts: Product[] = backendProducts
+        .filter((product) => product.status?.toLowerCase() !== 'remove')
+        .map((product) => ({
+          productId: product.productId || 0,
+          name: product.name,
+          shortName: product.shortName || '',
+          price: product.price,
+          serialPrefix: product.serialPrefix,
+          status: product.status || 'active',
+        }));
 
       setProducts(transformedProducts);
     } catch (error: any) {
@@ -109,20 +111,11 @@ export const ProductManagement = () => {
         status: 'active',
       };
 
-      const savedProduct = await productApi.createProduct(newProductData);
+      await productApi.createProduct(newProductData);
 
-      const newProduct: Product = {
-        productId: savedProduct.productId || 0,
-        name: savedProduct.name,
-        shortName: savedProduct.shortName || shortName,
-        price: savedProduct.price,
-        serialPrefix: savedProduct.serialPrefix,
-        status: savedProduct.status || 'active',
-      };
-
-      setProducts([...products, newProduct]);
       setIsModalOpen(false);
       showToast('Product added successfully!', 'success');
+      await loadProducts(); // Refresh the table from the backend to get the real ID
     } catch (error: any) {
       console.error('Failed to add product:', error);
       showToast('Failed to add product. Please try again.', 'error');
@@ -148,26 +141,13 @@ export const ProductManagement = () => {
         typeof updatedProduct.productId === 'string'
           ? parseInt(updatedProduct.productId)
           : updatedProduct.productId;
-      const savedProduct = await productApi.updateProduct(id, updateData);
-
-      setProducts(
-        products.map((product) =>
-          product.productId === id
-            ? {
-                productId: savedProduct.productId ?? id,
-                name: savedProduct.name,
-                shortName: savedProduct.shortName || updatedProduct.shortName,
-                price: savedProduct.price,
-                serialPrefix: savedProduct.serialPrefix,
-                status: savedProduct.status ?? 'active',
-              }
-            : product
-        )
-      );
+          
+      await productApi.updateProduct(id, updateData);
 
       setIsModalOpen(false);
       setCurrentProduct(null);
       showToast('Product updated successfully!', 'success');
+      await loadProducts(); // Refresh the table from the backend
     } catch (error: any) {
       console.error('Failed to update product:', error);
       showToast('Failed to update product. Please try again.', 'error');
@@ -179,13 +159,24 @@ export const ProductManagement = () => {
   // Handler for deleting a product
   const handleDeleteProduct = async (productId: string | number) => {
     const id = typeof productId === 'string' ? parseInt(productId) : productId;
+    
+    const productToDelete = products.find(p => p.productId === id);
+    if (!productToDelete) return;
 
     setLoading(true);
     try {
-      await productApi.deleteProduct(id);
-      setProducts(products.filter((product) => product.productId !== id));
+      // Perform soft delete by updating the status to 'remove'
+      // This ensures the backend hides/removes it if the DELETE endpoint is not functioning.
+      await productApi.updateProduct(id, {
+        name: productToDelete.name,
+        shortName: productToDelete.shortName,
+        price: productToDelete.price,
+        serialPrefix: productToDelete.serialPrefix,
+        status: 'remove',
+      });
+      
       showToast('Product deleted successfully!', 'success');
-      loadProducts(); // Refresh the table after delete
+      await loadProducts(); // Refresh the table after delete
     } catch (error: any) {
       console.error('Failed to delete product:', error);
       showToast('Failed to delete product. Please try again.', 'error');
@@ -212,11 +203,6 @@ export const ProductManagement = () => {
     setIsModalOpen(true);
   };
 
-  // Handler for refresh
-  const handleRefresh = () => {
-    loadProducts();
-  };
-
   return (
     <div className="min-h-screen mx-6 relative">
       <BackgroundIcons type="product" />
@@ -233,11 +219,7 @@ export const ProductManagement = () => {
       />
 
       <Header
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
         onAddClick={handleAddClick}
-        onRefresh={handleRefresh}
-        loading={loading}
       />
 
       <main className="container mx-auto px-2 sm:px-4 py-6 sm:py-8">
@@ -263,35 +245,27 @@ export const ProductManagement = () => {
         />
 
         {/* Pagination Controls */}
-        <div className="mt-4 sm:mt-2 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-xs sm:text-sm text-gray-500 order-2 sm:order-1">
+        <div className="mt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500">
+          <p className="order-2 sm:order-1 mt-4 sm:mt-0">
             Showing {paginatedProducts.length} of {filteredProducts.length} entries
           </p>
-          <div className="flex items-center gap-2 order-1 sm:order-2 flex-wrap justify-center">
+          <div className="flex items-center gap-1 order-1 sm:order-2">
             <button
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className={`px-2 sm:px-3 py-1 sm:py-2 rounded border text-xs sm:text-sm font-medium transition-colors ${
-                currentPage === 1
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
-                  : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'
-              }`}
+              className="w-5 h-5 flex items-center justify-center rounded bg-white/50 text-gray-500 hover:bg-white/80 transition-colors disabled:opacity-50"
             >
-              Prev
+              {'<'}
             </button>
-            <span className="text-xs sm:text-sm text-gray-700 px-2 sm:px-3 py-1 sm:py-2 bg-gray-50 border border-gray-200 rounded">
-              {currentPage}/{totalPages}
+            <span className="w-5 h-5 flex items-center justify-center rounded bg-white text-blue-600 font-medium shadow-sm">
+              {currentPage}
             </span>
             <button
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
-              className={`px-2 sm:px-3 py-1 sm:py-2 rounded border text-xs sm:text-sm font-medium transition-colors ${
-                currentPage === totalPages
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
-                  : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'
-              }`}
+              className="w-5 h-5 flex items-center justify-center rounded bg-white/50 text-gray-500 hover:bg-white/80 transition-colors disabled:opacity-50"
             >
-              Next
+              {'>'}
             </button>
           </div>
         </div>
