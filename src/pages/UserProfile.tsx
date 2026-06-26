@@ -402,6 +402,13 @@ export const UserProfile = () => {
           const r = resp as any;
           const updated = {
             ...formData,
+            name: (resp as any).name || formData.name,
+            email: (resp as any).email || formData.email,
+            telephone: (resp as any).telephone || formData.telephone,
+            role: (resp as any).role || formData.role,
+            address: (resp as any).address || formData.address,
+            nic: (resp as any).nic || formData.nic,
+            userName: (resp as any).userName || formData.userName,
             name: r.name || formData.name,
             email: r.email || formData.email,
             telephone: r.telephone || formData.telephone,

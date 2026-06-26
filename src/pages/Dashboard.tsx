@@ -265,6 +265,10 @@ export const Dashboard = () => {
       try {
         const userData = await getCurrentUser();
         setUser(userData);
+        const filteredProducts = (productsData as any[]).filter(
+          (p: any) => p.status?.toLowerCase() !== 'remove'
+        );
+        setProducts(filteredProducts);
         // Map products to { id, name } — backend may return array of objects or strings
         const mapped = Array.isArray(productsData)
           ? (productsData as any[]).map((p: any) => ({
