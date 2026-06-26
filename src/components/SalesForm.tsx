@@ -45,6 +45,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
   }>({ open: false, message: '', type: 'success' });
   const [defaultProduct, setDefaultProduct] = useState<ProductDto | null>(null);
   const [allCustomers, setAllCustomers] = useState<CustomerDtoGet[] | null>(null);
+
   const [customerInfoText, setCustomerInfoText] = useState('');
   const [manualTotalAmount, setManualTotalAmount] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -326,11 +327,6 @@ export const SalesForm: React.FC<SalesFormProps> = ({
     }
   };
 
-  // Normalize phone comparison by removing an optional leading 0 from user input
-  // const normalizePhoneForCompare = (phone: string) => {
-  //   if (!phone) return '';
-  //   return phone.startsWith('0') ? phone.slice(1) : phone;
-  // };
 
   const ensureLeadingZero = (phone?: string) => {
     if (!phone) return '';

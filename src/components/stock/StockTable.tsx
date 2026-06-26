@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { StockItem } from './StockForm';
 import { Product } from '../../models/product';
 
@@ -217,7 +218,7 @@ const StockTable: React.FC<Props> = ({ items, products, onEdit, onDelete, filter
                   : 'bg-white/50 text-[#414141] hover:bg-white/70'
               }`}
             >
-              Prev
+              <ChevronLeft className="w-4 h-4" />
             </button>
             <div className="px-4 py-2 text-[14px] font-medium text-[#414141] bg-white/50 rounded-[8px]">
               {currentPage}/{totalPages || 1}
@@ -231,7 +232,7 @@ const StockTable: React.FC<Props> = ({ items, products, onEdit, onDelete, filter
                   : 'bg-white/50 text-[#414141] hover:bg-white/70'
               }`}
             >
-              Next
+              <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         </div>

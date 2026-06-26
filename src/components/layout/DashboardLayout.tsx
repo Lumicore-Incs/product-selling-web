@@ -5,20 +5,17 @@ import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 
 export const DashboardLayout = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 768);
   const [showSettings, setShowSettings] = useState(false);
   const [salesTitle, setSalesTitle] = useState('Sales Management');
   const [salesBackgroundColor, setSalesBackgroundColor] = useState('#ffffff');
-  const [headerColor, setHeaderColor] = useState('#2a98a4');
   const location = useLocation();
 
   useEffect(() => {
     const savedTitle = localStorage.getItem('salesTitle') || 'Add New Order';
     const savedColor = localStorage.getItem('appBackgroundColor') || '#ffffff';
-    const savedHeaderColor = localStorage.getItem('headerColor') || '#2a98a4';
     setSalesTitle(savedTitle);
     setSalesBackgroundColor(savedColor);
-    setHeaderColor(savedHeaderColor);
   }, []);
 
   useEffect(() => {
@@ -29,7 +26,6 @@ export const DashboardLayout = () => {
 
   const handleTitleChange = (title: string) => setSalesTitle(title);
   const handleBackgroundColorChange = (color: string) => setSalesBackgroundColor(color);
-  const handleHeaderColorChange = (color: string) => setHeaderColor(color);
 
   return (
     <div
@@ -38,7 +34,7 @@ export const DashboardLayout = () => {
         background:
           salesBackgroundColor && salesBackgroundColor !== '#ffffff'
             ? salesBackgroundColor
-            : 'linear-gradient(135deg, #7ecdd4 0%, #b8d8e8 30%, #cdb8e9 65%, #d4b0ef 100%)',
+            : 'linear-gradient(135deg, #E2F5F8 0%, #E6E0F8 50%, #F5E8F9 100%)',
       }}
     >
       {/* Sidebar (Fixed on mobile, static on desktop) */}
@@ -60,6 +56,7 @@ export const DashboardLayout = () => {
         <Header
           onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
           headerColor={headerColor}
+          onSettingsClick={() => setShowSettings(!showSettings)}
         />
 
         <main className="flex-1 overflow-y-auto overflow-x-hidden w-full">
@@ -113,6 +110,7 @@ export const DashboardLayout = () => {
             <Settings
               onTitleChange={handleTitleChange}
               onBackgroundColorChange={handleBackgroundColorChange}
+              onHeaderColorChange={handleHeaderColorChange}
             />
           </div>
         </div>
@@ -141,6 +139,7 @@ export const DashboardLayout = () => {
               <Settings
                 onTitleChange={handleTitleChange}
                 onBackgroundColorChange={handleBackgroundColorChange}
+                onHeaderColorChange={handleHeaderColorChange}
               />
             </div>
           </div>

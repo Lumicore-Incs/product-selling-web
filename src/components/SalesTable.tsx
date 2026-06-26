@@ -10,6 +10,8 @@ import {
   SearchIcon,
   Trash2Icon,
   XIcon,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -87,6 +89,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
         'Collected from Warehouse',
         'Dispatched To Destination',
         'Received At Destination',
+        'Received by Client',
         'Out For Delivery',
         'Failed To Deliver',
         'Returned to HO',
@@ -202,7 +205,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
         return 'bg-red-500 text-white border-red-400';
       case 'Returned to Branch':
         return 'bg-red-300 text-white border-red-400';
-      case 'Returned to Client':
+      case 'Received by Client':
         return 'bg-red-500 text-white border-red-400';
       case 'Delivered':
         return 'bg-green-600 text-white border-green-600';
@@ -325,7 +328,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
             </p>
           </div>
 
-          <div className="flex items-center w-full sm:w-auto">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <div className="relative flex-1 sm:flex-none sm:w-72">
               <SearchIcon className="absolute left-3 top-2.5 w-4 h-4 text-white" />
               <input
@@ -340,14 +343,13 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                     setCurrentPage(1);
                   }
                 }}
-               className="text-sm focus:outline-none"
+                className="w-full text-sm focus:outline-none"
                 style={{
                   background: 'rgba(255,255,255,0.15)',
                   border: '1px solid rgba(255,255,255,0.25)',
                   borderRadius: '10px',
                   padding: '6px 12px 6px 30px',
                   color: '#fff',
-                  width: '270px',
                 }}
               />
               {searchTerm && (
@@ -687,19 +689,19 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                     className="bg-white rounded-lg border border-gray-200 overflow-hidden"
                   >
                     <div className="p-4">
-                      <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-start justify-between mb-3 gap-2">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <h3 className="text-lg font-semibold text-gray-900 truncate">
+                          <div className="flex items-center justify-between gap-2">
+                            <h3 className="text-lg font-semibold text-gray-900 truncate flex-1 min-w-0">
                               {sale.customerName}
                             </h3>
-                            <div className="text-xs text-gray-500 ml-3">#{sale.serialNo}</div>
+                            <div className="text-xs text-gray-500 flex-shrink-0">#{sale.serialNo}</div>
                           </div>
                           <div className="flex items-center gap-1 mt-1">
                             <MapPinIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                            <p className="text-sm text-gray-600 truncate">{sale.address}</p>
+                            <p className="text-sm text-gray-600 truncate flex-1 min-w-0">{sale.address}</p>
                           </div>
-                          <div className="text-xs text-gray-500 mt-1 flex items-center gap-2">
+                          <div className="text-xs text-gray-500 mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
                             <span>Waybill:</span>
                             {onWaybillChange ? (
                               <input
@@ -707,7 +709,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                                 value={sale.waybillId || ''}
                                 onChange={(e) => onWaybillChange(sale.id, e.target.value)}
                                 onBlur={() => onWaybillSave && onWaybillSave(sale.id)}
-                                className="px-5 py-0.5 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 w-24"
+                                className="px-2 py-0.5 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 w-24"
                                 placeholder="Waybill..."
                               />
                             ) : (
@@ -716,7 +718,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                             <span>• {formatDate(sale.date)}</span>
                           </div>
                         </div>
-                        <div className="ml-3">
+                        <div className="ml-3 flex-shrink-0">
                           {onStatusChange && (alwaysEditableStatus || sale.status === 'TEMPORARY') ? (
                             <select
                               className={`px-3 py-1 rounded-full text-xs font-medium border focus:outline-none ${getStatusColor(
@@ -851,29 +853,29 @@ export const SalesTable: React.FC<SalesTableProps> = ({
               <button
                 onClick={handlePrev}
                 disabled={isPrevDisabled}
-                className={`px-4 py-2 rounded-lg border font-medium transition-all ${
+                className={`flex items-center justify-center w-8 h-8 rounded-md border transition-all ${
                   isPrevDisabled
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
-                    : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'
+                    : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-300 shadow-sm'
                 }`}
               >
-                Previous
+                <ChevronLeft className="w-4 h-4" />
               </button>
 
-              <div className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg">
-                Page {displayPage} of {totalPages}
+              <div className="text-sm font-medium text-gray-600 px-2">
+                {displayPage}
               </div>
 
               <button
                 onClick={handleNext}
                 disabled={isNextDisabled}
-                className={`px-4 py-2 rounded-lg border font-medium transition-all ${
+                className={`flex items-center justify-center w-8 h-8 rounded-md border transition-all ${
                   isNextDisabled
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
-                    : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'
+                    : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-300 shadow-sm'
                 }`}
               >
-                Next
+                <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           </div>

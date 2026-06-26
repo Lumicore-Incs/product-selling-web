@@ -39,7 +39,7 @@ export async function getCurrentUser(): Promise<User> {
   return response.data;
 }
 
-export async function updateUser(userId: string | number, payload: Partial<User> | Record<string, unknown>) {
+export async function updateUser(userId: string | number, payload: Partial<User> | Record<string, unknown>): Promise<any> {
   try {
     const response = await axios.put(`/user/update/${userId}`, payload);
     return response.data;

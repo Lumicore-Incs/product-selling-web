@@ -90,7 +90,6 @@ const PasswordStrengthIndicator = ({ password }: { password: string }) => {
 const PasswordChangeDialog = ({
   open,
   onClose,
-  userId: _userId,
   userName,
   onSuccess,
 }: {
@@ -400,6 +399,7 @@ export const UserProfile = () => {
         const resp = await updateUser(formData.id, payload) as any;
         // Update local state with returned data if available
         if (resp) {
+          const r = resp as any;
           const updated = {
             ...formData,
             name: (resp as any).name || formData.name,
@@ -409,6 +409,13 @@ export const UserProfile = () => {
             address: (resp as any).address || formData.address,
             nic: (resp as any).nic || formData.nic,
             userName: (resp as any).userName || formData.userName,
+            name: r.name || formData.name,
+            email: r.email || formData.email,
+            telephone: r.telephone || formData.telephone,
+            role: r.role || formData.role,
+            address: r.address || formData.address,
+            nic: r.nic || formData.nic,
+            userName: r.userName || formData.userName,
           };
           setUser(updated);
           setFormData(updated);

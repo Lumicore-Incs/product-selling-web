@@ -43,6 +43,7 @@ I have a React frontend that currently calls `GET /order/allCustomer` with only 
   { value: 'Processing', label: 'PROCESSING' },
   { value: 'Dispatched to Destination', label: 'DISPATCHED TO DESTINATION' },
   { value: 'Received at Destination', label: 'RECEIVED AT DESTINATION' },
+  { value: 'Received by Client', label: 'RECEIVED BY CLIENT' },
   { value: 'Out for Delivery', label: 'OUT FOR DELIVERY' },
   { value: 'Rescheduled', label: 'RESCHEDULED' },
   { value: 'Failed to Deliver', label: 'FAILED TO DELIVER' },
