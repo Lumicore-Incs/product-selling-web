@@ -5,7 +5,7 @@ import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 
 export const DashboardLayout = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 768);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
   const [salesTitle, setSalesTitle] = useState('Sales Management');
   const [salesBackgroundColor, setSalesBackgroundColor] = useState('#ffffff');
@@ -55,7 +55,6 @@ export const DashboardLayout = () => {
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
         <Header
           onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          headerColor={headerColor}
           onSettingsClick={() => setShowSettings(!showSettings)}
         />
 
@@ -67,9 +66,6 @@ export const DashboardLayout = () => {
                 salesBackgroundColor,
                 showSettings,
                 setShowSettings,
-                onTitleChange: handleTitleChange,
-                onBackgroundColorChange: handleBackgroundColorChange,
-                onHeaderColorChange: handleHeaderColorChange,
               }}
             />
           </div>
@@ -110,7 +106,6 @@ export const DashboardLayout = () => {
             <Settings
               onTitleChange={handleTitleChange}
               onBackgroundColorChange={handleBackgroundColorChange}
-              onHeaderColorChange={handleHeaderColorChange}
             />
           </div>
         </div>
@@ -139,7 +134,6 @@ export const DashboardLayout = () => {
               <Settings
                 onTitleChange={handleTitleChange}
                 onBackgroundColorChange={handleBackgroundColorChange}
-                onHeaderColorChange={handleHeaderColorChange}
               />
             </div>
           </div>

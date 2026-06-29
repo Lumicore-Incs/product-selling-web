@@ -1,8 +1,8 @@
-import { PlusIcon } from 'lucide-react';
+import { PlusIcon, RefreshCwIcon } from 'lucide-react';
 
 interface HeaderProps {
-  searchTerm?: string;
-  onSearchChange?: (value: string) => void;
+  searchTerm: string;
+  onSearchChange: (value: string) => void;
   onAddClick: () => void;
   onRefresh?: () => void;
   loading?: boolean;
@@ -10,21 +10,63 @@ interface HeaderProps {
 
 export function Header({
   onAddClick,
+  onRefresh,
+  loading,
 }: Readonly<HeaderProps>) {
   return (
     <header className="mb-6">
-      <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
-        <h1 className="text-2xl font-bold" style={{ color: '#006D77', fontFamily: 'Inter, sans-serif' }}>
+      <div className="flex items-center justify-between">
+        {/* Title — matches Figma: Plus Jakarta Sans, 28px, Bold, #0E626E */}
+        <h1
+          style={{
+            fontFamily: "'Plus Jakarta Sans', sans-serif",
+            fontWeight: 700,
+            fontSize: '28px',
+            lineHeight: '35px',
+            color: '#0E626E',
+          }}
+        >
           Product Management
         </h1>
-        <button
-          onClick={onAddClick}
-          className="flex items-center justify-center gap-1.5 px-6 py-2 text-white text-sm rounded-lg font-medium transition-opacity hover:opacity-90 shadow-sm"
-          style={{ backgroundColor: '#008F8F' }}
-        >
-          <PlusIcon className="h-4 w-4" />
-          <span>Add</span>
-        </button>
+
+        <div className="flex items-center gap-2">
+          {/* Refresh button */}
+          {onRefresh && (
+            <button
+              onClick={onRefresh}
+              disabled={loading}
+              className="flex items-center justify-center w-[42px] h-[42px] rounded-xl transition hover:opacity-80 disabled:opacity-50"
+              style={{ background: 'rgba(246, 245, 248, 0.54)' }}
+              title="Refresh"
+            >
+              <RefreshCwIcon
+                className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`}
+                style={{ color: '#0B818D' }}
+              />
+            </button>
+          )}
+
+          {/* + Add button — matches Figma: #0B818D bg, Plus Jakarta Sans 14px, white text */}
+          <button
+            onClick={onAddClick}
+            className="flex items-center justify-center gap-2 transition hover:opacity-90"
+            style={{
+              background: '#0B818D',
+              borderRadius: '10px',
+              padding: '6px 16px',
+              height: '42px',
+              fontFamily: "'Plus Jakarta Sans', sans-serif",
+              fontWeight: 500,
+              fontSize: '14px',
+              lineHeight: '19px',
+              color: '#FFFFFF',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <PlusIcon className="w-4 h-4" />
+            Add
+          </button>
+        </div>
       </div>
     </header>
   );

@@ -59,14 +59,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   };
 
   return (
-      <header 
-        className="w-full border-b border-white sticky top-0 z-10"
-        style={{ 
-          backgroundColor: headerColor.startsWith('#') && headerColor.length === 7 ? `${headerColor}b3` : headerColor,
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)'
-        }}
-      >
+      <header className="w-full bg-transparent sticky top-0 z-10">
 
       <div className="flex items-center justify-between gap-2 sm:gap-6 px-4 sm:px-8 py-5">
 
@@ -154,14 +147,6 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
               )}
             </div>
           </div>
-
-          {/* SETTINGS - GO TO SETTINGS PAGE */}
-          <button 
-            onClick={() => navigate('/settings')}
-            className="p-2 bg-white bg-opacity-30 hover:bg-opacity-50 rounded-xl transition-all"
-          >
-            <Settings size={18} className="text-green-600" />
-          </button>
 
           {/* PROFILE */}
           <div className="flex items-center gap-3 border-l border-gray-200/50 pl-4">

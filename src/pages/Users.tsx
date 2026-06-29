@@ -11,14 +11,9 @@ import {
   Shield,
   Trash2,
   X,
-  XCircle,
-  ChevronLeft,
-  ChevronRight,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import { ConfirmDialog } from '../components/ConfirmDialog';
+import { toast, ToastContainer } from 'react-toastify';import { ConfirmDialog } from '../components/ConfirmDialog';
 import { InputField } from '../components/InputField';
 import { userService, type User as ServiceUser } from '../services/users/userService';
 import { productApi } from '../services/api';
@@ -455,20 +450,6 @@ export const Users = () => {
     }
   };
 
-  // Get status color and icon
-  const getStatusDisplay = (status: string) => {
-    switch (status) {
-      case 'active':
-        return { color: 'bg-green-100 text-green-800', icon: <CheckCircle className="w-4 h-4" /> };
-      case 'inactive':
-        return { color: 'bg-red-100 text-red-800', icon: <XCircle className="w-4 h-4" /> };
-      case 'pending':
-        return { color: 'bg-yellow-100 text-yellow-800', icon: <Clock className="w-4 h-4" /> };
-      default:
-        return { color: 'bg-gray-100 text-gray-800', icon: <Clock className="w-4 h-4" /> };
-    }
-  };
-
   // Fetch users and products on mount
   useEffect(() => {
     userService.getAllUsers()
@@ -553,44 +534,6 @@ export const Users = () => {
               className="w-full pl-11 pr-4 py-2.5 border border-gray-100 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#0B818D] text-sm bg-white"
               style={{ color: '#5C626E' }}
             />
-          </div>
-          <div className="flex gap-2 mt-4">
-            <button
-              onClick={() => {
-                setNewUser((prev: User) => ({
-                  ...prev,
-                  name: 'Sample User',
-                  email: `sample${Date.now() % 1000}@example.com`,
-                  contact: '0123456789',
-                  password: 'TempPass123!',
-                  role: 'User',
-                  type: '',
-                  status: 'pending',
-                  serialPrefix: 'SAMPLE',
-                }));
-              }}
-              disabled={isLoading}
-              className="bg-yellow-400 text-white px-4 py-2 rounded-lg hover:bg-yellow-500 transition-colors"
-            >
-              Fill Sample
-            </button>
-            <button
-              onClick={handleAddUser}
-              disabled={isLoading}
-              aria-busy={isLoading}
-              className={`px-4 py-2 rounded-lg transition-colors ${isLoading
-                  ? 'bg-green-300 text-white cursor-wait'
-                  : 'bg-green-500 text-white hover:bg-green-600'
-                }`}
-            >
-              {isLoading ? 'Adding…' : 'Add User'}
-            </button>
-            <button
-              onClick={() => setShowAddForm(false)}
-              className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
-            >
-              Cancel
-            </button>
           </div>
         </div>
 
@@ -728,29 +671,21 @@ export const Users = () => {
             <p className="text-[12px] font-['Inter'] font-normal text-[#5C626E] leading-[15px]">
               Showing {paginatedUsers.length} of {filteredUsers.length} entries
             </p>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handlePrev}
-                disabled={currentPage === 1}
-                className={`flex items-center justify-center w-8 h-8 rounded-md border transition-all ${currentPage === 1
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
-                    : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-300 shadow-sm'
-                  }`}
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={handlePrev} 
+                disabled={currentPage === 1} 
+                className="w-[15px] h-[15px] flex items-center justify-center rounded-[2px] disabled:opacity-40 hover:bg-white/90 active:bg-white shadow-sm transition-all bg-white/75"
               >
-                <ChevronLeft className="w-4 h-4" />
+                <svg width="4" height="6" viewBox="0 0 8 10" fill="none"><path d="M6 1L2 5L6 9" stroke="#757B87" strokeWidth="2.5" /></svg>
               </button>
-              <div className="text-sm font-medium text-gray-600 px-2">
-                {currentPage}
-              </div>
-              <button
-                onClick={handleNext}
-                disabled={currentPage === totalPages}
-                className={`flex items-center justify-center w-8 h-8 rounded-md border transition-all ${currentPage === totalPages
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
-                    : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-300 shadow-sm'
-                  }`}
+              <span className="text-[#5C626E] font-light font-['Inter'] text-[15px] leading-[18px] min-w-[10px] text-center">{currentPage}</span>
+              <button 
+                onClick={handleNext} 
+                disabled={currentPage === totalPages || totalPages === 0} 
+                className="w-[15px] h-[15px] flex items-center justify-center rounded-[2px] disabled:opacity-40 hover:bg-white/90 active:bg-white shadow-sm transition-all bg-white/75"
               >
-                <ChevronRight className="w-4 h-4" />
+                <svg width="4" height="6" viewBox="0 0 8 10" fill="none"><path d="M2 1L6 5L2 9" stroke="#757B87" strokeWidth="2.5" /></svg>
               </button>
             </div>
           </div>
@@ -824,42 +759,6 @@ export const Users = () => {
               <span className="text-[13px] text-[#5C626E]">{currentPage} / {totalPages || 1}</span>
               <button onClick={handleNext} disabled={currentPage === totalPages || totalPages === 0} className="px-3 py-1 rounded-lg text-sm border border-gray-200 disabled:opacity-50 bg-white text-[#5C626E]">Next</button>
             </div>
-          ))
-        ) : (
-          <div className="bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl shadow-sm p-6 text-center text-gray-500">
-            No users found
-          </div>
-        )}
-
-        {/* Mobile Pagination */}
-        <div className="flex flex-col gap-3 items-center pt-2">
-          <p className="text-sm text-gray-500">
-            Showing {paginatedUsers.length} of {filteredUsers.length} entries
-          </p>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handlePrev}
-              disabled={currentPage === 1}
-              className={`flex items-center justify-center w-8 h-8 rounded-md border transition-all ${currentPage === 1
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
-                  : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-300 shadow-sm'
-                }`}
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <div className="text-sm font-medium text-gray-600 px-2">
-              {currentPage}
-            </div>
-            <button
-              onClick={handleNext}
-              disabled={currentPage === totalPages}
-              className={`flex items-center justify-center w-8 h-8 rounded-md border transition-all ${currentPage === totalPages
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
-                  : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-300 shadow-sm'
-                }`}
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
           </div>
         </div>
       </div>
