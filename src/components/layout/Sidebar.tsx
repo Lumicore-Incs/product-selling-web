@@ -1,27 +1,23 @@
 import {
-  BarChart3Icon,
   ChevronDownIcon,
-  FileBarChart2Icon,
-  LayoutDashboardIcon,
-  LogOutIcon,
-  PackageIcon,
-  SettingsIcon,
-  ShoppingCartIcon,
-  StoreIcon,
   UsersIcon,
-  TruckIcon,
-  ClipboardListIcon,
   XIcon,
   Copy,
-  BadgeDollarSign
+  LayoutGrid,
+  FileUp,
+  MapPin,
+  Package,
+  Layers,
+  Settings,
+  BarChart3,
+  PanelLeftClose
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { getCurrentUser } from '../../service/auth';
-import { logout } from '../../services/authUtils';
 
 interface NavItem {
-  icon: any;
+  icon?: any;
   label: string;
   to?: string;
   isSettings?: boolean;
@@ -44,25 +40,23 @@ const getNavItems = (userRole: string): NavItem[] => {
   const items: NavItem[] = [];
 
   // DASHBOARD - All roles
-  items.push({ icon: LayoutDashboardIcon, label: 'Dashboard', to: '/', end: true });
+  items.push({ icon: LayoutGrid, label: 'Dashboard', to: '/', end: true });
 
   // USER Specific items
   if (isUser) {
-    items.push({ icon: ClipboardListIcon, label: 'Add New Order', to: '/sale', end: true });
-    items.push({
-      icon: BadgeDollarSign,
-      label: 'Orders',
-      children: [
-        { icon: Copy, label: 'Duplicate Orders', to: '/sale/duplicate' },
-        { icon: ShoppingCartIcon, label: 'My Orders', to: '/my-orders' },
-      ],
-    });
+    items.push({ icon: FileUp, label: 'Add New Order', to: '/sale', end: true });
+    items.push({ icon: Copy, label: 'Duplicate Orders', to: '/sale/duplicate' });
   }
 
   // SUPER USER Specific items
   if (isSuperUser) {
-    items.push({ icon: ClipboardListIcon, label: 'Export Orders', to: '/export-orders' });
-    items.push({ icon: TruckIcon, label: 'Tracking ID', to: '/tracking-id' });
+    items.push({ icon: FileUp, label: 'Export orders', to: '/export-orders' });
+    items.push({ icon: MapPin, label: 'Tracking Id', to: '/tracking-id' });
+  }
+
+  // PRODUCT - Super User only
+  if (isSuperUser) {
+    items.push({ icon: Package, label: 'Product', to: '/product' });
   }
 
   // USERS category - Super User and Admin
@@ -71,32 +65,20 @@ const getNavItems = (userRole: string): NavItem[] => {
       icon: UsersIcon,
       label: 'Users',
       children: [
-        { icon: UsersIcon, label: 'User List', to: '/users' },
-        { icon: ShoppingCartIcon, label: 'User Orders', to: '/user-orders' },
+        { label: 'User List', to: '/users' },
+        { label: 'User orders', to: '/user-orders' },
       ],
     });
-  }
-
-  // PRODUCT - Super User only
-  if (isSuperUser) {
-    items.push({ icon: PackageIcon, label: 'Product', to: '/product' });
   }
 
   // STOCK - Super User and Admin
   if (isSuperUser || isAdmin) {
-    items.push({ icon: StoreIcon, label: 'Stock', to: '/stock' });
+    items.push({ icon: Layers, label: 'Stock', to: '/stock' });
   }
 
   // DUPLICATE ORDERS - Super User and Admin (User already added above)
   if (isSuperUser || isAdmin) {
-    items.push({
-      icon: BadgeDollarSign,
-      label: 'Orders',
-      children: [
-        { icon: Copy, label: 'Duplicate Orders', to: '/sale/duplicate' },
-        { icon: ShoppingCartIcon, label: 'My Orders', to: '/my-orders' },
-      ],
-    });
+    items.push({ icon: Copy, label: 'Duplicate orders', to: '/sale/duplicate' });
   }
 
   return items;
@@ -114,21 +96,21 @@ const getHelpSettingsItems = (userRole: string): NavItem[] => {
 
   const items: NavItem[] = [];
 
+  // SETTINGS - All roles
+  items.push({ icon: Settings, label: 'Settings', to: '/sale/settings', isSettings: true });
+
   // REPORTS - Super User and Admin
   if (isSuperUser || isAdmin) {
     items.push({
-      icon: FileBarChart2Icon,
+      icon: BarChart3,
       label: 'Reports',
       children: [
-        { icon: FileBarChart2Icon, label: 'Monthly Report', to: '/monthly-report' },
-        { icon: FileBarChart2Icon, label: 'Sales Summary', to: '/reports' },
-        { icon: BarChart3Icon, label: 'Daily Report', to: '/daily-report' },
+        { label: 'Monthly Report', to: '/monthly-report' },
+        { label: 'Sales Summary', to: '/reports' },
+        { label: 'Daily Report', to: '/daily-report' },
       ],
     });
   }
-
-  // SETTINGS - All roles
-  items.push({ icon: SettingsIcon, label: 'Settings', to: '/settings' });
 
   return items;
 };
@@ -150,7 +132,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
 
   const location = useLocation();
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -187,11 +168,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     setExpandedItems(newSet);
   };
 
-  const handleLogout = async () => {
-    await logout();
-    navigate('/login');
-  };
-
   const handleSettingsClick = (e: React.MouseEvent) => {
     e.preventDefault();
     setShowSettings?.(!showSettings);
@@ -204,26 +180,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <button
           key={item.to}
           onClick={handleSettingsClick}
-          className="w-full flex items-center px-4 py-2.5 mx-6 rounded-lg text-[#0B818D] hover:bg-[#0B818D]/20 hover:text-white transition"
+          className="w-full flex items-center px-4 py-2.5 mx-4 my-0.5 rounded-xl text-[#0B818D] hover:bg-[#0B818D]/10 hover:text-[#0B818D] transition text-left"
         >
           <item.icon size={18} className="mr-3" />
-          {item.label}
+          <span className="text-[14px] font-medium">{item.label}</span>
         </button>
       );
     }
 
     if (item.children) {
       const isExpanded = expandedItems.has(item.label);
+      const isChildActive = item.children.some(child => location.pathname === child.to);
 
       return (
-        <div key={item.label} className="mx-6 ">
+        <div key={item.label} className="w-full">
           <button
             onClick={() => toggleExpand(item.label)}
-            className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-[#0B818D] hover:bg-[#0B818D]/20 hover:text-white transition"
+            className={`w-full flex items-center justify-between px-4 py-2.5 mx-4 my-0.5 rounded-xl transition text-left ${
+              isChildActive && !isExpanded
+                ? 'bg-[#0B818D] text-white shadow-sm'
+                : 'text-[#0B818D] hover:bg-[#0B818D]/10'
+            }`}
+            style={{ width: 'calc(100% - 32px)' }}
           >
             <div className="flex items-center">
               <item.icon size={18} className="mr-3" />
-              {item.label}
+              <span className="text-[14px] font-medium">{item.label}</span>
             </div>
             <ChevronDownIcon
               size={16}
@@ -232,20 +214,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </button>
 
           {isExpanded && (
-            <div className="ml-4 pl-2">
+            <div className="mt-1 space-y-1 mx-4" style={{ width: 'calc(100% - 32px)' }}>
               {item.children.map((child) => (
                 <NavLink
                   key={child.to}
                   to={child.to || '#'}
                   onClick={onClose}
-                  end={child.end}
                   className={({ isActive }) =>
-                    `block px-4 py-2 text-sm rounded-md transition ${
+                    `block px-4 py-2 pl-11 text-[14px] font-medium rounded-xl transition ${
                       isActive
-                        ? 'bg-[#16a34a]/30 text-white'
-                        : 'hover:bg-[#16a34a]/20 hover:text-white text-[#0B818D] '
+                        ? 'bg-[#0B818D] text-white shadow-sm'
+                        : 'text-[#0B818D] hover:bg-[#0B818D]/15'
                     }`
                   }
+                  style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '13px', fontWeight: 400, lineHeight: '16px' }}
                 >
                   {child.label}
                 </NavLink>
@@ -263,15 +245,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
         onClick={onClose}
         end={item.end}
         className={({ isActive }) =>
-          `flex items-center px-5 py-2.5 mx-6 rounded-lg transition ${
+          `flex items-center px-4 py-2.5 mx-4 my-0.5 rounded-xl font-medium transition ${
             isActive
-              ? 'bg-[#0B818D] text-white'
-              : 'hover:bg-[#0B818D]/20 hover:text-white text-[#0B818D] '
+              ? 'bg-[#0B818D] text-white shadow-sm'
+              : 'text-[#0B818D] hover:bg-[#0B818D]/10 hover:text-[#0B818D]'
           }`
         }
+        style={{ width: 'calc(100% - 32px)' }}
       >
         <item.icon size={18} className="mr-3" />
-        {item.label}
+        <span className="text-[14px]">{item.label}</span>
       </NavLink>
     );
   };
@@ -286,38 +269,57 @@ export const Sidebar: React.FC<SidebarProps> = ({
       )}
 
       <aside
-        className={`fixed md:static z-30 w-64 border-r bg-black md:bg-transparent transition overflow-x-hidden ${
+        className={`fixed md:static z-30 w-64 border-r transition overflow-x-hidden ${
           isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         } flex flex-col`}
-        style={{ height: '100vh', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+        style={{
+          height: '100vh',
+          fontFamily: "'Plus Jakarta Sans', sans-serif",
+          backgroundColor: '#E1F0F3',
+          borderColor: '#FFFFFF',
+        }}
       >
         {/* 🔹 Header */}
-        <div className="flex items-center justify-between p-5">
-          <img
-            src={new URL('../../assets/Logo.PNG', import.meta.url).href}
-            className="h-10 pl-8"
-          />
+        <div className="flex items-center justify-between p-5 pt-8 mb-6">
+          <div className="pl-4 w-[140px]">
+            <img
+              src={new URL('../../assets/Logo.PNG', import.meta.url).href}
+              className="w-full h-auto max-h-10 object-contain"
+              alt="Logo"
+            />
+          </div>
 
-          <div className="flex gap-2">
-            <button onClick={handleLogout}>
-              <LogOutIcon size={18} className="text-[#16a34a]" />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onClose}
+              className="p-1.5 bg-[#D2EBEF] hover:bg-[#c0e0e5] rounded-lg text-[#0B818D] transition md:hidden"
+              title="Close Menu"
+            >
+              <XIcon size={18} />
             </button>
-            <button onClick={onClose} className="md:hidden">
-              <XIcon size={18}  className="text-[#16a34a]" />
+            <button
+              className="p-1.5 bg-[#D2EBEF] hover:bg-[#c0e0e5] rounded-lg text-[#0B818D] transition hidden md:block"
+              title="Collapse sidebar"
+            >
+              <PanelLeftClose size={18} />
             </button>
           </div>
         </div>
 
         {/* 🔹 Content */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden">
-          <div className="mt-4">
-            <p className="px-4 pb-4 text-s text-[#0B818D]">Main menu</p>
-            {getNavItems(user?.role || '').map(renderNavItem)}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden space-y-6 pb-6 scrollbar-hide">
+          <div>
+            <p className="px-8 pb-2 text-[12px] font-semibold uppercase tracking-wider text-[#0B818D]/60 font-['Inter']">Main menu</p>
+            <div className="space-y-0.5">
+              {getNavItems(user?.role || '').map(renderNavItem)}
+            </div>
           </div>
 
-          <div className="mt-6 pt-4">
-            <p className="px-4 pb-4 text-s text-[#0B818D]">Help & Settings</p>
-            {getHelpSettingsItems(user?.role || '').map(renderNavItem)}
+          <div>
+            <p className="px-8 pb-2 text-[12px] font-semibold uppercase tracking-wider text-[#0B818D]/60 font-['Inter']">Help & Settings</p>
+            <div className="space-y-0.5">
+              {getHelpSettingsItems(user?.role || '').map(renderNavItem)}
+            </div>
           </div>
         </div>
       </aside>

@@ -1,4 +1,4 @@
-import { Package, Truck, XCircle } from 'lucide-react';
+import { Briefcase, ShoppingBag, Truck, XCircle, Loader } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertSnackbar } from '../components/AlertSnackbar';
 import { BackgroundIcons } from '../components/BackgroundIcons';
@@ -7,6 +7,7 @@ import { Sale } from '../models/sales';
 import { getCurrentUser } from '../service/auth';
 import { getDashboardStats } from '../service/dashboard';
 import { getAllProducts } from '../service/product';
+import { useNotification } from '../context/NotificationContext';
 import {
   getAllCustomerOrdersPaginated,
   getOrdersPaginated,
@@ -86,45 +87,47 @@ const StatCard = ({ icon: Icon, label, value, accentColor = 'teal' }: StatCardPr
         <div className="flex-1 min-w-0">
           <p
             style={{
-              color: '#050505',
-              marginBottom: 'clamp(6px, 1.2vw, 10px)',
-              fontFamily: 'sans-serif',
-              fontSize: 'clamp(9px, 1.8vw, 13px)',
+              color: '#5C626E',
+              marginBottom: '10px',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '16px',
+              fontWeight: 400,
               wordBreak: 'break-word',
-              lineHeight: '1.3',
+              lineHeight: '19px',
             }}
           >
             {label}
           </p>
           <p
-            className="font-black leading-none"
             style={{
               color: cfg.value,
-              letterSpacing: '-0.5px',
-              fontSize: 'clamp(18px, 3.5vw, 30px)',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '30px',
+              fontWeight: 700,
+              lineHeight: '36px',
             }}
           >
             {value}
           </p>
-        </div>
 
-        {/* Icon box */}
-        <div
-          className="flex items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110 flex-shrink-0"
-          style={{
-            width: 'clamp(32px, 5vw, 44px)',
-            height: 'clamp(32px, 5vw, 44px)',
-            background: `${cfg.icon}18`,
-          }}
-        >
-          <Icon
+          {/* Icon box */}
+          <div
+            className="flex items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110 flex-shrink-0"
             style={{
-              color: cfg.icon,
-              width: 'clamp(14px, 2.5vw, 22px)',
-              height: 'clamp(14px, 2.5vw, 22px)',
+              width: 'clamp(32px, 5vw, 44px)',
+              height: 'clamp(32px, 5vw, 44px)',
+              background: `${cfg.icon}18`,
             }}
-            strokeWidth={2.2}
-          />
+          >
+            <Icon
+              style={{
+                color: cfg.icon,
+                width: 'clamp(16px, 2.5vw, 24px)',
+                height: 'clamp(16px, 2.5vw, 24px)',
+              }}
+              strokeWidth={2.2}
+            />
+          </div>
         </div>
       </div>
 
@@ -140,12 +143,14 @@ const StatCard = ({ icon: Icon, label, value, accentColor = 'teal' }: StatCardPr
 // ─── Dashboard ───────────────────────────────────────────────────────────────
 
 export const Dashboard = () => {
+  const { addNotification } = useNotification();
 
   const [stats, setStats] = useState({
     total_order: '0',
     todayOrders: '0',
     confirmedOrders: '0',
     cancelledOrders: '0',
+    processingOrders: '0',
   });
   const [loading, setLoading] = useState(true);
   const [snackbar, setSnackbar] = useState<{
@@ -164,7 +169,7 @@ export const Dashboard = () => {
   const [totalPages, setTotalPages] = useState(0);
 
   const [user, setUser] = useState<{ role: string } | null>(null);
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [salesSearch, setSalesSearch] = useState('');
@@ -187,40 +192,44 @@ export const Dashboard = () => {
   };
 
   const fetchData = useCallback(async () => {
+    const filters: OrderFilterParams = {
+      search: debouncedSearch,
+      status: statusFilter === 'all' ? undefined : statusFilter,
+      productId: selectedProduct === 'all' ? undefined : selectedProduct,
+    };
+
+    // Fetch stats
     try {
       setLoading(true);
-      setSalesLoading(true);
-      setSalesError('');
-
-      const filters: OrderFilterParams = {
-        search: debouncedSearch,
-        status: statusFilter === 'all' ? undefined : statusFilter,
-        productId: selectedProduct === 'all' ? undefined : selectedProduct,
-      };
-
-      const [statsData, salesResult] = await Promise.all([
-        getDashboardStats(),
-        showTodayOnly
-          ? getOrdersPaginated(currentPage, pageSize, filters)
-          : getAllCustomerOrdersPaginated(currentPage, pageSize, filters),
-      ]);
-
+      const statsData = await getDashboardStats();
       setStats({
         total_order: String(statsData.total_order || 0),
         todayOrders: String(statsData.today_order || 0),
         confirmedOrders: String(statsData.conform_order || 0),
         cancelledOrders: String(statsData.cancel_order || 0),
+        processingOrders: String(statsData.processing_order || 0),
       });
+    } catch (err) {
+      console.error('Failed to fetch dashboard stats:', err);
+    } finally {
+      setLoading(false);
+    }
 
+    // Fetch sales
+    try {
+      setSalesLoading(true);
+      const salesResult = await (
+        showTodayOnly
+          ? getOrdersPaginated(currentPage, pageSize, filters)
+          : getAllCustomerOrdersPaginated(currentPage, pageSize, filters)
+      );
       setSales((salesResult as PaginatedResult<Sale>).data);
       setTotalCount((salesResult as PaginatedResult<Sale>).total);
       setTotalPages((salesResult as PaginatedResult<Sale>).totalPages);
     } catch (err) {
-      console.error('Failed to fetch dashboard data:', err);
-      setSnackbar({ open: true, message: 'Failed to load dashboard data', type: 'error' });
-      setSalesError('Failed to load sales data.');
+      console.error('Failed to fetch sales data:', err);
+      setSnackbar({ open: true, message: 'Failed to load sales data', type: 'error' });
     } finally {
-      setLoading(false);
       setSalesLoading(false);
     }
   }, [showTodayOnly, currentPage, pageSize, debouncedSearch, statusFilter, selectedProduct]);
@@ -252,7 +261,14 @@ export const Dashboard = () => {
           getAllProducts(),
         ]);
         setUser(userData);
-        setProducts(productsData as any[]);
+        // Map products to { id, name } — backend may return array of objects or strings
+        const mapped = Array.isArray(productsData)
+          ? (productsData as any[]).map((p: any) => ({
+              id: String(p?.productId ?? p?.id ?? p?.product_id ?? p),
+              name: String(p?.name ?? p?.productName ?? p?.product_name ?? p),
+            }))
+          : [];
+        setProducts(mapped);
       } catch (err) {
         console.error(err);
       }
@@ -272,18 +288,17 @@ export const Dashboard = () => {
       <button
         key={id}
         onClick={() => handleProductFilter(id)}
-        className="px-3 py-1.5 rounded-2xl font-semibold transition-all duration-200"
+        className="px-4 py-2 rounded-xl transition-all duration-200"
         style={{
-          fontFamily: ff,
-          fontSize: 'clamp(10px, 1.8vw, 13px)',
+          fontFamily: 'Inter, sans-serif',
+          fontWeight: 500,
+          fontSize: '16px',
+          lineHeight: '19px',
           background: active
-            ? 'linear-gradient(135deg, #0d9488, #0891b2)'
-            : 'rgba(255,255,255,0.75)',
-          color: active ? '#fff' : '#374151',
-          border: active ? 'none' : '1px solid rgba(0,0,0,0.08)',
-          boxShadow: active
-            ? '0 4px 14px rgba(13,148,136,0.3)'
-            : '0 1px 4px rgba(0,0,0,0.06)',
+            ? '#0B818D'
+            : 'rgba(122, 188, 195, 0.5)',
+          color: active ? '#FFFFFF' : '#0B818D',
+          border: 'none',
           whiteSpace: 'nowrap',
         }}
       >
@@ -306,26 +321,29 @@ export const Dashboard = () => {
       {/* ─── Page Header ─────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5 sm:mb-7">
         <h1
-          className="font-black"
           style={{
             color: '#0E626E',
-            letterSpacing: '-0.5px',
-            fontFamily: 'Inter',
-            fontWeight: 'bold',
-            fontSize: 'clamp(22px, 5vw, 36px)',
+            fontFamily: "'Plus Jakarta Sans', sans-serif",
+            fontWeight: 700,
+            fontSize: '28px',
+            lineHeight: '35px',
           }}
         >
           Welcome Back !
         </h1>
 
-        {/* Product filter — horizontally scrollable on mobile */}
+        {/* Product filter — dynamically loaded from API */}
         <div
           className="flex gap-2 overflow-x-auto pb-1"
           style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
         >
           {prodBtn('all', 'All Products')}
-          {Array.isArray(products) &&
-            products.map((p) => p.productId !== undefined && prodBtn(String(p.productId), p.name))}
+          {products.map((p: any) =>
+            prodBtn(
+              String(p.productId ?? p.id ?? p.name),
+              p.shortName || p.name || `Product ${p.productId}`
+            )
+          )}
         </div>
       </div>
 
@@ -354,22 +372,22 @@ export const Dashboard = () => {
         `}</style>
         <div className="stats-grid">
           <StatCard
-            icon={Package}
+            icon={Briefcase}
             label="Total Monthly Packs"
             value={loading ? '...' : stats.total_order}
             accentColor="teal"
           />
           <StatCard
-            icon={Package}
-            label="Processing Packs"
-            value={loading ? '...' : stats.todayOrders}
-            accentColor="blue"
-          />
-          <StatCard
-            icon={Package}
+            icon={ShoppingBag}
             label="Today Packs"
             value={loading ? '...' : stats.todayOrders}
             accentColor="yellow"
+          />
+          <StatCard
+            icon={Loader}
+            label="Processing Packs"
+            value={loading ? '...' : stats.processingOrders}
+            accentColor="blue"
           />
           <StatCard
             icon={Truck}
@@ -379,7 +397,7 @@ export const Dashboard = () => {
           />
           <StatCard
             icon={XCircle}
-            label="Canceled / Returned"
+            label="Canceled/Retuned Packs"
             value={loading ? '...' : stats.cancelledOrders}
             accentColor="pink"
           />
@@ -481,16 +499,14 @@ export const Dashboard = () => {
 
         {/* Table area */}
         <div className="p-2">
-          {salesLoading && (
-            <p className="text-center py-10 text-gray-400 text-sm">Loading sales...</p>
-          )}
           {salesError && (
             <p className="text-red-500 text-center py-10 text-sm">{salesError}</p>
           )}
 
-          {!salesLoading && !salesError && (
+          {!salesError && (
             <SalesTable
               sales={sales}
+              isLoading={salesLoading}
               onEdit={() => {}}
               onDelete={async (id) => {
                 try {

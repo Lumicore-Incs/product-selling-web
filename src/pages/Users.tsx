@@ -1,102 +1,26 @@
 import {
-  Calendar,
   CheckCircle,
-  Clock,
   Edit,
   Eye,
   EyeOff,
   Key,
   Lock,
-  Mail,
   Package,
-  Phone,
-  Plus,
   Save,
   Search,
   Shield,
   Trash2,
-  User,
   X,
-  XCircle,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { BackgroundIcons } from '../components/BackgroundIcons';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { InputField } from '../components/InputField';
-import { userService, User as ServiceUser } from '../services/users/userService';
+import { userService, type User as ServiceUser } from '../services/users/userService';
+import { productApi } from '../services/api';
 
 type User = ServiceUser & { productName?: string };
-
-// Password Strength Indicator Component
-const PasswordStrengthIndicator = ({ password }: { password: string }) => {
-  const getStrength = (pass: string) => {
-    let score = 0;
-    if (pass.length >= 8) score++;
-    if (/[A-Z]/.test(pass)) score++;
-    if (/[a-z]/.test(pass)) score++;
-    if (/[0-9]/.test(pass)) score++;
-    if (/[^A-Za-z0-9]/.test(pass)) score++;
-    return score;
-  };
-
-  const strength = getStrength(password);
-  const width = `${(strength / 5) * 100}%`;
-
-  const getColor = () => {
-    if (strength <= 1) return 'bg-red-500';
-    if (strength <= 3) return 'bg-yellow-500';
-    return 'bg-green-500';
-  };
-
-  const getText = () => {
-    if (password.length === 0) return '';
-    if (strength <= 1) return 'Very Weak';
-    if (strength <= 2) return 'Weak';
-    if (strength <= 3) return 'Fair';
-    if (strength <= 4) return 'Good';
-    return 'Strong';
-  };
-
-  return (
-    <div className="mt-2">
-      <div className="flex justify-between text-xs mb-1">
-        <span className="text-gray-600">Password Strength:</span>
-        <span className={`font-medium ${
-          strength <= 1 ? 'text-red-600' :
-          strength <= 3 ? 'text-yellow-600' :
-          'text-green-600'
-        }`}>
-          {getText()}
-        </span>
-      </div>
-      <div className="h-1 w-full bg-gray-200 rounded-full overflow-hidden">
-        <div
-          className={`h-full transition-all duration-300 ${getColor()}`}
-          style={{ width }}
-        />
-      </div>
-      {password.length > 0 && (
-        <ul className="mt-2 text-xs text-gray-500 space-y-1">
-          <li className={`flex items-center ${password.length >= 8 ? 'text-green-600' : ''}`}>
-            <CheckCircle className={`w-3 h-3 mr-1 ${password.length >= 8 ? 'text-green-600' : 'text-gray-300'}`} />
-            At least 8 characters
-          </li>
-          <li className={`flex items-center ${/[A-Z]/.test(password) ? 'text-green-600' : ''}`}>
-            <CheckCircle className={`w-3 h-3 mr-1 ${/[A-Z]/.test(password) ? 'text-green-600' : 'text-gray-300'}`} />
-            Uppercase letter
-          </li>
-          <li className={`flex items-center ${/[0-9]/.test(password) ? 'text-green-600' : ''}`}>
-            <CheckCircle className={`w-3 h-3 mr-1 ${/[0-9]/.test(password) ? 'text-green-600' : 'text-gray-300'}`} />
-            Number
-          </li>
-        </ul>
-      )}
-    </div>
-  );
-};
-
 
 // Password Reset Dialog Component (for admin)
 const PasswordResetDialog = ({
@@ -237,7 +161,14 @@ const PasswordResetDialog = ({
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
-              <PasswordStrengthIndicator password={newPassword} />
+              {/* inline strength bar */}
+              {newPassword.length > 0 && (
+                <div className="mt-2">
+                  <div className="h-1 w-full bg-gray-200 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full transition-all duration-300" style={{ width: `${Math.min(newPassword.length / 12 * 100, 100)}%`, background: newPassword.length < 6 ? '#EF4444' : newPassword.length < 10 ? '#F59E0B' : '#10B981' }} />
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Confirm Password */}
@@ -302,8 +233,11 @@ const PasswordResetDialog = ({
 
 export const Users = () => {
   const [users, setUsers] = useState<User[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editShortName, setEditShortName] = useState('');
+  const [editPrice, setEditPrice] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
@@ -373,6 +307,9 @@ export const Users = () => {
   // Handle user editing
   const handleEdit = (user: User) => {
     setEditingUser({ ...user });
+    const matchingProduct = products.find(p => p.serialPrefix === user.serialPrefix);
+    setEditShortName(matchingProduct?.shortName || '');
+    setEditPrice(matchingProduct?.price ? matchingProduct.price.toString() : '');
   };
 
   // Show toast notification
@@ -401,6 +338,31 @@ export const Users = () => {
           password: null as any, // Don't update password when editing user
         });
 
+        // Update or create product if serial prefix is provided
+        if (editingUser.serialPrefix) {
+          const matchingProduct = products.find(p => p.serialPrefix === editingUser.serialPrefix);
+          if (matchingProduct) {
+            const updatedProduct = await productApi.updateProduct(matchingProduct.productId, {
+              name: matchingProduct.name || editingUser.name || 'Product',
+              shortName: editShortName,
+              price: parseFloat(editPrice) || 0,
+              serialPrefix: editingUser.serialPrefix,
+              status: matchingProduct.status || 'active',
+            });
+            setProducts(prev => prev.map(p => p.productId === updatedProduct.productId ? updatedProduct : p));
+          } else {
+            // Create a new product since it does not exist
+            const newProduct = await productApi.createProduct({
+              name: editingUser.name || 'Product',
+              shortName: editShortName,
+              price: parseFloat(editPrice) || 0,
+              serialPrefix: editingUser.serialPrefix,
+              status: 'active',
+            });
+            setProducts(prev => [...prev, newProduct]);
+          }
+        }
+
         setUsers(
           users.map((user) =>
             user.id === updatedUser.id
@@ -411,10 +373,12 @@ export const Users = () => {
           )
         );
         setEditingUser(null);
-        showToast('User updated successfully!', 'success');
+        setEditShortName('');
+        setEditPrice('');
+        showToast('User and Product details updated successfully!', 'success');
       } catch (error) {
-        console.error('Failed to update user:', error);
-        showToast('Failed to update user. Please try again.', 'error');
+        console.error('Failed to update user/product:', error);
+        showToast('Failed to update. Please try again.', 'error');
       }
     }
   };
@@ -452,6 +416,8 @@ export const Users = () => {
   // Handle cancel edit
   const handleCancelEdit = () => {
     setEditingUser(null);
+    setEditShortName('');
+    setEditPrice('');
   };
 
   // Handle add new user
@@ -486,32 +452,36 @@ export const Users = () => {
     }
   };
 
-  // Get status color and icon
-  const getStatusDisplay = (status: string) => {
-    switch (status) {
-      case 'active':
-        return { color: 'bg-green-100 text-green-800', icon: <CheckCircle className="w-4 h-4" /> };
-      case 'inactive':
-        return { color: 'bg-red-100 text-red-800', icon: <XCircle className="w-4 h-4" /> };
-      case 'pending':
-        return { color: 'bg-yellow-100 text-yellow-800', icon: <Clock className="w-4 h-4" /> };
-      default:
-        return { color: 'bg-gray-100 text-gray-800', icon: <Clock className="w-4 h-4" /> };
-    }
-  };
-
-  // Fetch users from API on mount
+  // Fetch users and products on mount
   useEffect(() => {
     userService.getAllUsers()
-      .then((usersData) => {
-        setUsers(usersData);
-      })
-      .catch((err) => console.error('Failed to fetch data', err));
+      .then((usersData) => setUsers(usersData))
+      .catch((err) => console.error('Failed to fetch users', err));
+
+    productApi.getAllProducts()
+      .then((productsData) => setProducts(productsData))
+      .catch((err) => console.error('Failed to fetch products', err));
   }, []);
 
   return (
-    <div className="space-y-6 mx-6 relative">
-      <BackgroundIcons type="users" />
+    <div
+      className="relative overflow-hidden"
+      style={{
+        background: 'transparent',
+        minHeight: '1024px',
+        minWidth: 0,
+        width: '100%',
+        padding: '8px 4px 40px',
+        boxSizing: 'border-box',
+      }}
+    >
+      {/* Figma background glowing ellipses */}
+      <div className="absolute w-[543px] h-[582px] left-[1003px] top-[-137px] bg-[#7100BD] opacity-[0.12] rounded-full pointer-events-none" style={{ filter: 'blur(323.5px)' }} />
+      <div className="absolute w-[386px] h-[328px] left-[492px] top-[606px] bg-[#7100BD] opacity-[0.12] rounded-full pointer-events-none" style={{ filter: 'blur(323.5px)' }} />
+      <div className="absolute w-[677px] h-[726px] left-[835px] top-[407px] bg-[#0B818D] opacity-[0.12] rounded-full pointer-events-none" style={{ filter: 'blur(323.5px)' }} />
+      <div className="absolute w-[677px] h-[726px] left-[-185px] top-[-42px] bg-[#0B818D] opacity-[0.12] rounded-full pointer-events-none" style={{ filter: 'blur(323.5px)' }} />
+
+      <div className="space-y-6 relative z-10">
       <ToastContainer
         position="top-right"
         autoClose={5000}
@@ -543,627 +513,257 @@ export const Users = () => {
         userName={passwordResetDialog.userName}
         onResetPassword={handleResetPassword}
       />
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl  text-[#0B818D]" style={{ fontFamily: "Plus Jakarta Sans", fontWeight: 'semibold' }}>Users Management</h1>
-        <button
-          onClick={() => setShowAddForm(true)}
-          className="flex items-center gap-2  bg-[#0B818D] text-white px-2 py-1 rounded-lg hover:shadow-lg transform transition-all duration-300 hover:-translate-y-0.5"
-        >
-          <Plus className="w-5 h-5" />
-          Add
-        </button>
-      </div>
-
-      {/* Search Bar */}
-      <div className="bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl p-6 shadow-sm">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <input
-            type="text"
-            placeholder="Search users by name, email, role, or contact..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent bg-white bg-opacity-50 backdrop-filter backdrop-blur-sm"
-          />
+      <div className="p-2">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-[28px] text-[#0E626E] font-bold tracking-tight" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>User Management</h1>
+          <button
+            onClick={() => setShowAddForm(true)}
+            className="flex items-center justify-center bg-[#0B818D] hover:bg-[#096B75] text-white w-[93px] h-[42px] rounded-[10px] transition-colors text-[16px] font-medium font-['Inter'] shadow-sm"
+          >
+            + Add
+          </button>
         </div>
-      </div>
 
-      {/* Add User Form */}
-      {showAddForm && (
-        <div className="bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl p-6 shadow-sm">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-gray-800">Add New User</h2>
-            <button
-              onClick={() => setShowAddForm(false)}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Search Bar (Mobile Only to match Figma desktop which has no search bar in the table container) */}
+        <div className="mb-6 md:hidden">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-300 w-4 h-4" />
             <input
               type="text"
-              placeholder="Name"
-              value={newUser.name}
-              onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-              className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
+              placeholder="Search users..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-11 pr-4 py-2.5 border border-gray-100 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#0B818D] text-sm bg-white"
+              style={{ color: '#5C626E' }}
             />
-            <input
-              type="email"
-              placeholder="Email"
-              value={newUser.email}
-              onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-              className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
-            />
-            <input
-              type="tel"
-              placeholder="Contact"
-              value={newUser.contact}
-              onChange={(e) => setNewUser({ ...newUser, contact: e.target.value })}
-              className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
-            />
-            <select
-              value={newUser.role}
-              onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
-              className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
-            >
-              <option value="USER">USER</option>
-              <option value="SUPER USER">SUPER USER</option>
-            </select>
-            <select
-              value={newUser.status}
-              onChange={(e) => setNewUser({ ...newUser, status: e.target.value as User['status'] })}
-              className="px-3 h-12 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
-            >
-              <option value="pending">Pending</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
-            <input
-              type="text"
-              placeholder="Serial Prefix"
-              value={newUser.serialPrefix || ''}
-              onChange={(e) => setNewUser({ ...newUser, serialPrefix: e.target.value })}
-              className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
-            />
-            <InputField
-              id="password"
-              type="password"
-              label="Password"
-              icon={<Lock size={18} className="text-gray-400" />}
-              value={newUser.password ?? ''}
-              onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-              inputProps={{ placeholder: 'Password' }}
-            />
-          </div>
-          <div className="flex gap-2 mt-4">
-            <button
-              onClick={() => {
-                setNewUser((prev) => ({
-                  ...prev,
-                  name: 'Sample User',
-                  email: `sample${Date.now() % 1000}@example.com`,
-                  contact: '0123456789',
-                  password: 'TempPass123!',
-                  role: 'User',
-                  type: '',
-                  status: 'pending',
-                  serialPrefix: 'SAMPLE',
-                }));
-              }}
-              disabled={isLoading}
-              className="bg-yellow-400 text-white px-4 py-2 rounded-lg hover:bg-yellow-500 transition-colors"
-            >
-              Fill Sample
-            </button>
-            <button
-              onClick={handleAddUser}
-              disabled={isLoading}
-              aria-busy={isLoading}
-              className={`px-4 py-2 rounded-lg transition-colors ${isLoading
-                  ? 'bg-green-300 text-white cursor-wait'
-                  : 'bg-green-500 text-white hover:bg-green-600'
-                }`}
-            >
-              {isLoading ? 'Adding…' : 'Add User'}
-            </button>
-            <button
-              onClick={() => setShowAddForm(false)}
-              className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
-            >
-              Cancel
-            </button>
           </div>
         </div>
-      )}
 
-      {/* Users Table - Desktop View */}
-      <div className="bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl shadow-sm hidden md:block">
-        <div className="overflow-x-auto">
-          <table className="w-full table-fixed divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="w-[15%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <div className="flex items-center gap-2">
-                    <User className="w-4 h-4" />
-                    Name
-                  </div>
-                </th>
-                <th className="w-[15%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <div className="flex items-center gap-2">
-                    <Mail className="w-4 h-4" />
-                    Email
-                  </div>
-                </th>
-                <th className="w-[12%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <div className="flex items-center gap-2">
-                    <Phone className="w-4 h-4" />
-                    Contact
-                  </div>
-                </th>
-                <th className="w-[10%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <div className="flex items-center gap-2">
-                    <Shield className="w-4 h-4" />
-                    Role
-                  </div>
-                </th>
-                <th className="w-[10%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="w-[8%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Serial Prefix
-                </th>
-                <th className="w-[12%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    Date
-                  </div>
-                </th>
-                <th className="w-[11%] px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-300">
-              {paginatedUsers.length > 0 ? (
-                paginatedUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      {editingUser?.id === user.id ? (
-                        <input
-                          type="text"
-                          value={editingUser.name}
-                          onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
-                          className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
-                        />
-                      ) : (
-                        <div className="text-sm font-medium text-gray-900 truncate">
-                          {user.name}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      {editingUser?.id === user.id ? (
-                        <input
-                          type="email"
-                          value={editingUser.email}
-                          onChange={(e) =>
-                            setEditingUser({ ...editingUser, email: e.target.value })
-                          }
-                          className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
-                        />
-                      ) : (
-                        <div className="text-sm text-gray-500 truncate">{user.email}</div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      {editingUser?.id === user.id ? (
-                        <input
-                          type="tel"
-                          value={editingUser.contact}
-                          onChange={(e) =>
-                            setEditingUser({ ...editingUser, contact: e.target.value })
-                          }
-                          className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
-                        />
-                      ) : (
-                        <div className="text-sm text-gray-500 truncate">{user.contact}</div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      {editingUser?.id === user.id ? (
-                        <select
-                          value={editingUser.role}
-                          onChange={(e) => setEditingUser({ ...editingUser, role: e.target.value })}
-                          className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
-                        >
-                          <option value="USER">USER</option>
-                          <option value="SUPER USER">SUPER USER</option>
-                        </select>
-                      ) : (
-                        <div className="text-sm text-gray-500 truncate">{user.role}</div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      {editingUser?.id === user.id ? (
-                        <select
-                          value={editingUser.status}
-                          onChange={(e) => setEditingUser({ ...editingUser, status: e.target.value as User['status'] })}
-                          className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
-                        >
-                          <option value="pending">Pending</option>
-                          <option value="active">Active</option>
-                          <option value="inactive">Inactive</option>
-                        </select>
-                      ) : (
-                        <div className="flex items-center gap-1">
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusDisplay(user.status).color
-                              }`}
-                          >
-                            {user.status}
-                          </span>
-                          {getStatusDisplay(user.status).icon}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      {editingUser?.id === user.id ? (
-                        <input
-                          type="text"
-                          value={editingUser.serialPrefix || ''}
-                          onChange={(e) =>
-                            setEditingUser({ ...editingUser, serialPrefix: e.target.value })
-                          }
-                          className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
-                        />
-                      ) : (
-                        <div className="text-sm text-gray-500 truncate">{user.serialPrefix || '-'}</div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <div className="text-sm text-gray-500">
-                        {new Date(user.registration_date).toLocaleDateString()}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                      {editingUser?.id === user.id ? (
-                        <div className="flex gap-2 justify-end">
-                          <button
-                            onClick={handleSaveEdit}
-                            className="text-green-600 hover:text-green-900"
-                            title="Save"
-                          >
-                            <Save className="w-5 h-5" />
-                          </button>
-                          <button
-                            onClick={handleCancelEdit}
-                            className="text-gray-600 hover:text-gray-900"
-                            title="Cancel"
-                          >
-                            <X className="w-5 h-5" />
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex gap-3 justify-end">
-                          <button
-                            onClick={() => setPasswordResetDialog({
-                              open: true,
-                              userId: user.id,
-                              userName: user.name,
-                            })}
-                            className="text-purple-600 hover:text-purple-900 group relative"
-                            title="Reset Password (Admin)"
-                          >
-                            <Key className="w-5 h-5" />
-                            <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                              Reset Password
-                            </span>
-                          </button>
-                          <button
-                            onClick={() => handleEdit(user)}
-                            className="text-yellow-600 hover:text-yellow-900 group relative"
-                            title="Edit"
-                          >
-                            <Edit className="w-5 h-5" />
-                            <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                              Edit
-                            </span>
-                          </button>
-                          <button
-                            onClick={() => handleDelete(user.id)}
-                            className="text-red-600 hover:text-red-900 group relative"
-                            title="Delete"
-                          >
-                            <Trash2 className="w-5 h-5" />
-                            <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                              Delete
-                            </span>
-                          </button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
-                    No users found
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-          <div className="px-4 py-3 border-t flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <p className="text-sm text-gray-500">
-              Showing {paginatedUsers.length} of {filteredUsers.length} entries
-            </p>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handlePrev}
-                disabled={currentPage === 1}
-                className={`px-3 py-1 rounded border ${currentPage === 1
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-white text-gray-700 hover:bg-gray-50'
-                  }`}
-              >
-                Prev
-              </button>
-              <span className="text-sm text-gray-700">
-                Page {currentPage} of {totalPages}
-              </span>
-              <button
-                onClick={handleNext}
-                disabled={currentPage === totalPages}
-                className={`px-3 py-1 rounded border ${currentPage === totalPages
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-white text-gray-700 hover:bg-gray-50'
-                  }`}
-              >
-                Next
-              </button>
+        {/* Add User Form */}
+        {showAddForm && (
+          <div className="bg-gray-50 rounded-xl p-6 mb-6 shadow-sm border border-gray-100">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold text-gray-800">Add New User</h2>
+              <button onClick={() => setShowAddForm(false)} className="text-gray-500 hover:text-gray-700"><X className="w-5 h-5" /></button>
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Users Card View - Mobile View */}
-      <div className="md:hidden space-y-4">
-        {paginatedUsers.length > 0 ? (
-          paginatedUsers.map((user) => (
-            <div
-              key={user.id}
-              className="bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl shadow-m p-3 border border-[#0B818D] "
-            >
-              {/* User Card Header */}
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex-1">
-                  {editingUser?.id === user.id ? (
-                    <input
-                      type="text"
-                      value={editingUser.name}
-                      onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
-                      className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 font-semibold text-gray-900"
-                    />
-                  ) : (
-                    <h3 className="text-lg font-semibold flex items-center gap-2 text-[#0B818D]">
-                      <User className="w-5 h-5 text-[#0B818D]" />
-                      {user.name}
-                    </h3>
-                  )}
-                </div>
-                <div className="flex items-center gap-1">
-                  {editingUser?.id === user.id ? (
-                    <select
-                      value={editingUser.status}
-                      onChange={(e) => setEditingUser({ ...editingUser, status: e.target.value as User['status'] })}
-                      className="px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 text-xs font-medium"
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="active">Active</option>
-                      <option value="inactive">Inactive</option>
-                    </select>
-                  ) : (
-                    <>
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusDisplay(user.status).color
-                          }`}
-                      >
-                        {user.status}
-                      </span>
-                      {getStatusDisplay(user.status).icon}
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* User Card Body */}
-              <div className="space-y-3 mb-4">
-                {/* Email */}
-                <div className="flex items-start gap-3">
-                  <Mail className="w-5 h-5 flex-shrink-0 mt-0.5 text-[#0B818D]" />
-                  <div className="flex-1 min-w-0 border-b-2 border-[#0B818D]/10">
-                    <p className="text-xs uppercase tracking-wider" style={{ fontFamily: "'Inter'" }}>Email</p>
-                    {editingUser?.id === user.id ? (
-                      <input
-                        type="email"
-                        value={editingUser.email}
-                        onChange={(e) =>
-                          setEditingUser({ ...editingUser, email: e.target.value })
-                        }
-                        className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 text-sm text-gray-700"
-                      />
-                    ) : (
-                      <p className="text-sm truncate">{user.email}</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Contact */}
-                <div className="flex items-start gap-3">
-                  <Phone className="w-5 h-5 flex-shrink-0 mt-0.5 text-[#0B818D]" />
-                  <div className="flex-1 min-w-0 border-b-2 border-[#0B818D]/10">
-                    <p className="text-xs uppercase tracking-wider" style={{ fontFamily: "'Inter'" }}>Contact</p>
-                    {editingUser?.id === user.id ? (
-                      <input
-                        type="tel"
-                        value={editingUser.contact}
-                        onChange={(e) =>
-                          setEditingUser({ ...editingUser, contact: e.target.value })
-                        }
-                        className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 text-sm text-gray-700"
-                      />
-                    ) : (
-                      <p className="text-sm ">{user.contact}</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Role */}
-                <div className="flex items-start gap-3">
-                  <Shield className="w-5 h-5 text-[#0B818D] flex-shrink-0 mt-0.5" />
-                  <div className="flex-1 min-w-0 border-b-2 border-[#0B818D]/10">
-                    <p className="text-xs uppercase tracking-wider" style={{ fontFamily: "'Inter'" }}>Role</p>
-                    {editingUser?.id === user.id ? (
-                      <select
-                        value={editingUser.role}
-                        onChange={(e) => setEditingUser({ ...editingUser, role: e.target.value })}
-                        className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 text-sm"
-                      >
-                        <option value="USER">USER</option>
-                        <option value="SUPER USER">SUPER USER</option>
-                      </select>
-                    ) : (
-                      <p className="text-sm">{user.role}</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Serial Prefix */}
-                <div className="flex items-start gap-3">
-                  <Package className="w-5 h-5 text-[#0B818D] flex-shrink-0 mt-0.5" />
-                  <div className="flex-1 min-w-0 border-b-2 border-[#0B818D]/10">
-                    <p className="text-xs uppercase tracking-wider" style={{ fontFamily: "'Inter'" }}>Serial Prefix</p>
-                    {editingUser?.id === user.id ? (
-                      <input
-                        type="text"
-                        value={editingUser.serialPrefix || ''}
-                        onChange={(e) =>
-                          setEditingUser({ ...editingUser, serialPrefix: e.target.value })
-                        }
-                        className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 text-sm text-gray-700"
-                      />
-                    ) : (
-                      <p className="text-sm">{user.serialPrefix || '-'}</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Date */}
-                <div className="flex items-start gap-3">
-                  <Calendar className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1 border-b-2 border-[#0B818D]/10">
-                    <p className="text-xs uppercase tracking-wider" style={{ fontFamily: "'Inter'" }}>Registration Date</p>
-                    <p className="text-sm ">
-                      {new Date(user.registration_date).toLocaleDateString()}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-2 pt-4 border-t border-gray-200">
-                {editingUser?.id === user.id ? (
-                  <>
-                    <button
-                      onClick={handleSaveEdit}
-                      className="flex-1 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium"
-                      title="Save"
-                    >
-                      <Save className="w-4 h-4" />
-                      Save
-                    </button>
-                    <button
-                      onClick={handleCancelEdit}
-                      className="flex-1 flex items-center justify-center gap-2 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium"
-                      title="Cancel"
-                    >
-                      <X className="w-4 h-4" />
-                      Cancel
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      onClick={() => setPasswordResetDialog({
-                        open: true,
-                        userId: user.id,
-                        userName: user.name,
-                      })}
-                      className="flex-1 flex items-center justify-center gap-2 bg-purple-500 hover:bg-purple-600 text-white px-2 py-2 rounded-lg transition-colors text-sm font-medium"
-                      title="Reset Password"
-                    >
-                      <Key className="w-4 h-4" />
-                      Reset
-                    </button>
-                    <button
-                      onClick={() => handleEdit(user)}
-                      className="flex-1 flex items-center justify-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-2 rounded-lg transition-colors text-sm font-medium"
-                      title="Edit"
-                    >
-                      <Edit className="w-4 h-4" />
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(user.id)}
-                      className="flex-1 flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white px-2 py-2 rounded-lg transition-colors text-sm font-medium"
-                      title="Delete"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      Delete
-                    </button>
-                  </>
-                )}
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <input type="text" placeholder="Name" value={newUser.name} onChange={(e) => setNewUser({ ...newUser, name: e.target.value })} className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#0B818D] text-sm" />
+              <input type="email" placeholder="Email" value={newUser.email} onChange={(e) => setNewUser({ ...newUser, email: e.target.value })} className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#0B818D] text-sm" />
+              <input type="tel" placeholder="Contact" value={newUser.contact} onChange={(e) => setNewUser({ ...newUser, contact: e.target.value })} className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#0B818D] text-sm" />
+              <select value={newUser.role} onChange={(e) => setNewUser({ ...newUser, role: e.target.value })} className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#0B818D] text-sm"><option value="USER">USER</option><option value="SUPER USER">SUPER USER</option></select>
+              <select value={newUser.status} onChange={(e) => setNewUser({ ...newUser, status: e.target.value as User['status'] })} className="px-3 h-10 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#0B818D] text-sm"><option value="pending">Pending</option><option value="active">Active</option><option value="inactive">Inactive</option></select>
+              <input type="text" placeholder="Serial Prefix" value={newUser.serialPrefix || ''} onChange={(e) => setNewUser({ ...newUser, serialPrefix: e.target.value })} className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#0B818D] text-sm" />
+              <InputField id="password" type="password" label="Password" icon={<Lock size={16} className="text-gray-400" />} value={newUser.password ?? ''} onChange={(e) => setNewUser({ ...newUser, password: e.target.value })} inputProps={{ placeholder: 'Password', className: 'text-sm' }} />
             </div>
-          ))
-        ) : (
-          <div className="bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl shadow-sm p-6 text-center text-gray-500">
-            No users found
+            <div className="flex gap-2 mt-4">
+              <button onClick={() => { setNewUser((prev: ServiceUser & { productName?: string }) => ({ ...prev, name: 'Sample User', email: `sample${Date.now() % 1000}@example.com`, contact: '0123456789', password: 'TempPass123!', role: 'User', type: '', status: 'pending', serialPrefix: 'SAMPLE' })); }} disabled={isLoading} className="bg-yellow-400 text-white px-4 py-2 rounded-lg hover:bg-yellow-500 transition-colors text-sm font-medium">Fill Sample</button>
+              <button onClick={handleAddUser} disabled={isLoading} className={`px-4 py-2 rounded-lg transition-colors text-sm font-medium ${isLoading ? 'bg-green-300 text-white cursor-wait' : 'bg-green-500 text-white hover:bg-green-600'}`}>{isLoading ? 'Adding…' : 'Add User'}</button>
+              <button onClick={() => setShowAddForm(false)} className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors text-sm font-medium">Cancel</button>
+            </div>
           </div>
         )}
 
-        {/* Mobile Pagination */}
-        <div className="flex flex-col gap-3 items-center pt-2">
-          <p className="text-sm text-gray-500">
-            Showing {paginatedUsers.length} of {filteredUsers.length} entries
-          </p>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handlePrev}
-              disabled={currentPage === 1}
-              className={`px-3 py-1 rounded border text-sm ${currentPage === 1
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
-                }`}
-            >
-              Prev
-            </button>
-            <span className="text-sm text-gray-700">
-              Page {currentPage} of {totalPages}
-            </span>
-            <button
-              onClick={handleNext}
-              disabled={currentPage === totalPages}
-              className={`px-3 py-1 rounded border text-sm ${currentPage === totalPages
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
-                }`}
-            >
-              Next
-            </button>
+        {/* Users Table - Desktop View */}
+        <div className="hidden md:block">
+          <div 
+            className="overflow-hidden" 
+            style={{ 
+              background: 'rgba(255, 255, 255, 0.49)', 
+              borderRadius: '18px',
+              backdropFilter: 'blur(16px)',
+              WebkitBackdropFilter: 'blur(16px)',
+              border: '1px solid rgba(255, 255, 255, 0.7)',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.03)'
+            }}
+          >
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr style={{ background: 'rgba(255, 255, 255, 0.42)' }} className="h-[66px] border-b border-white">
+                    <th className="px-6 text-[16px] font-medium text-[#414141] font-['Inter']">Id</th>
+                    <th className="px-6 text-[16px] font-medium text-[#414141] font-['Inter']">Name</th>
+                    <th className="px-6 text-[16px] font-medium text-[#414141] font-['Inter']">Short Name</th>
+                    <th className="px-6 text-[16px] font-medium text-[#414141] font-['Inter']">Serial Prefix</th>
+                    <th className="px-6 text-[16px] font-medium text-[#414141] font-['Inter']">Price</th>
+                    <th className="px-6 text-[16px] font-medium text-[#414141] font-['Inter']">Status</th>
+                    <th className="px-6 text-[16px] font-medium text-[#414141] font-['Inter'] text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedUsers.length > 0 ? (
+                    paginatedUsers.map((user, index) => {
+                      const matchingProduct = products.find(p => p.serialPrefix === user.serialPrefix);
+                      const shortName = matchingProduct?.shortName || user.serialPrefix || '-';
+                      const priceVal = matchingProduct?.price ? `LKR ${Number(matchingProduct.price).toFixed(2)}` : '-';
+                      
+                      return (
+                        <tr 
+                          key={user.id} 
+                          className="hover:bg-white/50 transition-colors h-[60px] border-b border-white"
+                          style={{ background: index % 2 === 0 ? 'rgba(255, 255, 255, 0.45)' : 'transparent' }}
+                        >
+                          <td className="px-6 text-[16px] font-medium text-[#414141] font-['Inter']">{user.id}</td>
+                          <td className="px-6">
+                            {editingUser?.id === user.id ? (
+                              <input type="text" value={editingUser.name} onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })} className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-[#0B818D] text-[16px] font-medium text-[#414141] font-['Inter']" />
+                            ) : (
+                              <span className="text-[16px] font-medium text-[#414141] font-['Inter']">{user.name}</span>
+                            )}
+                          </td>
+                          <td className="px-6">
+                            {editingUser?.id === user.id ? (
+                              <input type="text" value={editShortName} onChange={(e) => setEditShortName(e.target.value)} className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-[#0B818D] text-[16px] font-medium text-[#414141] font-['Inter']" />
+                            ) : (
+                              <span className="text-[16px] font-medium text-[#414141] font-['Inter']">{shortName}</span>
+                            )}
+                          </td>
+                          <td className="px-6 text-[16px] font-medium text-[#414141] font-['Inter']">
+                            {editingUser?.id === user.id ? (
+                              <input type="text" value={editingUser.serialPrefix || ''} onChange={(e) => setEditingUser({ ...editingUser, serialPrefix: e.target.value })} className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-[#0B818D] text-[16px] font-medium text-[#414141] font-['Inter']" />
+                            ) : (
+                              user.serialPrefix || '-'
+                            )}
+                          </td>
+                          <td className="px-6">
+                            {editingUser?.id === user.id ? (
+                              <input type="text" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-[#0B818D] text-[16px] font-medium text-[#414141] font-['Inter']" />
+                            ) : (
+                              <span className="text-[16px] font-medium text-[#414141] font-['Inter']">{priceVal}</span>
+                            )}
+                          </td>
+                          <td className="px-6">
+                            {editingUser?.id === user.id ? (
+                              <select value={editingUser.status} onChange={(e) => setEditingUser({ ...editingUser, status: e.target.value as User['status'] })} className="w-full px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-[#0B818D] text-[16px] font-medium text-[#414141] font-['Inter']"><option value="pending">Pending</option><option value="active">Active</option><option value="inactive">Inactive</option></select>
+                            ) : (
+                              <span className="inline-flex items-center justify-center px-2 py-[2px] rounded-[17px] font-medium text-[12px] leading-none font-['Inter']" style={{ background: user.status === 'active' ? 'rgba(137, 250, 154, 0.46)' : user.status === 'inactive' ? 'rgba(255, 100, 100, 0.25)' : 'rgba(254, 243, 199, 0.5)', color: user.status === 'active' ? '#016D18' : user.status === 'inactive' ? '#9B0000' : '#92400E' }}>
+                                {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-6 text-center">
+                            {editingUser?.id === user.id ? (
+                              <div className="flex gap-3 justify-center items-center h-full">
+                                <button onClick={handleSaveEdit} className="text-green-600 hover:text-green-800" title="Save"><Save className="w-[20px] h-[20px]" /></button>
+                                <button onClick={handleCancelEdit} className="text-gray-500 hover:text-gray-700" title="Cancel"><X className="w-[20px] h-[20px]" /></button>
+                              </div>
+                            ) : (
+                              <div className="flex gap-3 justify-center items-center h-full">
+                                <button onClick={() => handleEdit(user)} className="text-[#2348CD] hover:opacity-75 transition-opacity" title="Edit"><Edit className="w-[20px] h-[20px]" /></button>
+                                <button onClick={() => handleDelete(user.id)} className="text-[#E0090C] hover:opacity-75 transition-opacity" title="Delete"><Trash2 className="w-[22px] h-[22px]" /></button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan={7} className="px-6 py-8 text-center text-[#5C626E] text-[16px] font-['Inter'] font-medium">
+                        No users found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Desktop Pagination */}
+          <div className="py-4 flex items-center justify-between px-2 mt-2">
+            <p className="text-[12px] font-['Inter'] font-normal text-[#5C626E] leading-[15px]">
+              Showing {paginatedUsers.length} of {filteredUsers.length} entries
+            </p>
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={handlePrev} 
+                disabled={currentPage === 1} 
+                className="w-[15px] h-[15px] flex items-center justify-center rounded-[2px] disabled:opacity-40 hover:bg-white/90 active:bg-white shadow-sm transition-all bg-white/75"
+              >
+                <svg width="4" height="6" viewBox="0 0 8 10" fill="none"><path d="M6 1L2 5L6 9" stroke="#757B87" strokeWidth="2.5" /></svg>
+              </button>
+              <span className="text-[#5C626E] font-light font-['Inter'] text-[15px] leading-[18px] min-w-[10px] text-center">{currentPage}</span>
+              <button 
+                onClick={handleNext} 
+                disabled={currentPage === totalPages || totalPages === 0} 
+                className="w-[15px] h-[15px] flex items-center justify-center rounded-[2px] disabled:opacity-40 hover:bg-white/90 active:bg-white shadow-sm transition-all bg-white/75"
+              >
+                <svg width="4" height="6" viewBox="0 0 8 10" fill="none"><path d="M2 1L6 5L2 9" stroke="#757B87" strokeWidth="2.5" /></svg>
+              </button>
+            </div>
           </div>
         </div>
+
+        {/* ── Mobile Card View ── */}
+        <div className="md:hidden space-y-3 mt-2">
+          {paginatedUsers.length > 0 ? paginatedUsers.map((user) => {
+            const isEditing = editingUser?.id === user.id;
+            const matchingProduct = products.find(p => p.serialPrefix === user.serialPrefix);
+            const shortName = matchingProduct?.shortName || user.serialPrefix || '-';
+            const priceVal = matchingProduct?.price ? `LKR ${Number(matchingProduct.price).toFixed(2)}` : '-';
+            
+            return (
+              <div key={user.id} className="rounded-[18px] p-4 border border-gray-100 shadow-sm bg-white">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    {isEditing
+                      ? <input type="text" className="px-2 py-1 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#0B818D] font-semibold text-sm" value={editingUser.name} onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })} />
+                      : <h3 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 600, fontSize: '16px', color: '#414141' }}>{user.name}</h3>}
+                    <p style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: '12px', color: '#5C626E', marginTop: 2 }}>{user.role}</p>
+                  </div>
+                  {isEditing
+                    ? <select className="px-2 py-1 border border-gray-200 rounded-lg focus:outline-none text-xs" value={editingUser.status} onChange={(e) => setEditingUser({ ...editingUser, status: e.target.value as User['status'] })}><option value="pending">Pending</option><option value="active">Active</option><option value="inactive">Inactive</option></select>
+                    : <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 10px', borderRadius: '17px', background: user.status === 'active' ? '#D1F4D9' : user.status === 'inactive' ? '#FEE2E2' : '#FEF3C7', fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 500, fontSize: '11px', color: user.status === 'active' ? '#016D18' : user.status === 'inactive' ? '#9B0000' : '#92400E' }}>
+                        {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
+                      </span>}
+                </div>
+                <div className="space-y-2 mb-3">
+                  {[
+                    { label: 'Short Name', val: shortName, icon: <Package className="w-4 h-4 text-[#0B818D]" />, edit: isEditing ? <input type="text" className="flex-1 px-2 py-0.5 border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-[#0B818D] text-sm" value={editShortName} onChange={(e) => setEditShortName(e.target.value)} /> : null },
+                    { label: 'Serial Prefix', val: user.serialPrefix || '—', icon: <Package className="w-4 h-4 text-[#0B818D]" />, edit: isEditing ? <input type="text" className="flex-1 px-2 py-0.5 border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-[#0B818D] text-sm" value={editingUser!.serialPrefix || ''} onChange={(e) => setEditingUser({ ...editingUser!, serialPrefix: e.target.value })} /> : null },
+                    { label: 'Price', val: priceVal, icon: <Package className="w-4 h-4 text-[#0B818D]" />, edit: isEditing ? <input type="text" className="flex-1 px-2 py-0.5 border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-[#0B818D] text-sm" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} /> : null },
+                  ].map(({ label, val, icon, edit }) => (
+                    <div key={label} className="flex items-center gap-2 pb-1 border-b border-gray-50">
+                      {icon}
+                      <span style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: '11px', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em', minWidth: 100 }}>{label}</span>
+                      {edit || <span style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: '13px', color: '#414141' }}>{val}</span>}
+                    </div>
+                  ))}
+                  {isEditing && (
+                    <div className="flex items-center gap-2 pb-1 border-b border-gray-50">
+                      <Shield className="w-4 h-4 text-[#0B818D]" />
+                      <span style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: '11px', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em', minWidth: 100 }}>Role</span>
+                      <select className="flex-1 px-2 py-0.5 border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-[#0B818D] text-sm" value={editingUser!.role} onChange={(e) => setEditingUser({ ...editingUser!, role: e.target.value })}><option value="USER">USER</option><option value="SUPER USER">SUPER USER</option></select>
+                    </div>
+                  )}
+                </div>
+                <div className="flex gap-4 pt-2 border-t border-gray-100 justify-end">
+                  {isEditing
+                    ? <>
+                        <button onClick={handleSaveEdit} className="text-[#016D18] hover:text-green-800 transition-colors"><Save className="w-[18px] h-[18px]" /></button>
+                        <button onClick={handleCancelEdit} className="text-[#5C626E] hover:text-gray-800 transition-colors"><X className="w-[18px] h-[18px]" /></button>
+                      </>
+                    : <>
+                        <button onClick={() => handleEdit(user)} className="text-[#EAB308] hover:text-yellow-700 transition-colors"><Edit className="w-[18px] h-[18px]" /></button>
+                        <button onClick={() => handleDelete(user.id)} className="text-[#EF4444] hover:text-red-700 transition-colors"><Trash2 className="w-[18px] h-[18px]" /></button>
+                      </>}
+                </div>
+              </div>
+            );
+          }) : (
+            <div className="rounded-[18px] p-10 text-center bg-gray-50 border border-gray-100 text-sm text-[#5C626E]">No users found</div>
+          )}
+          
+          {/* Mobile Pagination */}
+          <div className="flex flex-col items-center gap-2 pt-2">
+            <p className="text-xs text-[#5C626E]">Showing {paginatedUsers.length} of {filteredUsers.length} entries</p>
+            <div className="flex items-center gap-2">
+              <button onClick={handlePrev} disabled={currentPage === 1} className="px-3 py-1 rounded-lg text-sm border border-gray-200 disabled:opacity-50 bg-white text-[#5C626E]">Prev</button>
+              <span className="text-[13px] text-[#5C626E]">{currentPage} / {totalPages || 1}</span>
+              <button onClick={handleNext} disabled={currentPage === totalPages || totalPages === 0} className="px-3 py-1 rounded-lg text-sm border border-gray-200 disabled:opacity-50 bg-white text-[#5C626E]">Next</button>
+            </div>
+          </div>
+        </div>
+      </div>
       </div>
     </div>
   );
