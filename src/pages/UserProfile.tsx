@@ -397,7 +397,7 @@ export const UserProfile = () => {
           userName: formData.userName || ''
         };
 
-        const resp = await updateUser(formData.id, payload);
+        const resp = await updateUser(formData.id, payload) as any;
         // Update local state with returned data if available
         if (resp) {
           const r = resp as any;

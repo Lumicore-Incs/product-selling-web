@@ -1,4 +1,4 @@
-import { MinusIcon, PlusIcon, RefreshCwIcon, SaveIcon, Trash2Icon, XIcon } from 'lucide-react';
+import { MinusIcon, RefreshCwIcon, SaveIcon, Trash2Icon, XIcon } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { Sale, SaleItem } from '../models/sales';
 import { customerApi, CustomerRequestDTO, productApi, ProductDto, CustomerDtoGet } from '../services/api';
@@ -45,7 +45,6 @@ export const SalesForm: React.FC<SalesFormProps> = ({
   }>({ open: false, message: '', type: 'success' });
   const [defaultProduct, setDefaultProduct] = useState<ProductDto | null>(null);
   const [allCustomers, setAllCustomers] = useState<CustomerDtoGet[] | null>(null);
-  const [isLookingUpCustomer, setIsLookingUpCustomer] = useState(false);
   const [customerInfoText, setCustomerInfoText] = useState('');
   const [manualTotalAmount, setManualTotalAmount] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -225,6 +224,10 @@ export const SalesForm: React.FC<SalesFormProps> = ({
       items: matchedItems.length > 0 ? matchedItems : prev.items,
     }));
 
+    if (totalAmount) {
+      setManualTotalAmount(totalAmount);
+    }
+
     let message = 'Customer details parsed successfully!';
     if (matchedEntries > 0) {
       message += ` ${matchedEntries} item${matchedEntries === 1 ? '' : 's'} matched.`;
@@ -324,10 +327,10 @@ export const SalesForm: React.FC<SalesFormProps> = ({
   };
 
   // Normalize phone comparison by removing an optional leading 0 from user input
-  const normalizePhoneForCompare = (phone: string) => {
-    if (!phone) return '';
-    return phone.startsWith('0') ? phone.slice(1) : phone;
-  };
+  // const normalizePhoneForCompare = (phone: string) => {
+  //   if (!phone) return '';
+  //   return phone.startsWith('0') ? phone.slice(1) : phone;
+  // };
 
   const ensureLeadingZero = (phone?: string) => {
     if (!phone) return '';
