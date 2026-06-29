@@ -29,7 +29,7 @@ export const UserOrders = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [usersWithOrders, setUsersWithOrders] = useState<UserWithOrders[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const [_loading, setLoading] = useState(true);
+
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [paymentDetails, setPaymentDetails] = useState<PaymentDetail[]>([]);
   const [paymentDetailsLoading, setPaymentDetailsLoading] = useState(false);
@@ -53,7 +53,7 @@ export const UserOrders = () => {
     const user = await getCurrentUser();
     setCurrentUser(user);
 
-    if (!user || (user.role !== 'ADMIN' && user.role !== 'SUPER USER')) {
+    if (!user || (user.role?.toUpperCase() !== 'ADMIN' && user.role?.toUpperCase() !== 'SUPER USER')) {
       setLoading(false);
       return;
     }
@@ -62,8 +62,6 @@ export const UserOrders = () => {
   };
 
   const fetchUserOrders = async () => {
-    setLoading(true);
-
     try {
       const users = await userService.getAllUsers();
       const usersArray: UserWithOrders[] = users.map((u: any) => ({
@@ -71,28 +69,32 @@ export const UserOrders = () => {
         name: u.name || u.userName || 'Unknown',
         email: u.email,
         role: u.role,
-        phone: u.phone,
+        phone: u.contact || u.phone,
       }));
 
       setUsersWithOrders(usersArray);
 
-      const firstNonAdminUser = usersArray.find(u => u.role !== 'ADMIN');
+      const firstNonAdminUser = usersArray.find(u => u.role?.toUpperCase() !== 'ADMIN');
       if (firstNonAdminUser) {
         setSelectedUserId(firstNonAdminUser.id);
       }
     } catch (err) {
       console.error('Failed to fetch users:', err);
-    } finally {
-      setLoading(false);
     }
   };
 
   const fetchPaymentDetails = async (userId: string) => {
     setPaymentDetailsLoading(true);
     try {
-      const response = await paymentService.getPaymentsByUserId(userId);
-      if (response.success) {
+      const response: any = await paymentService.getPaymentsByUserId(userId);
+      if (response.success && response.data) {
         setPaymentDetails(response.data.paymentDetails || []);
+      } else if (response.paymentDetails) {
+        setPaymentDetails(response.paymentDetails);
+      } else if (Array.isArray(response)) {
+        setPaymentDetails(response);
+      } else {
+        setPaymentDetails([]);
       }
     } catch (err) {
       console.error('Failed to fetch payment details:', err);
@@ -105,9 +107,11 @@ export const UserOrders = () => {
   const fetchUserAnalytics = async (userId: string) => {
     try {
       setUserAnalytics(null);
-      const response = await getUserAnalytics(userId);
+      const response: any = await getUserAnalytics(userId);
       if (response.success && response.data) {
         setUserAnalytics(response.data);
+      } else if (response && response.todayQty !== undefined) {
+        setUserAnalytics(response);
       }
     } catch (err) {
       console.error('Failed to fetch user analytics:', err);
@@ -117,16 +121,7 @@ export const UserOrders = () => {
 
   const selectedUser = usersWithOrders.find(u => u.id === selectedUserId);
 
-  // Filter user directory based on search input
-  const filteredDirectoryUsers = usersWithOrders
-    .filter(user => user.role !== 'ADMIN')
-    .filter(user => {
-      if (!dirSearch.trim()) return true;
-      const term = dirSearch.toLowerCase();
-      return user.name.toLowerCase().includes(term) || user.email.toLowerCase().includes(term);
-    });
-
-  if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'SUPER USER')) {
+  if (!currentUser || (currentUser.role?.toUpperCase() !== 'ADMIN' && currentUser.role?.toUpperCase() !== 'SUPER USER')) {
     return (
       <div className="p-10 text-center text-red-500 text-xl font-bold">
         Access Denied
@@ -188,53 +183,27 @@ export const UserOrders = () => {
                 </div>
               </div>
 
-              {/* Directory Search (Frame 43) */}
-              <div className="relative mb-4 w-full h-[25px] rounded-[17px] bg-[#FFFFFF]/93">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#9298A4] w-4 h-4" />
-                <input
-                  type="text"
-                  placeholder="Search here..."
-                  value={dirSearch}
-                  onChange={(e) => setDirSearch(e.target.value)}
-                  className="w-full h-full pl-[38px] pr-4 border-none rounded-[17px] focus:outline-none focus:ring-1 focus:ring-[#0B818D] text-[10px] font-['Inter'] text-[#374151] placeholder-[#BEBEBE]"
-                />
-              </div>
-
-              <div className="space-y-2 max-h-[55vh] overflow-y-auto pr-1 custom-scrollbar">
-                {filteredDirectoryUsers.map(user => {
-                  const isSelected = selectedUserId === user.id;
-                  return (
-                    <div
-                      key={user.id}
-                      onClick={() => setSelectedUserId(user.id)}
-                      className={`flex items-center gap-3 px-3 h-[50px] rounded-[8px] cursor-pointer transition-all duration-300 flex-shrink-0 ${
-                        isSelected 
-                          ? 'bg-[#0B818D] text-white shadow-md' 
-                          : 'bg-transparent hover:bg-white/30'
-                      }`}
-                    >
-                      {/* Avatar */}
-                      <div className="w-[33px] h-[33px] bg-white rounded-[20px] flex items-center justify-center flex-shrink-0 border border-gray-100/30 overflow-hidden">
-                        <svg width="22" height="22" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <defs>
-                            <linearGradient id={`starGrad-${user.id}`} x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-                              <stop offset="0%" stopColor="#1EC8B0" />
-                              <stop offset="100%" stopColor="#2764E7" />
-                            </linearGradient>
-                            <linearGradient id={`pinkOverlay-${user.id}`} x1="0" y1="32" x2="32" y2="0" gradientUnits="userSpaceOnUse">
-                              <stop offset="0%" stopColor="rgba(255, 108, 232, 0.7)" />
-                              <stop offset="100%" stopColor="rgba(255, 108, 232, 0)" />
-                            </linearGradient>
-                          </defs>
-                          <path d="M16 1.5a3 3 0 0 1 2.8 1.9l.5 1.5a3 3 0 0 0 1.8 1.8l1.5.5a3 3 0 0 1 1.9 2.8l-.2 1.6a3 3 0 0 0 .9 2.4l1.2 1.1a3 3 0 0 1 0 4.1l-1.2 1.1a3 3 0 0 0-.9 2.4l.2 1.6a3 3 0 0 1-1.9 2.8l-1.5.5a3 3 0 0 0-1.8 1.8l-.5 1.5a3 3 0 0 1-2.8 1.9a3 3 0 0 1-2.8-1.9l-.5-1.5a3 3 0 0 0-1.8-1.8l-1.5-.5a3 3 0 0 1-1.9-2.8l.2-1.6a3 3 0 0 0-.9-2.4l-1.2-1.1a3 3 0 0 1 0-4.1l1.2-1.1a3 3 0 0 0 .9-2.4l-.2-1.6a3 3 0 0 1 1.9-2.8l1.5.5a3 3 0 0 0 1.8-1.8l.5-1.5A3 3 0 0 1 16 1.5z" fill={`url(#starGrad-${user.id})`}/>
-                          <path d="M16 1.5a3 3 0 0 1 2.8 1.9l.5 1.5a3 3 0 0 0 1.8 1.8l1.5.5a3 3 0 0 1 1.9 2.8l-.2 1.6a3 3 0 0 0 .9 2.4l1.2 1.1a3 3 0 0 1 0 4.1l-1.2 1.1a3 3 0 0 0-.9 2.4l.2 1.6a3 3 0 0 1-1.9 2.8l-1.5.5a3 3 0 0 0-1.8 1.8l-.5 1.5a3 3 0 0 1-2.8 1.9a3 3 0 0 1-2.8-1.9l-.5-1.5a3 3 0 0 0-1.8-1.8l-1.5-.5a3 3 0 0 1-1.9-2.8l.2-1.6a3 3 0 0 0-.9-2.4l-1.2-1.1a3 3 0 0 1 0-4.1l1.2-1.1a3 3 0 0 0 .9-2.4l-.2-1.6a3 3 0 0 1 1.9-2.8l1.5-.5a3 3 0 0 0 1.8-1.8l.5-1.5A3 3 0 0 1 16 1.5z" fill={`url(#pinkOverlay-${user.id})`}/>
-                          <circle cx="16" cy="11.5" r="4.25" fill="#FFFFFF"/>
-                          <path d="M9.5 21.5c0-3.3 2.9-6 6.5-6s6.5 2.7 6.5 6H9.5z" fill="#FFFFFF"/>
-                        </svg>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className={`text-[12px] font-medium truncate font-['Inter'] ${isSelected ? 'text-white' : 'text-[#3B3B3B]'}`}>{user.name}</div>
-                        <div className={`text-[10px] truncate font-['Inter'] mt-[2px] ${isSelected ? 'text-[#EBEBEB]' : 'text-[#727272]'}`}>{user.email}</div>
+              <div className="space-y-1.5 max-h-[60vh] overflow-y-auto pr-1 custom-scrollbar">
+                {loading ? (
+                  <div className="text-center py-4 text-gray-500 text-xs font-bold">Loading directory...</div>
+                ) : usersWithOrders.filter(user => user.role?.toUpperCase() !== 'ADMIN').length === 0 ? (
+                  <div className="text-center py-4 text-gray-400 text-xs">No users found</div>
+                ) : (
+                  usersWithOrders
+                    .filter(user => user.role?.toUpperCase() !== 'ADMIN')
+                    .map(user => (
+                      <div
+                        key={user.id}
+                        onClick={() => setSelectedUserId(user.id)}
+                        className={`px-4 py-3 rounded-2xl cursor-pointer transition-all duration-300 border ${selectedUserId === user.id
+                            ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-100'
+                            : 'bg-transparent border-transparent hover:bg-blue-50/50 hover:border-blue-100 text-gray-600 hover:text-blue-600'
+                          }`}
+                      >
+                        <div className="font-bold text-sm truncate">{user.name}</div>
+                        <div className={`text-[10px] truncate ${selectedUserId === user.id ? 'text-blue-100' : 'text-gray-400'}`}>
+                          {user.email}
+                        </div>
                       </div>
                       {isSelected && (
                         <div className="w-[40px] h-[12px] bg-[#C5FAFF]/86 border-[0.25px] border-[#00353B] rounded-[5px] text-[#00353B] text-[7px] font-['Inter'] font-normal flex items-center justify-center flex-shrink-0">

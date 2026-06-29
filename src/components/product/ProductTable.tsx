@@ -1,4 +1,4 @@
-import { Edit2Icon, TrashIcon } from 'lucide-react';
+import { Edit, Trash2 } from 'lucide-react';
 import { Product } from '../../models/product';
 
 interface ProductTableProps {
@@ -61,150 +61,87 @@ export function ProductTable({
     <>
       {/* Desktop Table */}
       <div className="hidden lg:block">
-        <div
-          className="overflow-hidden"
-          style={{
-            background: 'rgba(255, 255, 255, 0.49)',
-            borderRadius: '18px',
-          }}
-        >
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              {/* Header Row */}
+        <div className="bg-white/50 backdrop-blur-sm rounded-2xl overflow-hidden shadow-sm">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-sm" style={{ fontFamily: 'Inter, sans-serif' }}>
+              {/* Header */}
               <thead>
-                <tr
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.42)',
-                    borderBottom: '1px solid #FFFFFF',
-                  }}
-                >
-                  <th style={headerCellStyle}>Id</th>
-                  <th style={headerCellStyle}>Name</th>
-                  <th style={headerCellStyle}>Short Name</th>
-                  <th style={headerCellStyle}>Serial Prefix</th>
-                  <th style={headerCellStyle}>Price</th>
-                  <th style={headerCellStyle}>Status</th>
-                  <th style={{ ...headerCellStyle, textAlign: 'center' }}>Actions</th>
+                <tr className="bg-white/60 text-gray-700">
+                  <th className="px-6 py-5 text-left font-semibold">Id</th>
+                  <th className="px-6 py-5 text-left font-semibold">Name</th>
+                  <th className="px-6 py-5 text-left font-semibold">Short Name</th>
+                  <th className="px-6 py-5 text-left font-semibold">Serial Prefix</th>
+                  <th className="px-6 py-5 text-left font-semibold">Price</th>
+                  <th className="px-6 py-5 text-left font-semibold">Status</th>
+                  <th className="px-6 py-5 text-center font-semibold">Actions</th>
                 </tr>
               </thead>
 
+              {/* Body */}
               <tbody>
-                {products.map((product) => (
-                  <tr
-                    key={product.productId}
-                    className="hover:bg-white/30 transition-colors"
-                    style={{ borderBottom: '1px solid #FFFFFF' }}
-                  >
-                    <td style={cellStyle}>{product.productId}</td>
-                    <td style={cellStyle}>{product.name}</td>
-                    <td style={cellStyle}>{product.shortName}</td>
-                    <td style={cellStyle}>{product.serialPrefix}</td>
-                    <td style={cellStyle}>LKR {Number(product.price).toFixed(2)}</td>
+                {products.map((product, index) => {
+                  return (
+                    <tr
+                      key={product.productId}
+                      className={`border-b border-white/20 transition hover:bg-white/80 ${
+                        index % 2 === 0 ? 'bg-white/50' : 'bg-transparent'
+                      }`}
+                    >
+                      <td className="px-6 py-4 font-medium text-gray-900">
+                        {product.productId}
+                      </td>
 
-                    {/* Status Badge */}
-                    <td style={{ ...cellStyle }}>
-                      <span
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          padding: '2px 8px',
-                          borderRadius: '17px',
-                          background:
-                            product.status === 'inactive'
-                              ? 'rgba(255, 100, 100, 0.25)'
-                              : 'rgba(137, 250, 154, 0.46)',
-                          fontFamily: "'Plus Jakarta Sans', sans-serif",
-                          fontWeight: 500,
-                          fontSize: '12px',
-                          lineHeight: '15px',
-                          color: product.status === 'inactive' ? '#9B0000' : '#016D18',
-                        }}
-                      >
-                        {product.status === 'inactive' ? 'Inactive' : 'Active'}
-                      </span>
-                    </td>
+                      <td className="px-6 py-4 text-gray-700">
+                        {product.name}
+                      </td>
 
-                    {/* Action Buttons */}
-                    <td style={{ ...cellStyle, textAlign: 'center' }}>
-                      <div className="flex items-center justify-center gap-3">
-                        <button
-                          onClick={() => onEdit(product)}
-                          title="Edit"
-                          className="hover:opacity-70 transition-opacity"
-                        >
-                          <Edit2Icon
-                            style={{ width: '20px', height: '20px', color: '#2348CD' }}
-                          />
-                        </button>
-                        <button
-                          onClick={() => onDelete(product.productId)}
-                          title="Delete"
-                          className="hover:opacity-70 transition-opacity"
-                        >
-                          <TrashIcon
-                            style={{ width: '22px', height: '22px', color: '#E0090C' }}
-                          />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      <td className="px-6 py-4 text-gray-700">
+                        {product.shortName}
+                      </td>
+
+                      <td className="px-6 py-4 text-gray-700">
+                        {product.serialPrefix}
+                      </td>
+
+                      <td className="px-6 py-4 font-medium text-gray-900">
+                        LKR {product.price.toFixed(2)}
+                      </td>
+
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+                          !product.status || product.status.toLowerCase() === 'active' ? 'bg-green-200 text-green-800' : 'bg-gray-100 text-gray-700'
+                        }`}>
+                          {!product.status || product.status.toLowerCase() === 'active' ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
+
+                      {/* Actions */}
+                      <td className="px-6 py-4 text-center">
+                        <div className="flex justify-center items-center gap-4">
+                          <button
+                            onClick={() => onEdit(product)}
+                            className="text-blue-600 hover:text-blue-800 transition"
+                            title="Edit"
+                          >
+                            <Edit className="w-5 h-5 stroke-[2]" />
+                          </button>
+
+                          <button
+                            onClick={() => onDelete(product.productId)}
+                            className="text-red-600 hover:text-red-800 transition"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-5 h-5 stroke-[2]" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
-
-          {/* Pagination Footer */}
-          <div className="flex items-center justify-between px-6 py-4">
-            <p
-              style={{
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
-                fontWeight: 400,
-                fontSize: '12px',
-                lineHeight: '15px',
-                color: '#5C626E',
-              }}
-            >
-              Showing {products.length} of {totalCount ?? products.length} entries
-            </p>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={onPrev}
-                disabled={currentPage <= 1}
-                className="w-[15px] h-[15px] flex items-center justify-center rounded-sm disabled:opacity-30 hover:opacity-70 transition"
-                style={{ background: 'rgba(255,255,255,0.75)' }}
-              >
-                <svg width="8" height="10" viewBox="0 0 8 10" fill="none">
-                  <path d="M6 1L2 5L6 9" stroke="#757B87" strokeWidth="1.5" />
-                </svg>
-              </button>
-              <span
-                style={{
-                  fontFamily: "'Plus Jakarta Sans', sans-serif",
-                  fontWeight: 300,
-                  fontSize: '15px',
-                  lineHeight: '18px',
-                  color: '#5C626E',
-                  minWidth: '20px',
-                  textAlign: 'center',
-                }}
-              >
-                {currentPage}
-              </span>
-              <button
-                onClick={onNext}
-                disabled={currentPage >= totalPages}
-                className="w-[15px] h-[15px] flex items-center justify-center rounded-sm disabled:opacity-30 hover:opacity-70 transition"
-                style={{ background: 'rgba(255,255,255,0.75)' }}
-              >
-                <svg width="8" height="10" viewBox="0 0 8 10" fill="none">
-                  <path d="M2 1L6 5L2 9" stroke="#757B87" strokeWidth="1.5" />
-                </svg>
-              </button>
-            </div>
-          </div>
         </div>
-      </div>
 
       {/* Mobile Card View */}
       <div className="lg:hidden space-y-3">
@@ -257,18 +194,16 @@ export function ProductTable({
                   <span
                     style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '13px', color: '#5C626E' }}
                   >
-                    {label}:
-                  </span>
-                  <span
-                    style={{
-                      fontFamily: "'Plus Jakarta Sans', sans-serif",
-                      fontSize: '13px',
-                      fontWeight: 500,
-                      color: '#414141',
-                    }}
+                    <Edit className="w-4 h-4" />
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => onDelete(product.productId)}
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition"
                   >
-                    {val}
-                  </span>
+                    <Trash2 className="w-4 h-4" />
+                    Delete
+                  </button>
                 </div>
               ))}
             </div>

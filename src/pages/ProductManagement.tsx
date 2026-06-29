@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast, ToastContainer } from 'react-toastify';
 import { BackgroundIcons } from '../components/BackgroundIcons';
 import { Header } from '../components/product/Header';
@@ -15,7 +16,7 @@ export type Product = ProductModel;
 export const ProductManagement = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(false);
@@ -71,14 +72,16 @@ export const ProductManagement = () => {
     try {
       const backendProducts = await productApi.getAllProducts();
 
-      const transformedProducts: Product[] = backendProducts.map((product) => ({
-        productId: product.productId || 0,
-        name: product.name,
-        shortName: product.shortName || '',
-        price: product.price,
-        serialPrefix: product.serialPrefix,
-        status: product.status || 'active',
-      }));
+      const transformedProducts: Product[] = backendProducts
+        .filter((product) => product.status?.toLowerCase() !== 'remove')
+        .map((product) => ({
+          productId: product.productId || 0,
+          name: product.name,
+          shortName: product.shortName || '',
+          price: product.price,
+          serialPrefix: product.serialPrefix,
+          status: product.status || 'active',
+        }));
 
       setProducts(transformedProducts);
     } catch (error: any) {
@@ -109,20 +112,11 @@ export const ProductManagement = () => {
         status: 'active',
       };
 
-      const savedProduct = await productApi.createProduct(newProductData);
+      await productApi.createProduct(newProductData);
 
-      const newProduct: Product = {
-        productId: savedProduct.productId || 0,
-        name: savedProduct.name,
-        shortName: savedProduct.shortName || shortName,
-        price: savedProduct.price,
-        serialPrefix: savedProduct.serialPrefix,
-        status: savedProduct.status || 'active',
-      };
-
-      setProducts([...products, newProduct]);
       setIsModalOpen(false);
       showToast('Product added successfully!', 'success');
+      await loadProducts(); // Refresh the table from the backend to get the real ID
     } catch (error: any) {
       console.error('Failed to add product:', error);
       showToast('Failed to add product. Please try again.', 'error');
@@ -148,26 +142,13 @@ export const ProductManagement = () => {
         typeof updatedProduct.productId === 'string'
           ? parseInt(updatedProduct.productId)
           : updatedProduct.productId;
-      const savedProduct = await productApi.updateProduct(id, updateData);
-
-      setProducts(
-        products.map((product) =>
-          product.productId === id
-            ? {
-                productId: savedProduct.productId ?? id,
-                name: savedProduct.name,
-                shortName: savedProduct.shortName || updatedProduct.shortName,
-                price: savedProduct.price,
-                serialPrefix: savedProduct.serialPrefix,
-                status: savedProduct.status ?? 'active',
-              }
-            : product
-        )
-      );
+          
+      await productApi.updateProduct(id, updateData);
 
       setIsModalOpen(false);
       setCurrentProduct(null);
       showToast('Product updated successfully!', 'success');
+      await loadProducts(); // Refresh the table from the backend
     } catch (error: any) {
       console.error('Failed to update product:', error);
       showToast('Failed to update product. Please try again.', 'error');
@@ -179,13 +160,24 @@ export const ProductManagement = () => {
   // Handler for deleting a product
   const handleDeleteProduct = async (productId: string | number) => {
     const id = typeof productId === 'string' ? parseInt(productId) : productId;
+    
+    const productToDelete = products.find(p => p.productId === id);
+    if (!productToDelete) return;
 
     setLoading(true);
     try {
-      await productApi.deleteProduct(id);
-      setProducts(products.filter((product) => product.productId !== id));
+      // Perform soft delete by updating the status to 'remove'
+      // This ensures the backend hides/removes it if the DELETE endpoint is not functioning.
+      await productApi.updateProduct(id, {
+        name: productToDelete.name,
+        shortName: productToDelete.shortName,
+        price: productToDelete.price,
+        serialPrefix: productToDelete.serialPrefix,
+        status: 'remove',
+      });
+      
       showToast('Product deleted successfully!', 'success');
-      loadProducts(); // Refresh the table after delete
+      await loadProducts(); // Refresh the table after delete
     } catch (error: any) {
       console.error('Failed to delete product:', error);
       showToast('Failed to delete product. Please try again.', 'error');
@@ -212,11 +204,6 @@ export const ProductManagement = () => {
     setIsModalOpen(true);
   };
 
-  // Handler for refresh
-  const handleRefresh = () => {
-    loadProducts();
-  };
-
   return (
     <div className="min-h-screen relative" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <BackgroundIcons type="product" />
@@ -232,15 +219,9 @@ export const ProductManagement = () => {
         pauseOnHover
       />
 
-      <div className="px-4 sm:px-6 py-6">
-        {/* Page Header */}
-        <Header
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          onAddClick={handleAddClick}
-          onRefresh={handleRefresh}
-          loading={loading}
-        />
+      <Header
+        onAddClick={handleAddClick}
+      />
 
         {/* Loading Banner */}
         {loading && (
@@ -265,17 +246,44 @@ export const ProductManagement = () => {
         />
       </div>
 
-      <ProductModal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setCurrentProduct(null);
-        }}
-        product={currentProduct}
-        onAdd={handleAddProduct}
-        onUpdate={handleUpdateProduct}
-        loading={loading}
-      />
+        {/* Pagination Controls */}
+        <div className="mt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500">
+          <p className="order-2 sm:order-1 mt-4 sm:mt-0">
+            Showing {paginatedProducts.length} of {filteredProducts.length} entries
+          </p>
+          <div className="flex items-center gap-1 order-1 sm:order-2">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="w-5 h-5 flex items-center justify-center rounded bg-white/50 text-gray-500 hover:bg-white/80 transition-colors disabled:opacity-50"
+            >
+              {'<'}
+            </button>
+            <span className="w-5 h-5 flex items-center justify-center rounded bg-white text-blue-600 font-medium shadow-sm">
+              {currentPage}
+            </span>
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="w-5 h-5 flex items-center justify-center rounded bg-white/50 text-gray-500 hover:bg-white/80 transition-colors disabled:opacity-50"
+            >
+              {'>'}
+            </button>
+          </div>
+        </div>
+
+        <ProductModal
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setCurrentProduct(null);
+          }}
+          product={currentProduct}
+          onAdd={handleAddProduct}
+          onUpdate={handleUpdateProduct}
+          loading={loading}
+        />
+      </main>
     </div>
   );
 };
