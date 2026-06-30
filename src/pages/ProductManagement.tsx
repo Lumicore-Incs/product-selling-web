@@ -5,7 +5,7 @@ import { Header } from '../components/product/Header';
 import { ProductModal } from '../components/product/ProductModal';
 import { ProductTable } from '../components/product/ProductTable';
 import { productApi, ProductDto } from '../services/api';
-import { isAuthenticated, removeToken } from '../services/authUtils';
+import { removeToken } from '../services/authUtils';
 
 // Updated Product type to match backend
 import { Product as ProductModel } from '../models/product';
