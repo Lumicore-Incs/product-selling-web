@@ -168,7 +168,11 @@ export const AuthCard = () => {
       }
     } catch (error: any) {
       console.error('API Error:', error);
-      setError(error.response?.data?.message || 'Wrong UserName Or Password..!');
+      if (!error.response) {
+        setError('Cannot connect to the server. Please make sure the backend is running.');
+      } else {
+        setError(error.response?.data?.message || 'Wrong UserName Or Password..!');
+      }
       setAlertType('error');
       setAlertOpen(true);
     } finally {

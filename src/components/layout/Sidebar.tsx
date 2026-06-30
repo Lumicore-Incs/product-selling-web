@@ -20,7 +20,7 @@ import {
   PanelLeftClose
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { getCurrentUser } from '../../service/auth';
 
 interface NavItem {
@@ -119,9 +119,6 @@ const getHelpSettingsItems = (userRole: string): NavItem[] => {
     });
   }
 
-  // SETTINGS - All roles
-  items.push({ icon: SettingsIcon, label: 'Settings', to: '/settings' });
-
   return items;
 };
 
@@ -142,6 +139,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
 
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -290,11 +288,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }}
       >
         {/* 🔹 Header */}
-        <div className="flex items-center justify-between p-5 pt-8 mb-6">
-          <div className="pl-4 w-[140px]">
+        <div className="flex items-center justify-between px-5 pt-8 mb-6 gap-2">
+          <div className="w-[160px] flex-shrink-0">
             <img
               src={new URL('../../assets/Logo.PNG', import.meta.url).href}
-              className="w-full h-auto max-h-10 object-contain"
+              className="w-full h-auto object-contain"
               alt="Logo"
             />
           </div>
@@ -302,14 +300,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={onClose}
-              className="p-1.5 bg-[#D2EBEF] hover:bg-[#c0e0e5] rounded-lg text-[#0B818D] transition md:hidden"
+              className="p-1.5 text-[#0B818D] hover:opacity-80 transition md:hidden"
               title="Close Menu"
             >
               <XIcon size={18} />
             </button>
             <button
-              className="p-1.5 bg-[#D2EBEF] hover:bg-[#c0e0e5] rounded-lg text-[#0B818D] transition hidden md:block"
-              title="Collapse sidebar"
+              onClick={() => {
+                localStorage.removeItem('token');
+                navigate('/auth');
+              }}
+              className="p-1.5 text-[#0B818D] hover:opacity-80 transition hidden md:block"
+              title="Logout"
             >
               <PanelLeftClose size={18} />
             </button>

@@ -1,4 +1,4 @@
-import { Edit2Icon, TrashIcon } from 'lucide-react';
+import { EditIcon, Trash2Icon } from 'lucide-react';
 import { Product } from '../../models/product';
 
 interface ProductTableProps {
@@ -133,7 +133,7 @@ export function ProductTable({
                           title="Edit"
                           className="hover:opacity-70 transition-opacity"
                         >
-                          <Edit2Icon
+                          <EditIcon
                             style={{ width: '20px', height: '20px', color: '#2348CD' }}
                           />
                         </button>
@@ -142,7 +142,7 @@ export function ProductTable({
                           title="Delete"
                           className="hover:opacity-70 transition-opacity"
                         >
-                          <TrashIcon
+                          <Trash2Icon
                             style={{ width: '22px', height: '22px', color: '#E0090C' }}
                           />
                         </button>
@@ -278,14 +278,14 @@ export function ProductTable({
                 className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg hover:bg-blue-50 transition"
                 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '14px', color: '#2348CD' }}
               >
-                <Edit2Icon className="w-4 h-4" /> Edit
+                <EditIcon className="w-4 h-4" /> Edit
               </button>
               <button
                 onClick={() => onDelete(product.productId)}
                 className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg hover:bg-red-50 transition"
                 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '14px', color: '#E0090C' }}
               >
-                <TrashIcon className="w-4 h-4" /> Delete
+                <Trash2Icon className="w-4 h-4" /> Delete
               </button>
             </div>
           </div>

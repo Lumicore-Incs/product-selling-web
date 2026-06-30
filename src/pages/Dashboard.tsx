@@ -263,10 +263,12 @@ export const Dashboard = () => {
         setUser(userData);
         // Map products to { id, name } — backend may return array of objects or strings
         const mapped = Array.isArray(productsData)
-          ? (productsData as any[]).map((p: any) => ({
-              id: String(p?.productId ?? p?.id ?? p?.product_id ?? p),
-              name: String(p?.name ?? p?.productName ?? p?.product_name ?? p),
-            }))
+          ? (productsData as any[])
+              .filter((p: any) => p?.status?.toLowerCase() !== 'remove')
+              .map((p: any) => ({
+                id: String(p?.productId ?? p?.id ?? p?.product_id ?? p),
+                name: String(p?.name ?? p?.productName ?? p?.product_name ?? p),
+              }))
           : [];
         setProducts(mapped);
       } catch (err) {
