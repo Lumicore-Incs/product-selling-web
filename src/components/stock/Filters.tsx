@@ -44,10 +44,11 @@ const Filters: React.FC<FiltersProps> = ({ onFilterChange, existingItems }) => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row items-end gap-[30px] xl:gap-[25px] mb-6 bg-[rgba(255,255,255,0.49)] p-[28px] rounded-[8px] shadow-sm border border-white/40 backdrop-blur-md">
+    <div className="flex flex-col gap-5 mb-6 bg-[rgba(255,255,255,0.49)] p-[28px] rounded-[8px] shadow-sm border border-white/40 backdrop-blur-md">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:flex xl:flex-row xl:items-end gap-5 xl:gap-[25px]">
       
       {/* Filter by Type */}
-      <div className="flex-1 max-w-[273px]">
+      <div className="w-full xl:flex-1 xl:max-w-[273px]">
         <label className="block text-[18px] font-semibold text-[#414141] mb-[5px]">
           Filter by type
         </label>
@@ -72,7 +73,7 @@ const Filters: React.FC<FiltersProps> = ({ onFilterChange, existingItems }) => {
       </div>
 
       {/* Filter by Status */}
-      <div className="flex-1 max-w-[273px]">
+      <div className="w-full xl:flex-1 xl:max-w-[273px]">
         <label className="block text-[18px] font-semibold text-[#414141] mb-[5px]">
           Filter by status
         </label>
@@ -97,7 +98,7 @@ const Filters: React.FC<FiltersProps> = ({ onFilterChange, existingItems }) => {
       </div>
 
       {/* Filter by Date */}
-      <div className="flex-1 max-w-[273px]">
+      <div className="w-full xl:flex-1 xl:max-w-[273px]">
         <label className="block text-[18px] font-semibold text-[#414141] mb-[5px]">
           Filter by date
         </label>
@@ -112,7 +113,7 @@ const Filters: React.FC<FiltersProps> = ({ onFilterChange, existingItems }) => {
       </div>
 
       {/* Reset Button */}
-      <div className="flex-1 flex justify-start items-end max-w-[148px]">
+      <div className="w-full sm:col-span-2 xl:flex-none xl:w-[148px] flex items-end">
         <button
           onClick={handleReset}
           className="w-full h-[37px] bg-[#C5C5C5] hover:bg-[#b3b3b3] transition rounded-[8px] flex items-center justify-center gap-2"
@@ -123,7 +124,7 @@ const Filters: React.FC<FiltersProps> = ({ onFilterChange, existingItems }) => {
           <span className="text-[16px] font-semibold text-[#5C626E]">Reset</span>
         </button>
       </div>
-
+      </div>
     </div>
   );
 };

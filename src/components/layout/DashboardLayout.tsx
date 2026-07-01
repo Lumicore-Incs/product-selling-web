@@ -29,13 +29,7 @@ export const DashboardLayout = () => {
 
   return (
     <div
-      className="h-screen w-screen flex flex-col md:flex-row overflow-x-hidden"
-      style={{
-        background:
-          salesBackgroundColor && salesBackgroundColor !== '#ffffff'
-            ? salesBackgroundColor
-            : 'linear-gradient(135deg, #E2F5F8 0%, #E6E0F8 50%, #F5E8F9 100%)',
-      }}
+      className="h-screen w-screen flex flex-col md:flex-row overflow-x-hidden bg-transparent"
     >
       {/* Sidebar (Fixed on mobile, static on desktop) */}
       <div

@@ -96,7 +96,14 @@ export function App() {
     <NotificationProvider>
       <HashRouter>
         <BackgroundShapes />
-        <div className="w-full min-h-screen" style={{ position: 'relative', zIndex: 1 }}>
+        <div 
+          className="w-full min-h-screen" 
+          style={{ 
+            position: 'relative', 
+            zIndex: 1,
+            background: 'linear-gradient(135deg, #C3E5EC 0%, #DED5F6 50%, #EBD1E9 100%)'
+          }}
+        >
           <Routes>
           <Route
             path="/auth"
