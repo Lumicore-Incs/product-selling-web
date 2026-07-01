@@ -105,8 +105,8 @@ const StockForm: React.FC<Props> = ({ onSubmit, initialValues, mode = 'add' }) =
         onSubmit={handleSubmit(handleFormSubmit)}
         className="bg-[rgba(255,255,255,0.49)] rounded-[8px] p-[28px] mb-6 shadow-sm border border-white/40 backdrop-blur-md"
       >
-        <div className="flex flex-col xl:flex-row xl:items-end gap-[30px] xl:gap-[25px]">
-          <div className="flex-1 max-w-[201px]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:flex xl:flex-row xl:items-end gap-5 xl:gap-[25px]">
+          <div className="w-full xl:w-[201px]">
             <label className="block text-[18px] font-semibold text-[#414141] mb-[5px]">Product</label>
             <div className="relative">
               <select
@@ -140,7 +140,7 @@ const StockForm: React.FC<Props> = ({ onSubmit, initialValues, mode = 'add' }) =
             )}
           </div>
 
-          <div className="flex-1 max-w-[201px]">
+          <div className="w-full xl:w-[201px]">
             <label className="block text-[18px] font-semibold text-[#414141] mb-[5px]">Date</label>
             <div className="relative">
               <input
@@ -152,7 +152,7 @@ const StockForm: React.FC<Props> = ({ onSubmit, initialValues, mode = 'add' }) =
             </div>
           </div>
 
-          <div className="flex-1 max-w-[201px]">
+          <div className="w-full xl:w-[201px]">
             <label className="block text-[18px] font-semibold text-[#414141] mb-[5px]">Quantity</label>
             <div className="relative">
               <input
@@ -164,10 +164,10 @@ const StockForm: React.FC<Props> = ({ onSubmit, initialValues, mode = 'add' }) =
             </div>
           </div>
 
-          <div className="flex-1 flex flex-col justify-end">
+          <div className="w-full xl:flex-1 flex flex-col justify-end">
             <label className="block text-[18px] font-semibold text-[#414141] mb-[5px]">Status</label>
-            <div className="flex items-center gap-[10px]">
-              <div className="flex items-center w-[213px] h-[35px] bg-[#FBFCFC] rounded-[8px] p-1 shadow-sm">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center w-full sm:w-[213px] h-[35px] bg-[#FBFCFC] rounded-[8px] p-1 shadow-sm">
                 {(['NEW', 'DAMAGE', 'RETURN'] as const).map((s) => (
                   <button
                     key={s}

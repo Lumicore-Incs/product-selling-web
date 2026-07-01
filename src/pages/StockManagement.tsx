@@ -4,15 +4,13 @@ import Filters from '../components/stock/Filters';
 import StockForm, { StockItem } from '../components/stock/StockForm';
 import StockTable from '../components/stock/StockTable';
 import { getAllStock, addStock, updateStock, deleteStock } from '../services/stock/stockService';
-import { getAllProducts } from '../service/product';
-import { Product } from '../models/product';
+
 import Spinner from '../components/Spinner';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { AlertSnackbar } from '../components/AlertSnackbar';
 
 export const StockManagement = () => {
   const [items, setItems] = useState<StockItem[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
   const [editItem, setEditItem] = useState<StockItem | null>(null);
   const [filters, setFilters] = useState({ type: 'All', date: '', status: 'All' });
   const [isLoading, setIsLoading] = useState(true);
@@ -31,12 +29,8 @@ export const StockManagement = () => {
     try {
       setIsLoading(true);
       setError(null);
-      const [stockData, productsData] = await Promise.all([
-        getAllStock(),
-        getAllProducts()
-      ]);
+      const stockData = await getAllStock();
       setItems(stockData as StockItem[]);
-      setProducts(productsData as Product[]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch data');
     } finally {
@@ -129,20 +123,20 @@ export const StockManagement = () => {
   ];
 
   return (
-    <div className="space-y-6 mx-6 relative">
+    <div className="space-y-6 mx-3 sm:mx-6 relative">
       <BackgroundIcons type="stock" />
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div className="flex items-center gap-4">
-          <h1 className="text-[28px] font-bold text-[#0E626E] font-['Plus_Jakarta_Sans']">Stock Management</h1>
+          <h1 className="text-[24px] sm:text-[28px] font-bold text-[#0E626E] font-['Plus_Jakarta_Sans']">Stock Management</h1>
           {isLoading && <Spinner size={24} colorClass="text-[#0E626E]" />}
         </div>
-        <div className="flex gap-4">
+        <div className="flex gap-3">
           <button
             onClick={() => {
               setFormMode('add');
               setEditItem(null);
             }}
-            className="px-[30px] py-[11px] rounded-[8px] font-semibold text-[18px] text-white bg-[#296BDF] transition hover:bg-[#2055b5] flex items-center justify-center min-w-[150px] h-[44px]"
+            className="flex-1 sm:flex-none px-5 sm:px-[30px] py-[11px] rounded-[8px] font-semibold text-[16px] sm:text-[18px] text-white bg-[#296BDF] transition hover:bg-[#2055b5] flex items-center justify-center h-[44px]"
           >
             Add Stock
           </button>
@@ -151,7 +145,7 @@ export const StockManagement = () => {
               setFormMode('damage');
               setEditItem(null);
             }}
-            className="px-[30px] py-[11px] rounded-[8px] font-semibold text-[18px] text-white bg-[#C94741] transition hover:bg-[#a63934] flex items-center justify-center min-w-[169px] h-[44px]"
+            className="flex-1 sm:flex-none px-5 sm:px-[30px] py-[11px] rounded-[8px] font-semibold text-[16px] sm:text-[18px] text-white bg-[#C94741] transition hover:bg-[#a63934] flex items-center justify-center h-[44px]"
           >
             Log Damage
           </button>
@@ -248,7 +242,6 @@ export const StockManagement = () => {
       )}
       <StockTable
         items={items}
-        products={products}
         onEdit={handleEdit}
         onDelete={handleDeleteRequest}
         filterType={filters.type}
