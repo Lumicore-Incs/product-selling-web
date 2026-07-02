@@ -154,15 +154,15 @@ export const StockManagement = () => {
 
       {/* Top Product Summary Cards */}
       {productSummaries.length > 0 && (
-        <div className="flex overflow-x-auto pb-4 gap-4 scrollbar-hide">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:flex md:overflow-x-auto pb-4 gap-4 scrollbar-hide">
           {productSummaries.map((summary, index) => {
             const colors = summaryColors[index % summaryColors.length];
             return (
-              <div key={summary.name} className="flex-none w-[210px] h-[95px] bg-white/35 rounded-[21px] p-[15px] relative">
-                <div className={`font-bold text-[20px] leading-[24px] truncate ${colors.text}`}>
+              <div key={summary.name} className="md:flex-none md:w-[210px] min-h-[105px] bg-white/35 rounded-[21px] p-[15px] pb-[50px] relative">
+                <div className={`font-bold text-[13px] leading-[17px] break-words ${colors.text}`}>
                   {summary.name}
                 </div>
-                <div className={`absolute bottom-[10px] font-bold text-[30px] leading-[36px] ${colors.num}`}>
+                <div className={`absolute bottom-[10px] font-bold text-[40px] leading-[48px] ${colors.num}`}>
                   {summary.total}
                 </div>
               </div>
