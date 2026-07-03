@@ -202,8 +202,7 @@ class OrderService {
   ): Promise<PaginatedResult<Sale>> {
     try {
       const params = buildFilterParams(page, size, filters);
-      // Assuming '/customer' or another endpoint is used for customer orders
-      const resp = await apiClient.get('/customer', { params });
+      const resp = await apiClient.get('/order/allCustomer', { params });
       return parsePaginatedResponse(resp?.data, page, size);
     } catch (err) {
       console.error('orderService.getAllCustomerOrdersPaginated failed:', err);

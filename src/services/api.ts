@@ -217,6 +217,16 @@ export interface User {
  * Returns a Blob (Excel file)
  */
 export const dashboardApi = {
+  getStats: async (): Promise<Record<string, number>> => {
+    try {
+      const response = await api.get<Record<string, number>>('/dashboard');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+      throw error;
+    }
+  },
+
   exportSalesExcel: async (productName: string): Promise<Blob> => {
     try {
       const encodedName = encodeURIComponent(productName);
