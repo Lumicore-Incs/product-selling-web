@@ -16,14 +16,14 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve({
-        total_order: 1250,
-        today_order: 45,
-        conform_order: 1180,
-        cancel_order: 25,
-        totalOrdersTrend: '+5%',
-        todayOrdersTrend: '+12%',
-        confirmedOrdersTrend: '+8%',
-        cancelledOrdersTrend: '-2%',
+        total_order: 0,
+        today_order: 0,
+        conform_order: 0,
+        cancel_order: 0,
+        totalOrdersTrend: '0%',
+        todayOrdersTrend: '0%',
+        confirmedOrdersTrend: '0%',
+        cancelledOrdersTrend: '0%',
       });
     }, 500);
   });

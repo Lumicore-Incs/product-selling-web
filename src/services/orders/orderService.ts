@@ -178,39 +178,21 @@ class OrderService {
     }
   }
 
-  // @ts-ignore
-  private getMockPaginatedOrders(page: number, size: number, filters: OrderFilterParams): Promise<PaginatedResult<Sale>> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const mockSales: Sale[] = Array.from({ length: size }).map((_, i) => ({
-          id: `ORD-${1000 + page * size + i}`,
-          orderId: `ORD-${1000 + page * size + i}`,
-          name: `Customer ${page * size + i}`,
-          customerName: `Customer ${page * size + i}`,
-          address: '123 Mock Street',
-          qty: 2,
-          date: new Date().toISOString(),
-          status: i % 3 === 0 ? 'PENDING' : 'DELIVERED',
-          totalPrice: 1500 + i * 10,
-          items: [{ productId: '1', productName: 'Sample Product', qty: 2, price: 750, total: 1500 }]
-        }));
-        resolve({
-          data: mockSales,
-          total: 100,
-          totalPages: Math.ceil(100 / size),
-          page,
-          size
-        });
-      }, 500);
-    });
-  }
+
 
   async getOrdersPaginated(
     page = 0,
     size = 10,
     filters: OrderFilterParams = {},
   ): Promise<PaginatedResult<Sale>> {
-    return this.getMockPaginatedOrders(page, size, filters);
+    try {
+      const params = buildFilterParams(page, size, filters);
+      const resp = await apiClient.get('/order', { params });
+      return parsePaginatedResponse(resp?.data, page, size);
+    } catch (err) {
+      console.error('orderService.getOrdersPaginated failed:', err);
+      throw err;
+    }
   }
 
   async getAllCustomerOrdersPaginated(
@@ -218,7 +200,15 @@ class OrderService {
     size = 10,
     filters: OrderFilterParams = {},
   ): Promise<PaginatedResult<Sale>> {
-    return this.getMockPaginatedOrders(page, size, filters);
+    try {
+      const params = buildFilterParams(page, size, filters);
+      // Assuming '/customer' or another endpoint is used for customer orders
+      const resp = await apiClient.get('/customer', { params });
+      return parsePaginatedResponse(resp?.data, page, size);
+    } catch (err) {
+      console.error('orderService.getAllCustomerOrdersPaginated failed:', err);
+      throw err;
+    }
   }
 
 
