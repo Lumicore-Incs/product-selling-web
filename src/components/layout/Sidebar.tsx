@@ -277,14 +277,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
       )}
 
       <aside
-        className={`fixed md:static z-30 w-64 border-r transition overflow-x-hidden ${
+        className={`fixed md:static z-30 w-64 border-r transition overflow-x-hidden bg-black md:bg-transparent ${
           isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         } flex flex-col`}
         style={{
           height: '100vh',
           fontFamily: "'Plus Jakarta Sans', sans-serif",
-          backgroundColor: '#E1F0F3',
-          borderColor: '#FFFFFF',
+          borderColor: 'transparent',
         }}
       >
         {/* 🔹 Header */}
