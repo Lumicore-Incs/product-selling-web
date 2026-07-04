@@ -5,6 +5,7 @@ import { login, register } from '../service/auth';
 import { setToken } from '../services/authUtils';
 import axios from '../services/axiosConfig';
 import { AlertSnackbar } from './AlertSnackbar';
+import { AnimatedAvatar } from './AnimatedAvatar';
 import { Button } from './Button';
 import { InputField } from './InputField';
 import { OtpVerification } from './OtpVerification';
@@ -214,6 +215,7 @@ export const AuthCard = () => {
         />
         <div className="bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-2xl shadow-lg p-8 transition-all duration-500">
           <div className="text-center mb-8">
+            <AnimatedAvatar emailInputId="forgotEmail" />
             <h1 className="text-3xl font-bold text-gray-800">Forgot Password</h1>
             <p className="text-gray-600 mt-2">
               Enter your email address to receive password reset instructions
@@ -259,6 +261,7 @@ export const AuthCard = () => {
       />
       <div className="bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-2xl shadow-lg p-8 transition-all duration-500">
         <div className="text-center mb-8">
+          <AnimatedAvatar emailInputId="email" passwordInputId="password" />
           <h1 className="text-3xl font-bold text-gray-800">
             {isLogin ? 'Welcome Back' : 'Create Account'}
           </h1>
