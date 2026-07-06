@@ -79,7 +79,7 @@ export const AnimatedAvatar = ({
     }
 
     function getCoord() {
-      if (!email) return;
+      if (!email || !mySVG) return;
       const carPos = email.selectionEnd ?? email.value.length;
       const div = document.createElement('div');
       const span = document.createElement('span');
@@ -163,20 +163,20 @@ export const AnimatedAvatar = ({
       if (value.length > 0) {
         if (value.includes('@')) {
           mouthStatus.current = 'large';
-          gsap.to([mouthBG.current, mouthOutline.current, mouthMaskPath.current], { duration: 1, morphSVG: mouthLargeBG.current, ease: 'expo.out', overwrite: 'auto' });
+          gsap.to([mouthBG.current, mouthOutline.current, mouthMaskPath.current], { duration: 1, morphSVG: mouthLargeBG.current!, ease: 'expo.out', overwrite: 'auto' });
           gsap.to(tooth.current, { duration: 1, x: 3, y: -2, ease: 'expo.out', overwrite: 'auto' });
           gsap.to(tongue.current, { duration: 1, y: 2, ease: 'expo.out', overwrite: 'auto' });
           gsap.to([eyeL.current, eyeR.current], { duration: 1, scaleX: 0.65, scaleY: 0.65, transformOrigin: 'center center', ease: 'expo.out', overwrite: 'auto' });
         } else {
           mouthStatus.current = 'medium';
-          gsap.to([mouthBG.current, mouthOutline.current, mouthMaskPath.current], { duration: 1, morphSVG: mouthMediumBG.current, ease: 'expo.out', overwrite: 'auto' });
+          gsap.to([mouthBG.current, mouthOutline.current, mouthMaskPath.current], { duration: 1, morphSVG: mouthMediumBG.current!, ease: 'expo.out', overwrite: 'auto' });
           gsap.to(tooth.current, { duration: 1, x: 0, y: 0, ease: 'expo.out', overwrite: 'auto' });
           gsap.to(tongue.current, { duration: 1, x: 0, y: 1, ease: 'expo.out', overwrite: 'auto' });
           gsap.to([eyeL.current, eyeR.current], { duration: 1, scaleX: 0.85, scaleY: 0.85, ease: 'expo.out', overwrite: 'auto' });
         }
       } else {
         mouthStatus.current = 'small';
-        gsap.to([mouthBG.current, mouthOutline.current, mouthMaskPath.current], { duration: 1, morphSVG: mouthSmallBG.current, ease: 'expo.out', overwrite: 'auto' });
+        gsap.to([mouthBG.current, mouthOutline.current, mouthMaskPath.current], { duration: 1, morphSVG: mouthSmallBG.current!, ease: 'expo.out', overwrite: 'auto' });
         gsap.to(tooth.current, { duration: 1, x: 0, y: 0, ease: 'expo.out', overwrite: 'auto' });
         gsap.to(tongue.current, { duration: 1, y: 0, ease: 'expo.out', overwrite: 'auto' });
         gsap.to([eyeL.current, eyeR.current], { duration: 1, scaleX: 1, scaleY: 1, ease: 'expo.out', overwrite: 'auto' });

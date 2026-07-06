@@ -297,35 +297,15 @@ export const SalesManagement: React.FC = () => {
           </div>
         </div>
       )}
-      <header className="mb-6 sm:mb-8">
+      <header className="mb-4 sm:mb-6 px-1">
         <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
           <div className="w-full sm:w-auto">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">{salesTitle}</h1>
-            <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">
-              Add, edit, and manage your sales entries
+            <h1 className="text-[28px] sm:text-[32px] font-bold text-[#115E59] font-['Plus_Jakarta_Sans',sans-serif] tracking-tight leading-tight">
+              {salesTitle}
+            </h1>
+            <p className="text-[#475569] mt-0.5 text-[13px] sm:text-[14px] font-medium font-['Inter',sans-serif]">
+              Create new custom order
             </p>
-          </div>
-          <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-            <button
-              onClick={refreshData}
-              disabled={isLoading}
-              className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-md text-white text-sm sm:text-base transition-colors ${
-                isLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'
-              }`}
-            >
-              {isLoading ? 'Refreshing...' : 'Refresh'}
-            </button>
-            {user?.role === 'ADMIN' && (
-              <button
-                onClick={() => setShowExportPopup(true)}
-                disabled={isExporting}
-                className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-md text-white text-sm sm:text-base transition-colors ${
-                  isExporting ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
-                }`}
-              >
-                {isExporting ? 'Exporting...' : 'Export'}
-              </button>
-            )}
           </div>
         </div>
       </header>

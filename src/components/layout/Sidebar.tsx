@@ -302,7 +302,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 localStorage.removeItem('token');
                 navigate('/auth');
               }}
-              className="p-1.5 text-[#0B818D] hover:opacity-80 transition hidden md:block"
+              className="p-1.5 text-[#0B818D] hover:opacity-80 transition"
               title="Logout"
             >
               <PanelLeftClose size={18} />
