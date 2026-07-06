@@ -29,6 +29,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
     status: 'pending',
     qty: '',
     remark: '',
+    nic: '',
     items: [] as SaleItem[],
   });
 
@@ -37,7 +38,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
   const [selectedProductId, setSelectedProductId] = useState('');
   const [selectedProductQuantity, setSelectedProductQuantity] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [_error, setError] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -49,8 +50,8 @@ export const SalesForm: React.FC<SalesFormProps> = ({
   const [customerInfoText, setCustomerInfoText] = useState('');
   const [manualTotalAmount, setManualTotalAmount] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [searchResults, setSearchResults] = useState<CustomerDtoGet[]>([]);
-  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [_searchResults, setSearchResults] = useState<CustomerDtoGet[]>([]);
+  const [_showSearchResults, setShowSearchResults] = useState(false);
   const [priceWarnings, setPriceWarnings] = useState<Set<string>>(new Set());
 
   // Add this useEffect after the existing loadProducts useEffect
@@ -98,6 +99,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
         status: currentSale.status ?? 'pending',
         qty: String(currentSale.qty ?? ''),
         remark: currentSale.remark ?? '',
+        nic: '',
         items: currentSale.items || [],
       });
       
@@ -268,38 +270,16 @@ export const SalesForm: React.FC<SalesFormProps> = ({
       
       setSearchResults(results);
       setShowSearchResults(true);
-    } catch (e) {
-      console.error('Error searching customers:', e);
+    } catch (_e) {
+      console.error('Error searching customers:', _e);
       setSearchResults([]);
     }
   };
 
   // Load selected customer into form
-  const handleSelectCustomerFromSearch = (customer: CustomerDtoGet) => {
-    const selectedCustomerName = customer.customerName || customer.name || '';
+  /*  */
 
-    setFormData((prev) => ({
-      ...prev,
-      name: selectedCustomerName || prev.name,
-      customerName: selectedCustomerName || prev.customerName,
-      address: customer.address || prev.address,
-      contact01: ensureLeadingZero(customer.contact01) || prev.contact01,
-      contact02: ensureLeadingZero(customer.contact02) || prev.contact02,
-      customerId: String(customer.customerId ?? '') || prev.customerId,
-    }));
-    
-    setSearchQuery('');
-    setSearchResults([]);
-    setShowSearchResults(false);
-    
-    setSnackbar({
-      open: true,
-      message: `Customer "${selectedCustomerName}" loaded successfully!`,
-      type: 'success',
-    });
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     // If the quantity field changed and there's a default product, sync it with items
     if (name === 'qty') {
@@ -382,7 +362,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
   //         type: 'success',
   //       });
   //     }
-  //   } catch (e) {
+  //   } catch (_e) {
   //     // Silent fail; no blocking if lookup fails
   //   } finally {
   //     setIsLookingUpCustomer(false);
@@ -722,6 +702,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
       status: 'pending',
       qty: '',
       remark: '',
+      nic: '',
       items: [] as SaleItem[],
     });
     setCustomerInfoText('');
@@ -761,6 +742,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
       status: 'pending',
       qty: sampleProduct ? '2' : '',
       remark: 'Sample order',
+      nic: '',
       items: sampleItems,
     });
     setSnackbar({ open: true, message: 'Sample data loaded', type: 'success' });
@@ -784,7 +766,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
   }, [snackbar.open]);
 
   return (
-    <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+    <div className="w-full h-full bg-transparent font-['Inter',sans-serif]">
       <AlertSnackbar
         message={snackbar.message}
         type={snackbar.type}
@@ -792,583 +774,436 @@ export const SalesForm: React.FC<SalesFormProps> = ({
         onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
       />
 
-      {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 sm:p-6">
-        <h2 className="text-xl sm:text-2xl font-bold text-white">
-          {isEditing ? 'Edit Sale Entry' : 'Add New Sale'}
-        </h2>
-      </div>
-
-      {/* Customer Search Bar */}
-      <div className="bg-blue-50 border-b border-blue-100 p-4 sm:p-6">
-        <div className="relative">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            🔍 Search Existing Customer
-          </label>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <div className="flex-1 relative">
+      <form onSubmit={handleSubmit} className="flex flex-col xl:flex-row gap-6 items-start">
+        
+        {/* Main Left Section */}
+        <div className="flex-1 flex flex-col gap-5 w-full">
+          
+          {/* Search Bar & New Customer Button */}
+          <div className="flex flex-col sm:flex-row gap-4 w-full bg-white rounded-3xl p-4 shadow-sm border border-gray-100">
+            <div className="relative flex-1 bg-white border border-[#BFF0EC] rounded-full h-[46px] flex items-center px-4">
+              <svg className="w-4 h-4 text-[#0B818D] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              </svg>
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => handleSearchCustomer(e.target.value)}
-                placeholder="Enter customer name or contact number..."
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-base"
+                className="w-full bg-transparent focus:outline-none text-[13px] text-gray-700 placeholder-gray-400 font-medium"
+                placeholder="Search existing customer by name, phone or WhatsApp..."
               />
-              
-              {/* Search Results Dropdown */}
-              {showSearchResults && searchResults.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-64 overflow-y-auto">
-                  {searchResults.map((customer, index) => (
-                    <button
-                      key={index}
-                      type="button"
-                      onClick={() => handleSelectCustomerFromSearch(customer)}
-                      className="w-full text-left px-4 py-3 hover:bg-blue-50 border-b border-gray-100 last:border-b-0 transition-colors duration-150"
-                    >
-                      <div className="font-medium text-gray-900">{customer.name}</div>
-                      <div className="text-sm text-gray-500">
-                        {customer.contact01 && <span>📱 {customer.contact01}</span>}
-                        {customer.contact02 && <span> • {customer.contact02}</span>}
-                      </div>
-                      {customer.address && (
-                        <div className="text-xs text-gray-400 mt-1">📍 {customer.address}</div>
-                      )}
-                    </button>
-                  ))}</div>
-              )}
-              
-              {showSearchResults && searchResults.length === 0 && searchQuery.trim() && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg p-4 text-center text-gray-500 text-sm">
-                  No customers found matching your search
-                </div>
-              )}
             </div>
-            
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchQuery('');
-                  setSearchResults([]);
-                  setShowSearchResults(false);
-                }}
-                className="px-4 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 focus:ring-2 focus:ring-gray-500 transition-all duration-200 font-medium whitespace-nowrap"
-              >
-                Clear Search
-              </button>
-            )}
+            <button
+              type="button"
+              className="bg-[#0B818D] text-white px-6 rounded-full text-[13px] font-semibold flex items-center justify-center gap-2 hover:bg-[#096B75] transition-colors h-[46px] min-w-[150px]"
+            >
+              <svg className="w-[18px] h-[18px]" fill="currentColor" viewBox="0 0 24 24"><path d="M16 21l-1.42-3.15L11.43 16.4l3.15-1.42L16 11.83l1.42 3.15 3.15 1.42-3.15 1.42zM7.5 15.5l-2.27-5.07L0 8.16l5.23-2.27L7.5 .82l2.27 5.07L15 8.16l-5.23 2.27z" /></svg>
+              Generate Customer
+            </button>
           </div>
-        </div>
-      </div>
 
-      <div className="p-4 sm:p-6">
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 text-sm">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Customer Information Section */}
-          <div className="bg-gray-50 rounded-lg p-4 sm:p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+          {/* Customer Information */}
+          <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex flex-col gap-5">
+            <h3 className="text-[#134E4A] font-semibold text-[15px] flex items-center gap-3">
+              <div className="w-[34px] h-[34px] bg-[#F0FDFA] rounded-full flex items-center justify-center text-[#0D9488]">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+              </div>
               Customer Information
             </h3>
 
-            {/* Quick Customer Info Input - Text Area */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Quick Customer Info (Copy & Paste)
-              </label>
-              <div className="flex flex-col gap-2">
-                <textarea
-                  value={customerInfoText}
-                  onChange={(e) => setCustomerInfoText(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-base min-h-[120px] resize-vertical"
-                  rows={4}
-                  placeholder="Example:&#10;Name - John Doe&#10;Address - 123 Main St&#10;Phone no 1 - 0771234567&#10;Phone no 2 - 0112345678&#10;Total amount - 5000&#10;Items -&#10;1. vac - 2&#10;2. Se - 3"
-                />
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <button
-                    type="button"
-                    onClick={parseCustomerInfoText}
-                    disabled={!customerInfoText.trim()}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 transition-all duration-200 font-medium disabled:bg-blue-400 disabled:cursor-not-allowed"
-                  >
-                    Parse & Fill Information
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCustomerInfoText('')}
-                    className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 focus:ring-2 focus:ring-gray-500 transition-all duration-200 font-medium"
-                  >
-                    Clear
-                  </button>
-                </div>
-                <div className="text-xs text-gray-500">
-                  Tip: Copy customer details from anywhere and paste above; include "- qty" after each item (e.g., "vac - 2") so quantities are captured.
-                </div>
+            <div className="flex flex-col gap-2 mb-2">
+              <label className="text-[12px] sm:text-[13px] font-semibold text-slate-700">Quick Customer Info (Copy & Paste)</label>
+              <textarea
+                value={customerInfoText}
+                onChange={(e) => setCustomerInfoText(e.target.value)}
+                className="w-full min-h-[100px] p-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 bg-slate-50/50"
+                placeholder="Name - John Doe
+Address - 123 Main St
+Phone no 1 - 0771234567
+Phone no 2 - 0112345678
+Total amount - 5000
+Items -
+1. vac-2
+2. Se-2"
+              />
+              <div className="flex items-center gap-3 mt-1">
+                <button
+                  type="button"
+                  onClick={parseCustomerInfoText}
+                  className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-md transition-colors"
+                >
+                  Parse & Fill Information
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCustomerInfoText('')}
+                  className="px-4 py-2 bg-slate-500 hover:bg-slate-600 text-white text-xs font-medium rounded-md transition-colors"
+                >
+                  Clear
+                </button>
               </div>
+              <p className="text-[11px] text-slate-500">Tip: Copy customer details from anywhere and paste above; include "- qty" after each item (e.g., "vac - 2") so quantities are captured.</p>
             </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-              {/* Customer Name */}
-              <div className="md:col-span-2">
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                  Customer Name *
-                </label>
-                <div className="relative">
-                  <input
-                    id="name"
-                    name="name"
-                    type="text"
-                    required
-                    value={formData.customerName}
-                    onChange={handleChange}
-                    // onBlur={lookupAndPrefillCustomer}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-base"
-                    placeholder="Enter customer name"
-                  />
-                  {/* Search results dropdown for name */}
-                  {showSearchResults && searchResults.length > 0 && searchQuery.trim() && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-20 max-h-48 overflow-y-auto">
-                      {searchResults.map((customer, index) => (
-                        <button
-                          key={index}
-                          type="button"
-                          onClick={() => handleSelectCustomerFromSearch(customer)}
-                          className="w-full text-left px-4 py-2 hover:bg-blue-50 border-b border-gray-100 last:border-b-0 transition-colors duration-150 text-sm"
-                        >
-                          <div className="font-medium text-gray-900">{customer.name}</div>
-                          <div className="text-xs text-gray-500">
-                            {customer.contact01 && <span>📱 {customer.contact01}</span>}
-                            {customer.contact02 && <span> • {customer.contact02}</span>}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Address */}
-              <div className="md:col-span-2">
-                <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
-                  Address *
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-semibold text-[#0F766E]">
+                  Customer Name <span className="text-[#F43F5E]">*</span>
                 </label>
                 <input
-                  id="address"
-                  name="address"
+                  name="name"
                   type="text"
+                  required
+                  value={formData.customerName}
+                  onChange={handleChange}
+                  className="w-full h-[44px] px-4 bg-white border border-[#BFF0EC] rounded-2xl text-[13px] text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-1 focus:ring-[#0B818D]"
+                  placeholder="Enter customer name"
+                />
+              </div>
+              
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-semibold text-[#0F766E]">
+                  Contact Number <span className="text-[#F43F5E]">*</span>
+                </label>
+                <input
+                  name="contact02"
+                  type="text"
+                  value={formData.contact02}
+                  onChange={handleChange}
+                  className="w-full h-[44px] px-4 bg-white border border-[#BFF0EC] rounded-2xl text-[13px] text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-1 focus:ring-[#0B818D]"
+                  placeholder="Enter contact number"
+                  maxLength={10}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-semibold text-[#0F766E]">
+                  WhatsApp Number
+                </label>
+                <input
+                  name="contact01"
+                  type="text"
+                  value={formData.contact01}
+                  onChange={handleChange}
+                  className="w-full h-[44px] px-4 bg-white border border-[#BFF0EC] rounded-2xl text-[13px] text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-1 focus:ring-[#0B818D]"
+                  placeholder="Enter WhatsApp number"
+                  maxLength={10}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5 md:col-span-2">
+                <label className="text-[11px] font-semibold text-[#0F766E]">
+                  Address <span className="text-[#F43F5E]">*</span>
+                </label>
+                <textarea
+                  name="address"
                   required
                   value={formData.address}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-base"
+                  className="w-full px-4 py-3 bg-white border border-[#BFF0EC] rounded-2xl text-[13px] text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-1 focus:ring-[#0B818D] min-h-[90px] resize-none"
                   placeholder="Enter customer address"
                 />
-              </div>
-
-              {/* Contact Numbers */}
-              <div>
-                <label htmlFor="contact01" className="block text-sm font-medium text-gray-700 mb-2">
-                  WhatsApp Number
-                </label>
-                <div className="relative">
-                  <input
-                    id="contact01"
-                    name="contact01"
-                    type="text"
-                    value={formData.contact01}
-                    onChange={handleChange}
-                    // onBlur={lookupAndPrefillCustomer}
-                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-base ${
-                      formData.contact01 && !isContact01Valid
-                        ? 'border-red-500 bg-red-50'
-                        : 'border-gray-300'
-                    }`}
-                    placeholder="10 digits with 0 (e.g., 0771234567)"
-                    maxLength={10}
-                  />
-                  {/* Search results dropdown for contact01 */}
-                  {showSearchResults && searchResults.length > 0 && searchQuery.trim() && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-20 max-h-48 overflow-y-auto">
-                      {searchResults.map((customer, index) => (
-                        <button
-                          key={index}
-                          type="button"
-                          onClick={() => handleSelectCustomerFromSearch(customer)}
-                          className="w-full text-left px-4 py-2 hover:bg-blue-50 border-b border-gray-100 last:border-b-0 transition-colors duration-150 text-sm"
-                        >
-                          <div className="font-medium text-gray-900">{customer.name}</div>
-                          <div className="text-xs text-gray-500">
-                            {customer.contact01 && <span>📱 {customer.contact01}</span>}
-                            {customer.contact02 && <span> • {customer.contact02}</span>}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                <div className="flex justify-end mt-1">
+                  <span className="text-[11px] text-[#2DD4BF] font-medium">0 / 250</span>
                 </div>
-                {formData.contact01 && !isContact01Valid && (
-                  <div className="text-xs text-red-600 mt-1">
-                    WhatsApp number must be exactly 10 digits starting with 0.
-                  </div>
-                )}
               </div>
-
-              <div>
-                <label htmlFor="contact02" className="block text-sm font-medium text-gray-700 mb-2">
-                  Contact Number
-                </label>
-                <div className="relative">
-                  <input
-                    id="contact02"
-                    name="contact02"
-                    type="text"
-                    value={formData.contact02}
-                    onChange={handleChange}
-                    // onBlur={lookupAndPrefillCustomer}
-                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-base ${
-                      formData.contact02 && !isContact02Valid
-                        ? 'border-red-500 bg-red-50'
-                        : 'border-gray-300'
-                    }`}
-                    placeholder="10 digits with 0 (e.g., 0112345678)"
-                    maxLength={10}
-                  />
-                  {/* Search results dropdown for contact02 */}
-                  {showSearchResults && searchResults.length > 0 && searchQuery.trim() && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-20 max-h-48 overflow-y-auto">
-                      {searchResults.map((customer, index) => (
-                        <button
-                          key={index}
-                          type="button"
-                          onClick={() => handleSelectCustomerFromSearch(customer)}
-                          className="w-full text-left px-4 py-2 hover:bg-blue-50 border-b border-gray-100 last:border-b-0 transition-colors duration-150 text-sm"
-                        >
-                          <div className="font-medium text-gray-900">{customer.name}</div>
-                          <div className="text-xs text-gray-500">
-                            {customer.contact01 && <span>📱 {customer.contact01}</span>}
-                            {customer.contact02 && <span> • {customer.contact02}</span>}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                {formData.contact02 && !isContact02Valid && (
-                  <div className="text-xs text-red-600 mt-1">
-                    Contact number must be exactly 10 digits starting with 0.
-                  </div>
-                )}
-                {!hasAtLeastOneContact && (
-                  <div className="text-xs text-red-600 mt-1">
-                    At least one contact number is required.
-                  </div>
-                )}
-              </div>
-
-              {/* Remark */}
-              <div className="md:col-span-2">
-                <label htmlFor="remark" className="block text-sm font-medium text-gray-700 mb-2">
-                  Remark
-                </label>
-                <input
-                  id="remark"
-                  name="remark"
-                  type="text"
-                  value={formData.remark}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-base"
-                  placeholder="Optional remark"
-                />
+              {/* Remark Section */}
+              <div className="flex flex-col gap-1.5 md:col-span-2">
+                 <label className="text-[11px] font-semibold text-[#0F766E]">Remark</label>
+                 <input
+                   name="remark"
+                   type="text"
+                   value={formData.remark}
+                   onChange={handleChange}
+                   className="w-full h-[44px] px-4 bg-white border border-[#BFF0EC] rounded-2xl text-[13px] text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-1 focus:ring-[#0B818D]"
+                   placeholder="Optional remark"
+                 />
               </div>
             </div>
+          
           </div>
 
-          {/* Product Information Section */}
-          <div className="bg-gray-50 rounded-lg p-4 sm:p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Product Information</h3>
+          {/* Products */}
 
-            {/* Default Product Quantity */}
-            <div className="mb-4">
-              <div className="flex flex-col sm:flex-row gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowProductSelector(!showProductSelector)}
-                  className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 flex items-center justify-center gap-2 font-medium"
-                >Add Product
-                  <span className="hidden sm:inline">Add Product</span>
-                </button>
-              </div>
-
-              {defaultProduct && (
-                <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                  <div className="text-sm text-blue-700">
-                    Default Product: <span className="font-medium">{defaultProduct.name}</span>
-                    <span className="ml-2 text-blue-600">(${defaultProduct.price})</span>
-                  </div>
+          <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex flex-col gap-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-[#0B818D] font-semibold text-[15px] flex items-center gap-3">
+                <div className="w-[34px] h-[34px] bg-[#F0FDFA] rounded-full flex items-center justify-center text-[#0B818D]">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                  </svg>
                 </div>
-              )}
+                Products
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowProductSelector(true)}
+                className="bg-[#0B818D] text-white px-5 h-[38px] rounded-full text-[13px] font-semibold flex items-center justify-center gap-1.5 hover:bg-[#096B75] transition-colors"
+              >
+                <span className="text-lg leading-none mb-0.5">+</span> Add Product
+              </button>
             </div>
 
-            {/* Product Selector */}
-            {showProductSelector && (
-              <div className="border border-gray-300 rounded-lg p-4 bg-white mb-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-base font-medium text-gray-800">Add Product</h4>
-                  <button
-                    type="button"
-                    onClick={() => setShowProductSelector(false)}
-                    className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
-                  >
-                    <XIcon className="w-5 h-5" />
-                  </button>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Select Product
-                    </label>
-                    <select
-                      value={selectedProductId}
-                      onChange={(e) => setSelectedProductId(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
-                    >
-                      <option value="">Choose a product...</option>
-                      {products.map((product) => (
-                        // Ensure the key is always a primitive (string/number).
-                        // product.productId may sometimes be undefined or an object in upstream data,
-                        // so stringify to guarantee a unique primitive key.
-                        <option key={String(product.productId)} value={product.productId}>
-                          {product.name} - ${product.price}
-                          {defaultProduct?.productId === product.productId
-                            ? '  -  default product'
-                            : ' '}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={selectedProductQuantity}
-                      onChange={(e) => setSelectedProductQuantity(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
-                    />
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <button
-                      type="button"
-                      onClick={handleAddProduct}
-                      disabled={!selectedProductId}
-                      className={`flex-1 px-4 py-3 rounded-lg text-white font-medium transition-all duration-200 ${
-                        selectedProductId
-                          ? 'bg-green-600 hover:bg-green-700 focus:ring-2 focus:ring-green-500'
-                          : 'bg-gray-400 cursor-not-allowed'
-                      }`}
-                    >
-                      Add Product
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowProductSelector(false)}
-                      className="flex-1 sm:flex-initial px-4 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 focus:ring-2 focus:ring-gray-500 transition-all duration-200 font-medium"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Selected Products List */}
-            {formData.items.length > 0 && (
-              <div className="border border-gray-300 rounded-lg p-4 bg-white">
-                <h4 className="text-base font-medium text-gray-800 mb-4">Selected Products</h4>
-                <div className="space-y-3">
+            <div className="w-full overflow-x-auto pb-4">
+              <table className="w-full text-left border-collapse min-w-[650px]">
+                <thead>
+                  <tr className="border-b-0">
+                    <th className="pb-3 px-2 text-[11px] font-bold text-[#14B8A6] w-[30px]">#</th>
+                    <th className="pb-3 px-2 text-[11px] font-bold text-[#14B8A6] min-w-[200px]">Product</th>
+                    <th className="pb-3 px-2 text-[11px] font-bold text-[#14B8A6] w-[110px]">Quantity</th>
+                    <th className="pb-3 px-2 text-[11px] font-bold text-[#14B8A6] w-[100px]">Unit Price <br/>(Rs.)</th>
+                    <th className="pb-3 px-2 text-[11px] font-bold text-[#14B8A6] w-[90px]">Discount <br/>(Rs.)</th>
+                    <th className="pb-3 px-2 text-[11px] font-bold text-[#14B8A6] w-[80px]">Total <br/>(Rs.)</th>
+                    <th className="pb-3 px-2 text-[11px] font-bold text-[#14B8A6] w-[50px] text-center">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="space-y-3">
                   {formData.items.map((item, index) => (
-                    // Use composite key with index to ensure uniqueness even when productId
-                    // could be non-unique or unexpectedly an object. Index is acceptable here
-                    // because items order is stable within the form and items are editable.
-                    <div
-                      key={`${String(item.productId)}-${index}`}
-                      className="border border-gray-200 rounded-lg p-4 bg-gray-50"
-                    >
-                      <div className="flex flex-col gap-3">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                          <div className="flex-1">
-                            <div className="font-medium text-gray-800 text-base">
-                              {item.productName}
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveProduct(item.productId)}
-                              className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-all duration-200"
-                            >
-                              <MinusIcon className="w-4 h-4" />
-                            </button>
+                    <tr key={`${item.productId}-${index}`} className="">
+                      <td className="py-3 px-2 text-[13px] text-[#14B8A6] font-semibold">{index + 1}</td>
+                      <td className="py-3 px-2">
+                        <div className="relative">
+                          <select
+                            value={item.productId}
+                            onChange={(_e) => {
+                              // Custom logic to update the product inline
+                              // (Since SalesForm original logic has handleAddProduct, we just display it as select but they have to use popup if we don't change state logic)
+                            }}
+                            disabled
+                            className="w-full h-[40px] px-3.5 border border-[#BFF0EC] rounded-[14px] text-[13px] text-[#0B818D] bg-white appearance-none pr-8 focus:outline-none"
+                          >
+                            <option value={item.productId}>{item.productName}</option>
+                          </select>
+                          <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none text-[#0B818D]">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                           </div>
                         </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          <div className="flex flex-col">
-                            <label className="text-xs text-gray-600 mb-1">
-                              Price ($)
-                              {priceWarnings.has(item.productId) && (
-                                <span className="ml-1 text-amber-600 font-semibold">⚠️</span>
-                              )}
-                            </label>
-                            <input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              value={item.price}
-                              onChange={(e) =>
-                                handleUpdateItemPrice(
-                                  item.productId,
-                                  parseFloat(e.target.value) || 0
-                                )
-                              }
-                              className={`px-3 py-2 border rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                                priceWarnings.has(item.productId)
-                                  ? 'border-amber-400 bg-amber-50'
-                                  : 'border-gray-300'
-                              }`}
-                            />
-                            {priceWarnings.has(item.productId) && (
-                              <div className="text-xs text-amber-700 mt-1">
-                                ⚠️ Price is above original (${products.find((p) => String(p.productId) === item.productId)?.price.toFixed(2)})
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="flex flex-col">
-                            <label className="text-xs text-gray-600 mb-1">Quantity</label>
-                            <input
-                              type="number"
-                              min="1"
-                              value={item.qty}
-                              onChange={(e) =>
-                                handleUpdateItemQuantity(
-                                  item.productId,
-                                  parseInt(e.target.value) || 1
-                                )
-                              }
-                              className="px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                          </div>
-
-                          <div className="flex flex-col">
-                            <label className="text-xs text-gray-600 mb-1">Subtotal</label>
-                            <div className="px-3 py-2 bg-green-50 border border-green-200 rounded text-sm font-semibold text-green-700">
-                              ${(item.qty * item.price).toFixed(2)}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* Total Amount */}
-                  <div className="pt-4 border-t border-gray-300">
-                    <div className="flex flex-col gap-2">
-                      <div className="flex flex-wrap justify-between items-center gap-2">
-                        <span className="font-semibold text-gray-800 text-sm">Calculated Total:</span>
-                        <span className="font-medium text-gray-600 break-all text-right">
-                          ${formData.items.reduce((sum, item) => sum + item.qty * item.price, 0).toFixed(2)}
-                        </span>
-                      </div>
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                        <label className="font-semibold text-gray-800 text-base sm:text-lg whitespace-nowrap">Total Amount:</label>
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-1 min-w-0 w-full">
+                      </td>
+                      <td className="py-3 px-2">
+                        <div className="flex items-center w-[96px] h-[40px] bg-white border border-[#BFF0EC] rounded-[14px] overflow-hidden">
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateItemQuantity(item.productId, Math.max(1, item.qty - 1))}
+                            className="w-8 h-full flex items-center justify-center text-[#14B8A6] hover:bg-teal-50"
+                          >
+                            <span className="text-xl leading-none -mt-1">-</span>
+                          </button>
                           <input
                             type="number"
-                            min="0"
-                            step="0.01"
-                            value={manualTotalAmount !== '' ? manualTotalAmount : formData.items.reduce((sum, item) => sum + item.qty * item.price, 0).toFixed(2)}
-                            onChange={(e) => setManualTotalAmount(e.target.value)}
-                            className="w-full min-w-0 sm:flex-1 py-2 border-2 border-green-300 rounded-lg text-base sm:text-xl font-bold text-green-700 bg-green-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                            placeholder="Enter total amount"
+                            value={item.qty}
+                            onChange={(e) => handleUpdateItemQuantity(item.productId, parseInt(e.target.value) || 1)}
+                            className="flex-1 w-full h-full text-center text-[13px] text-[#0B818D] bg-transparent focus:outline-none border-x border-[#BFF0EC]/50"
                           />
-                          {manualTotalAmount !== '' && (
-                            <button
-                              type="button"
-                              onClick={() => setManualTotalAmount('')}
-                              className="w-full sm:w-auto px-3 py-2 bg-gray-500 text-white text-sm rounded-lg hover:bg-gray-600 transition-all duration-200"
-                              title="Reset to calculated total"
-                            >
-                              Reset
-                            </button>
-                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateItemQuantity(item.productId, item.qty + 1)}
+                            className="w-8 h-full flex items-center justify-center text-[#14B8A6] hover:bg-teal-50"
+                          >
+                            <span className="text-lg leading-none -mt-0.5">+</span>
+                          </button>
                         </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                      </td>
+                      <td className="py-3 px-2">
+                         <input
+                            type="number"
+                            value={item.price}
+                            onChange={(e) => handleUpdateItemPrice(item.productId, parseFloat(e.target.value) || 0)}
+                            className="w-[85px] h-[40px] px-3 border border-[#BFF0EC] rounded-[14px] text-[13px] text-[#0B818D] bg-white focus:outline-none"
+                          />
+                      </td>
+                      <td className="py-3 px-2">
+                        <input
+                          type="number"
+                          value="0"
+                          readOnly
+                          className="w-[75px] h-[40px] px-3 border border-[#BFF0EC] rounded-[14px] text-[13px] text-[#0B818D] bg-white focus:outline-none"
+                        />
+                      </td>
+                      <td className="py-3 px-2">
+                        <span className="text-[13px] text-[#0B818D] font-bold">
+                          {(item.qty * item.price).toFixed(2)}
+                        </span>
+                      </td>
+                      <td className="py-3 px-2 text-center">
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveProduct(item.productId)}
+                          className="w-[34px] h-[34px] mx-auto flex items-center justify-center text-[#F43F5E] bg-[#FFF1F2] rounded-xl hover:bg-rose-100 transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  
+                  {/* Inline popup for adding new product */}
+                  {showProductSelector && (
+                    <tr>
+                      <td className="py-3 px-2 text-[13px] text-[#14B8A6] font-semibold">{formData.items.length + 1}</td>
+                      <td className="py-3 px-2">
+                        <div className="relative">
+                          <select
+                            value={selectedProductId}
+                            onChange={(e) => setSelectedProductId(e.target.value)}
+                            className="w-full h-[40px] px-3.5 border border-[#BFF0EC] rounded-[14px] text-[13px] text-[#0B818D] bg-white appearance-none pr-8 focus:outline-none"
+                          >
+                            <option value="">Select product</option>
+                            {products.map((product) => (
+                              <option key={String(product.productId)} value={product.productId}>
+                                {product.name}
+                              </option>
+                            ))}
+                          </select>
+                          <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none text-[#0B818D]">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3 px-2">
+                        <div className="flex items-center w-[96px] h-[40px] bg-white border border-[#BFF0EC] rounded-[14px] overflow-hidden">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedProductQuantity(String(Math.max(1, (parseInt(selectedProductQuantity) || 1) - 1)))}
+                            className="w-8 h-full flex items-center justify-center text-[#14B8A6] hover:bg-teal-50"
+                          >
+                            <span className="text-xl -mt-1">-</span>
+                          </button>
+                          <input
+                            type="number"
+                            value={selectedProductQuantity}
+                            onChange={(e) => setSelectedProductQuantity(e.target.value)}
+                            className="flex-1 w-full h-full text-center text-[13px] text-[#0B818D] border-x border-[#BFF0EC]/50 focus:outline-none bg-transparent"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setSelectedProductQuantity(String((parseInt(selectedProductQuantity) || 0) + 1))}
+                            className="w-8 h-full flex items-center justify-center text-[#14B8A6] hover:bg-teal-50"
+                          >
+                            <span className="text-lg -mt-0.5">+</span>
+                          </button>
+                        </div>
+                      </td>
+                      <td colSpan={4} className="py-3 px-2">
+                        <div className="flex gap-2">
+                          <button type="button" onClick={handleAddProduct} disabled={!selectedProductId} className="h-[40px] px-4 bg-[#0B818D] text-white rounded-[14px] text-[12px] font-semibold">Add</button>
+                          <button type="button" onClick={() => setShowProductSelector(false)} className="h-[40px] px-4 bg-gray-100 text-gray-600 rounded-[14px] text-[12px] font-semibold">Cancel</button>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+              <div className="mt-2">
+                <button type="button" className="text-[#0B818D] text-[13px] font-semibold flex items-center gap-1.5 hover:opacity-80" onClick={() => setShowProductSelector(true)}>
+                  <span className="text-lg leading-none mb-0.5">+</span> Add another product
+                </button>
               </div>
-            )}
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3 pt-4">
-            {isEditing ? (
-              <>
+              {/* Action Buttons */}
+              <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 mt-4 pt-4 border-t border-gray-100">
                 <button
                   type="submit"
                   disabled={isLoading || isSaveDisabled}
-                  className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 font-medium disabled:bg-blue-400 disabled:cursor-not-allowed"
+                  className="flex-1 h-[38px] bg-[#4ade80] text-white rounded-[10px] font-medium text-[13px] flex items-center justify-center gap-1.5 hover:bg-[#3bc06c] transition-colors disabled:opacity-50"
                 >
-                  <RefreshCwIcon className="w-5 h-5" />
-                  {isLoading ? 'Updating...' : 'Update Sale'}
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></polyline><polyline points="7 3 7 8 15 8" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></polyline></svg>
+                  {isLoading ? 'Saving...' : (isEditing ? 'Update Sale' : 'Save Sale')}
                 </button>
+
                 <button
                   type="button"
-                  onClick={onCancelEdit}
-                  className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-200 font-medium"
+                  onClick={resetForm}
+                  className="flex-1 h-[38px] bg-[#ef4444] text-white rounded-[10px] font-medium text-[13px] flex items-center justify-center gap-1.5 hover:bg-[#dc2626] transition-colors"
                 >
-                  <XIcon className="w-5 h-5" />
-                  Cancel
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                  Clear Form
                 </button>
-              </>
-            ) : (
-              <button
-                type="submit"
-                disabled={isLoading || isSaveDisabled}
-                className="flex items-center justify-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 font-medium disabled:bg-green-400 disabled:cursor-not-allowed"
-              >
-                <SaveIcon className="w-5 h-5" />
-                {isLoading ? 'Saving...' : 'Save Sale'}
-              </button>
-            )}
 
-            <button
-              type="button"
-              onClick={resetForm}
-              className="flex items-center justify-center gap-2 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200 font-medium"
-            >
-              <Trash2Icon className="w-5 h-5" />
-              Clear Form
-            </button>
-            <button
-              type="button"
-              onClick={fillSampleData}
-              className="flex items-center justify-center gap-2 px-6 py-3 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 focus:ring-2 focus:ring-yellow-400 transition-all duration-200 font-medium"
-            >
-              <RefreshCwIcon className="w-5 h-5" />
-              Fill Sample
-            </button>
+                <button
+                  type="button"
+                  onClick={fillSampleData}
+                  className="flex-1 h-[38px] bg-[#eab308] text-white rounded-[10px] font-medium text-[13px] flex items-center justify-center gap-1.5 hover:bg-[#ca8a04] transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                  Fill Sample
+                </button>
+              </div>
+            </div>
           </div>
-        </form>
-      </div>
+
+        </div>
+
+        {/* Right Summary Section */}
+        <div className="w-full xl:w-[320px] shrink-0">
+          <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex flex-col gap-5 sticky top-6">
+            
+            <h3 className="text-[#134E4A] font-semibold text-[15px] flex items-center gap-3">
+              <div className="w-[34px] h-[34px] bg-[#F0FDFA] rounded-full flex items-center justify-center text-[#0D9488]">
+                <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+              </div>
+              Order Summary
+            </h3>
+
+            <div className="flex flex-col gap-4 mt-2">
+              <div className="flex justify-between items-center text-[13px]">
+                <span className="text-[#0D9488] flex items-center gap-2.5 font-medium">
+                   <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M3 9h18"></path><path d="M3 15h18"></path><path d="M9 3v18"></path><path d="M15 3v18"></path></svg>
+                   Total Items
+                </span>
+                <span className="font-bold text-gray-900">{formData.items.length}</span>
+              </div>
+              
+              <div className="flex justify-between items-center text-[13px]">
+                <span className="text-[#0D9488] flex items-center gap-2.5 font-medium">
+                   <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                   Subtotal
+                </span>
+                <span className="font-bold text-gray-900">Rs. {getTotalAmount().toFixed(2)}</span>
+              </div>
+
+              <div className="flex justify-between items-center text-[13px]">
+                <span className="text-[#0D9488] flex items-center gap-2.5 font-medium">
+                   <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                     <path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"></path>
+                     <path d="m15 9-6 6"></path>
+                     <path d="M9 9h.01"></path>
+                     <path d="M15 15h.01"></path>
+                   </svg>
+                   Discount
+                   <svg className="w-[14px] h-[14px] text-[#2DD4BF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                   </svg>
+                </span>
+                <input
+                  type="number"
+                  value="0"
+                  readOnly
+                  className="w-[70px] h-[30px] px-2 border border-[#BFF0EC] bg-white rounded-[10px] text-center text-sm text-gray-900 focus:outline-none"
+                />
+              </div>
+
+              <div className="flex justify-between items-center font-bold mt-2">
+                <span className="text-[#134E4A] text-[14px]">Grand Total</span>
+                <span className="text-[#0B818D] text-[17px]">Rs. {getTotalAmount().toFixed(2)}</span>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-3 mt-4 bg-[#F0FDFA] p-4 rounded-[14px]">
+               <span className="text-[#0D9488] shrink-0 mt-[1px]">
+                 <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+               </span>
+               <p className="text-[12px] sm:text-[13px] text-[#0D9488] leading-relaxed font-medium">
+                 You can save the order and continue to process payment later.
+               </p>
+            </div>
+
+          </div>
+        </div>
+      </form>
     </div>
   );
 };
