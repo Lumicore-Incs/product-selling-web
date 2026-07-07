@@ -327,7 +327,7 @@ export const DailyReport = () => {
                         >
                           <div>
                             <p style={{ fontSize: '14px', fontWeight: 600, color: '#414141' }}>
-                              {product.productName} - {product.productId}
+                              #{product.productId} - {product.productName}
                             </p>
                             {product.productShortName && (
                               <p style={{ fontSize: '12px', color: '#949494', marginTop: '2px' }}>
