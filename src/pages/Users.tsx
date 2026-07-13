@@ -512,11 +512,11 @@ export const Users = () => {
         onResetPassword={handleResetPassword}
       />
       <div className="p-2">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-[28px] text-[#0E626E] font-bold tracking-tight" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>User Management</h1>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-0 mb-6">
+          <h1 className="text-2xl sm:text-[28px] text-[#0E626E] font-bold tracking-tight" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>User Management</h1>
           <button
             onClick={() => setShowAddForm(true)}
-            className="flex items-center justify-center bg-[#0B818D] hover:bg-[#096B75] text-white w-[93px] h-[42px] rounded-[10px] transition-colors text-[16px] font-medium font-['Inter'] shadow-sm"
+            className="flex items-center justify-center bg-[#0B818D] hover:bg-[#096B75] text-white w-full sm:w-[93px] h-[42px] rounded-[10px] transition-colors text-[16px] font-medium font-['Inter'] shadow-sm"
           >
             + Add
           </button>
@@ -553,10 +553,10 @@ export const Users = () => {
               <input type="text" placeholder="Serial Prefix" value={newUser.serialPrefix || ''} onChange={(e) => setNewUser({ ...newUser, serialPrefix: e.target.value })} className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#0B818D] text-sm" />
               <InputField id="password" type="password" label="Password" icon={<Lock size={16} className="text-gray-400" />} value={newUser.password ?? ''} onChange={(e) => setNewUser({ ...newUser, password: e.target.value })} inputProps={{ placeholder: 'Password', className: 'text-sm' }} />
             </div>
-            <div className="flex gap-2 mt-4">
-              <button onClick={() => { setNewUser((prev: ServiceUser & { productName?: string }) => ({ ...prev, name: 'Sample User', email: `sample${Date.now() % 1000}@example.com`, contact: '0123456789', password: 'TempPass123!', role: 'User', type: '', status: 'pending', serialPrefix: 'SAMPLE' })); }} disabled={isLoading} className="bg-yellow-400 text-white px-4 py-2 rounded-lg hover:bg-yellow-500 transition-colors text-sm font-medium">Fill Sample</button>
-              <button onClick={handleAddUser} disabled={isLoading} className={`px-4 py-2 rounded-lg transition-colors text-sm font-medium ${isLoading ? 'bg-green-300 text-white cursor-wait' : 'bg-green-500 text-white hover:bg-green-600'}`}>{isLoading ? 'Adding…' : 'Add User'}</button>
-              <button onClick={() => setShowAddForm(false)} className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors text-sm font-medium">Cancel</button>
+            <div className="flex flex-col sm:flex-row flex-wrap gap-2 mt-4">
+              <button onClick={() => { setNewUser((prev: ServiceUser & { productName?: string }) => ({ ...prev, name: 'Sample User', email: `sample${Date.now() % 1000}@example.com`, contact: '0123456789', password: 'TempPass123!', role: 'User', type: '', status: 'pending', serialPrefix: 'SAMPLE' })); }} disabled={isLoading} className="bg-yellow-400 text-white px-4 py-2 rounded-lg hover:bg-yellow-500 transition-colors text-sm font-medium w-full sm:w-auto">Fill Sample</button>
+              <button onClick={handleAddUser} disabled={isLoading} className={`px-4 py-2 rounded-lg transition-colors text-sm font-medium w-full sm:w-auto ${isLoading ? 'bg-green-300 text-white cursor-wait' : 'bg-green-500 text-white hover:bg-green-600'}`}>{isLoading ? 'Adding…' : 'Add User'}</button>
+              <button onClick={() => setShowAddForm(false)} className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors text-sm font-medium w-full sm:w-auto">Cancel</button>
             </div>
           </div>
         )}
@@ -702,10 +702,10 @@ export const Users = () => {
             return (
               <div key={user.id} className="rounded-[18px] p-4 border border-gray-100 shadow-sm bg-white">
                 <div className="flex items-start justify-between mb-3">
-                  <div>
+                  <div className="flex-1 mr-2">
                     {isEditing
-                      ? <input type="text" className="px-2 py-1 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#0B818D] font-semibold text-sm" value={editingUser.name} onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })} />
-                      : <h3 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 600, fontSize: '16px', color: '#414141' }}>{user.name}</h3>}
+                      ? <input type="text" className="w-full px-2 py-1 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#0B818D] font-semibold text-sm" value={editingUser.name} onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })} />
+                      : <h3 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 600, fontSize: '16px', color: '#414141', wordBreak: 'break-word' }}>{user.name}</h3>}
                     <p style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: '12px', color: '#5C626E', marginTop: 2 }}>{user.role}</p>
                   </div>
                   {isEditing
@@ -716,9 +716,9 @@ export const Users = () => {
                 </div>
                 <div className="space-y-2 mb-3">
                   {[
-                    { label: 'Short Name', val: shortName, icon: <Package className="w-4 h-4 text-[#0B818D]" />, edit: isEditing ? <input type="text" className="flex-1 px-2 py-0.5 border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-[#0B818D] text-sm" value={editShortName} onChange={(e) => setEditShortName(e.target.value)} /> : null },
-                    { label: 'Serial Prefix', val: user.serialPrefix || '—', icon: <Package className="w-4 h-4 text-[#0B818D]" />, edit: isEditing ? <input type="text" className="flex-1 px-2 py-0.5 border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-[#0B818D] text-sm" value={editingUser!.serialPrefix || ''} onChange={(e) => setEditingUser({ ...editingUser!, serialPrefix: e.target.value })} /> : null },
-                    { label: 'Price', val: priceVal, icon: <Package className="w-4 h-4 text-[#0B818D]" />, edit: isEditing ? <input type="text" className="flex-1 px-2 py-0.5 border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-[#0B818D] text-sm" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} /> : null },
+                    { label: 'Short Name', val: shortName, icon: <Package className="w-4 h-4 text-[#0B818D] flex-shrink-0" />, edit: isEditing ? <input type="text" className="flex-1 w-full min-w-0 px-2 py-0.5 border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-[#0B818D] text-sm" value={editShortName} onChange={(e) => setEditShortName(e.target.value)} /> : null },
+                    { label: 'Serial Prefix', val: user.serialPrefix || '—', icon: <Package className="w-4 h-4 text-[#0B818D] flex-shrink-0" />, edit: isEditing ? <input type="text" className="flex-1 w-full min-w-0 px-2 py-0.5 border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-[#0B818D] text-sm" value={editingUser!.serialPrefix || ''} onChange={(e) => setEditingUser({ ...editingUser!, serialPrefix: e.target.value })} /> : null },
+                    { label: 'Price', val: priceVal, icon: <Package className="w-4 h-4 text-[#0B818D] flex-shrink-0" />, edit: isEditing ? <input type="text" className="flex-1 w-full min-w-0 px-2 py-0.5 border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-[#0B818D] text-sm" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} /> : null },
                   ].map(({ label, val, icon, edit }) => (
                     <div key={label} className="flex items-center gap-2 pb-1 border-b border-gray-50">
                       {icon}
