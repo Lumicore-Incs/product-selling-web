@@ -31,6 +31,9 @@ export interface CustomerRequestDTO {
   contact02?: string;
   qty: string;
   remark: string;
+  date?: string;
+  deliveryDate?: string;
+  delivery_date?: string;
   totalPrice: number;
   items: OrderItem[];
 }

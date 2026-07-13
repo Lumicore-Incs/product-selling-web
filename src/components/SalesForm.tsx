@@ -1,4 +1,3 @@
-import { MinusIcon, RefreshCwIcon, SaveIcon, Trash2Icon, XIcon } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { Sale, SaleItem } from '../models/sales';
 import { customerApi, CustomerRequestDTO, productApi, ProductDto, CustomerDtoGet } from '../services/api';
@@ -11,6 +10,42 @@ interface SalesFormProps {
   isEditing: boolean;
   onCancelEdit: () => void;
 }
+
+const getTodayDateString = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const normalizeDateValue = (value?: string | null) => {
+  if (!value) return getTodayDateString();
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return value;
+  }
+
+  const parsedDate = new Date(value);
+  if (Number.isNaN(parsedDate.getTime())) {
+    return getTodayDateString();
+  }
+
+  const year = parsedDate.getFullYear();
+  const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
+  const day = String(parsedDate.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+};
+
+const formatDateTimeForBackend = (value?: string | null) => {
+  const normalizedDate = normalizeDateValue(value);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(normalizedDate)) {
+    return `${normalizedDate}T00:00:00`;
+  }
+
+  return normalizedDate;
+};
 
 export const SalesForm: React.FC<SalesFormProps> = ({
   onSave,
@@ -30,6 +65,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
     qty: '',
     remark: '',
     nic: '',
+    deliveryDate: getTodayDateString(),
     items: [] as SaleItem[],
   });
 
@@ -49,6 +85,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
 
   const [customerInfoText, setCustomerInfoText] = useState('');
   const [manualTotalAmount, setManualTotalAmount] = useState<string>('');
+  const [grandTotalOverride, setGrandTotalOverride] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [_searchResults, setSearchResults] = useState<CustomerDtoGet[]>([]);
   const [_showSearchResults, setShowSearchResults] = useState(false);
@@ -100,9 +137,10 @@ export const SalesForm: React.FC<SalesFormProps> = ({
         qty: String(currentSale.qty ?? ''),
         remark: currentSale.remark ?? '',
         nic: '',
+        deliveryDate: normalizeDateValue((currentSale as Sale & { deliveryDate?: string }).deliveryDate),
         items: currentSale.items || [],
       });
-      
+
       // Load the saved total price as manual total amount
       if (currentSale.totalPrice) {
         setManualTotalAmount(currentSale.totalPrice.toFixed(2));
@@ -250,7 +288,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
   // Search customers by name or contact number
   const handleSearchCustomer = async (query: string) => {
     setSearchQuery(query);
-    
+
     if (!query.trim()) {
       setSearchResults([]);
       setShowSearchResults(false);
@@ -260,14 +298,14 @@ export const SalesForm: React.FC<SalesFormProps> = ({
     try {
       const customers = await ensureCustomersLoaded();
       const lowerQuery = query.toLowerCase();
-      
+
       const results = customers.filter(
         (c) =>
           (c.customerName && c.customerName.toLowerCase().includes(lowerQuery)) ||
           (c.contact01 && c.contact01.includes(query)) ||
           (c.contact02 && c.contact02.includes(query))
       );
-      
+
       setSearchResults(results);
       setShowSearchResults(true);
     } catch (_e) {
@@ -377,44 +415,44 @@ export const SalesForm: React.FC<SalesFormProps> = ({
         : String(defaultProduct.productId)
       : null;
 
-    let updatedItems = [...formData.items];
+    setFormData((prev) => {
+      let updatedItems = [...prev.items];
 
-    if (defaultPid) {
-      const existingIndex = updatedItems.findIndex((it) => it.productId === defaultPid);
-      const parsed = parseInt(qtyValue || '0');
+      if (defaultPid) {
+        const existingIndex = updatedItems.findIndex((it) => it.productId === defaultPid);
+        const parsed = parseInt(qtyValue || '0');
 
-      if (!qtyValue || isNaN(parsed) || parsed <= 0) {
-        // remove default product from items if present
-        if (existingIndex >= 0) {
-          updatedItems = updatedItems.filter((it) => it.productId !== defaultPid);
-        }
-      } else {
-        // add or update default product entry
-        const def = defaultProduct as ProductDto;
-        const price = def.price;
-        const name = def.name;
-        if (existingIndex >= 0) {
-          updatedItems[existingIndex] = {
-            ...updatedItems[existingIndex],
-            qty: parsed,
-            total: parsed * price,
-          };
+        if (!qtyValue || isNaN(parsed) || parsed <= 0) {
+          if (existingIndex >= 0) {
+            updatedItems = updatedItems.filter((it) => it.productId !== defaultPid);
+          }
         } else {
-          updatedItems.push({
-            productId: defaultPid,
-            productName: name,
-            qty: parsed,
-            price: price,
-            total: parsed * price,
-          });
+          const def = defaultProduct as ProductDto;
+          const price = def.price;
+          const name = def.name;
+          if (existingIndex >= 0) {
+            updatedItems[existingIndex] = {
+              ...updatedItems[existingIndex],
+              qty: parsed,
+              total: parsed * price,
+            };
+          } else {
+            updatedItems.push({
+              productId: defaultPid,
+              productName: name,
+              qty: parsed,
+              price: price,
+              total: parsed * price,
+            });
+          }
         }
       }
-    }
 
-    setFormData({
-      ...formData,
-      qty: qtyValue,
-      items: updatedItems,
+      return {
+        ...prev,
+        qty: qtyValue,
+        items: updatedItems,
+      };
     });
   };
 
@@ -435,23 +473,21 @@ export const SalesForm: React.FC<SalesFormProps> = ({
           total: quantity * product.price,
         };
 
-        // Check if product already exists, update quantity if it does
-        const existingItemIndex = formData.items.findIndex((item) => item.productId === pid);
-        if (existingItemIndex >= 0) {
-          const updatedItems = [...formData.items];
-          updatedItems[existingItemIndex].qty += quantity;
-          setFormData({
-            ...formData,
-            items: updatedItems,
-          });
-        } else {
-          setFormData({
-            ...formData,
-            items: [...formData.items, newItem],
-          });
-        }
+        setFormData((prev) => {
+          const existingItemIndex = prev.items.findIndex((item) => item.productId === pid);
+          if (existingItemIndex >= 0) {
+            const updatedItems = [...prev.items];
+            updatedItems[existingItemIndex] = {
+              ...updatedItems[existingItemIndex],
+              qty: updatedItems[existingItemIndex].qty + quantity,
+              total: (updatedItems[existingItemIndex].qty + quantity) * updatedItems[existingItemIndex].price,
+            };
+            return { ...prev, items: updatedItems };
+          }
 
-        // Reset selection
+          return { ...prev, items: [...prev.items, newItem] };
+        });
+
         setSelectedProductId('');
         setSelectedProductQuantity('');
         setShowProductSelector(false);
@@ -460,12 +496,10 @@ export const SalesForm: React.FC<SalesFormProps> = ({
   };
 
   const handleRemoveProduct = (productId: string) => {
-    const updatedItems = formData.items.filter((item) => item.productId !== productId);
-
-    setFormData({
-      ...formData,
-      items: updatedItems,
-    });
+    setFormData((prev) => ({
+      ...prev,
+      items: prev.items.filter((item) => item.productId !== productId),
+    }));
   };
 
   const handleUpdateItemQuantity = (productId: string, newQuantity: number) => {
@@ -474,63 +508,71 @@ export const SalesForm: React.FC<SalesFormProps> = ({
       return;
     }
 
-    const updatedItems = formData.items.map((item) =>
-      item.productId === productId ? { ...item, qty: newQuantity, total: newQuantity * item.price } : item
-    );
+    setFormData((prev) => {
+      const updatedItems = prev.items.map((item) =>
+        item.productId === productId ? { ...item, qty: newQuantity, total: newQuantity * item.price } : item
+      );
 
-    // If the updated item is the default product, also update the default qty field
-    const defaultPid = defaultProduct
-      ? defaultProduct.productId == null
-        ? ''
-        : String(defaultProduct.productId)
-      : null;
-    if (defaultPid && productId === defaultPid) {
-      // find the updated qty for the default product
-      const updatedDefaultItem = updatedItems.find((it) => it.productId === defaultPid);
-      setFormData({
-        ...formData,
+      const defaultPid = defaultProduct
+        ? defaultProduct.productId == null
+          ? ''
+          : String(defaultProduct.productId)
+        : null;
+
+      if (defaultPid && productId === defaultPid) {
+        const updatedDefaultItem = updatedItems.find((it) => it.productId === defaultPid);
+        return {
+          ...prev,
+          items: updatedItems,
+          qty: updatedDefaultItem ? String(updatedDefaultItem.qty) : prev.qty,
+        };
+      }
+
+      return {
+        ...prev,
         items: updatedItems,
-        qty: updatedDefaultItem ? String(updatedDefaultItem.qty) : formData.qty,
-      });
-    } else {
-      setFormData({
-        ...formData,
-        items: updatedItems,
-      });
-    }
+      };
+    });
   };
 
   const handleUpdateItemPrice = (productId: string, newPrice: number) => {
     if (newPrice < 0) return;
 
-    // Find the product to check if price exceeds original
     const product = products.find((p) => String(p.productId) === productId);
     const newWarnings = new Set(priceWarnings);
-    
+
     if (product && newPrice > product.price) {
       newWarnings.add(productId);
     } else if (product) {
       newWarnings.delete(productId);
     }
-    
+
     setPriceWarnings(newWarnings);
 
-    const updatedItems = formData.items.map((item) =>
-      item.productId === productId ? { ...item, price: newPrice, total: item.qty * newPrice } : item
-    );
-
-    setFormData({
-      ...formData,
-      items: updatedItems,
-    });
+    setFormData((prev) => ({
+      ...prev,
+      items: prev.items.map((item) =>
+        item.productId === productId ? { ...item, price: newPrice, total: item.qty * newPrice } : item
+      ),
+    }));
   };
 
+  const calculateItemTotal = (item: SaleItem) => (item.qty || 0) * (item.price || 0);
+
   const getTotalAmount = () => {
-    if (manualTotalAmount !== '') {
+    const itemsTotal = formData.items.reduce((sum, item) => sum + calculateItemTotal(item), 0);
+
+    if (grandTotalOverride !== '') {
+      const override = parseFloat(grandTotalOverride);
+      return isNaN(override) ? itemsTotal : override;
+    }
+
+    if (manualTotalAmount !== '' && formData.items.length === 0) {
       const manual = parseFloat(manualTotalAmount);
       return isNaN(manual) ? 0 : manual;
     }
-    return formData.items.reduce((sum, item) => sum + item.qty * item.price, 0);
+
+    return itemsTotal;
   };
 
   // Helper: validate contact numbers (now accepts 10 digits with leading 0)
@@ -592,11 +634,14 @@ export const SalesForm: React.FC<SalesFormProps> = ({
     try {
       // Use getTotalAmount() to respect manual override
       const totalAmount = getTotalAmount();
+      const deliveryDateForBackend = formatDateTimeForBackend(formData.deliveryDate);
 
       // If editing, use the existing logic
       if (isEditing && currentSale) {
         onUpdate({
           ...formData,
+          date: deliveryDateForBackend,
+          deliveryDate: deliveryDateForBackend,
           id: currentSale.id,
           items: finalItems,
           totalPrice: totalAmount,
@@ -623,20 +668,22 @@ export const SalesForm: React.FC<SalesFormProps> = ({
         .filter((shortName) => shortName !== '')
         .join(' ');
 
-        const customerNameForBackend = formData.name;
-      
-      const customerNameWithProducts = productShortNames 
+      const customerNameForBackend = formData.name;
+
+      const customerNameWithProducts = productShortNames
         ? `${formData.name}(${productShortNames})`
         : formData.name;
 
       const customerData: CustomerRequestDTO = {
-        customerName:customerNameForBackend,
+        customerName: customerNameForBackend,
         name: customerNameWithProducts,
         address: formData.address,
         contact01: contact01ForBackend,
         contact02: contact02ForBackend,
         qty: formData.qty,
         remark: formData.remark,
+        date: deliveryDateForBackend,
+        deliveryDate: deliveryDateForBackend,
         totalPrice: totalAmount,
         items: finalItems.map((item) => ({
           productId: Number(item.productId) || 0,
@@ -656,6 +703,8 @@ export const SalesForm: React.FC<SalesFormProps> = ({
       // Also call the original onSave for backward compatibility
       onSave({
         ...formData,
+        date: deliveryDateForBackend,
+        deliveryDate: deliveryDateForBackend,
         items: finalItems,
         totalPrice: totalAmount,
         qty: parseInt(formData.qty),
@@ -677,9 +726,8 @@ export const SalesForm: React.FC<SalesFormProps> = ({
         setSnackbar({
           open: true,
           message: duplicateCustomer
-            ? `Customer already exists! Name: ${duplicateCustomer.name}, Contact: ${
-                duplicateCustomer.contact01 || duplicateCustomer.contact02
-              }`
+            ? `Customer already exists! Name: ${duplicateCustomer.name}, Contact: ${duplicateCustomer.contact01 || duplicateCustomer.contact02
+            }`
             : 'Customer already exists!',
           type: 'error',
         });
@@ -703,6 +751,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
       qty: '',
       remark: '',
       nic: '',
+      deliveryDate: getTodayDateString(),
       items: [] as SaleItem[],
     });
     setCustomerInfoText('');
@@ -711,6 +760,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
     setSelectedProductQuantity('');
     setError(null);
     setManualTotalAmount('');
+    setGrandTotalOverride('');
     setSearchQuery('');
     setSearchResults([]);
     setShowSearchResults(false);
@@ -722,14 +772,14 @@ export const SalesForm: React.FC<SalesFormProps> = ({
     const sampleProduct = defaultProduct ?? products[0] ?? null;
     const sampleItems: SaleItem[] = sampleProduct
       ? [
-          {
-            productId: sampleProduct.productId == null ? '' : String(sampleProduct.productId),
-            productName: sampleProduct.name,
-            qty: 2,
-            price: sampleProduct.price,
-            total: 2 * sampleProduct.price,
-          },
-        ]
+        {
+          productId: sampleProduct.productId == null ? '' : String(sampleProduct.productId),
+          productName: sampleProduct.name,
+          qty: 2,
+          price: sampleProduct.price,
+          total: 2 * sampleProduct.price,
+        },
+      ]
       : [];
 
     setFormData({
@@ -743,6 +793,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
       qty: sampleProduct ? '2' : '',
       remark: 'Sample order',
       nic: '',
+      deliveryDate: getTodayDateString(),
       items: sampleItems,
     });
     setSnackbar({ open: true, message: 'Sample data loaded', type: 'success' });
@@ -775,10 +826,10 @@ export const SalesForm: React.FC<SalesFormProps> = ({
       />
 
       <form onSubmit={handleSubmit} className="flex flex-col xl:flex-row gap-6 items-start">
-        
+
         {/* Main Left Section */}
         <div className="flex-1 flex flex-col gap-5 w-full">
-          
+
           {/* Search Bar & New Customer Button */}
           <div className="flex flex-col sm:flex-row gap-4 w-full bg-white rounded-3xl p-4 shadow-sm border border-gray-100">
             <div className="relative flex-1 bg-white border border-[#BFF0EC] rounded-full h-[46px] flex items-center px-4">
@@ -846,7 +897,7 @@ Items -
               </div>
               <p className="text-[11px] text-slate-500">Tip: Copy customer details from anywhere and paste above; include "- qty" after each item (e.g., "vac - 2") so quantities are captured.</p>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
 
               <div className="flex flex-col gap-1.5">
@@ -863,7 +914,7 @@ Items -
                   placeholder="Enter customer name"
                 />
               </div>
-              
+
               <div className="flex flex-col gap-1.5">
                 <label className="text-[11px] font-semibold text-[#0F766E]">
                   Contact Number <span className="text-[#F43F5E]">*</span>
@@ -894,6 +945,19 @@ Items -
                 />
               </div>
 
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-semibold text-[#0F766E]">
+                  Delivery Date
+                </label>
+                <input
+                  name="deliveryDate"
+                  type="date"
+                  value={formData.deliveryDate || getTodayDateString()}
+                  onChange={handleChange}
+                  className="w-full h-[44px] px-4 bg-white border border-[#BFF0EC] rounded-2xl text-[13px] text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-1 focus:ring-[#0B818D]"
+                />
+              </div>
+
               <div className="flex flex-col gap-1.5 md:col-span-2">
                 <label className="text-[11px] font-semibold text-[#0F766E]">
                   Address <span className="text-[#F43F5E]">*</span>
@@ -912,18 +976,18 @@ Items -
               </div>
               {/* Remark Section */}
               <div className="flex flex-col gap-1.5 md:col-span-2">
-                 <label className="text-[11px] font-semibold text-[#0F766E]">Remark</label>
-                 <input
-                   name="remark"
-                   type="text"
-                   value={formData.remark}
-                   onChange={handleChange}
-                   className="w-full h-[44px] px-4 bg-white border border-[#BFF0EC] rounded-2xl text-[13px] text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-1 focus:ring-[#0B818D]"
-                   placeholder="Optional remark"
-                 />
+                <label className="text-[11px] font-semibold text-[#0F766E]">Remark</label>
+                <input
+                  name="remark"
+                  type="text"
+                  value={formData.remark}
+                  onChange={handleChange}
+                  className="w-full h-[44px] px-4 bg-white border border-[#BFF0EC] rounded-2xl text-[13px] text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-1 focus:ring-[#0B818D]"
+                  placeholder="Optional remark"
+                />
               </div>
             </div>
-          
+
           </div>
 
           {/* Products */}
@@ -954,9 +1018,9 @@ Items -
                     <th className="pb-3 px-2 text-[11px] font-bold text-[#14B8A6] w-[30px]">#</th>
                     <th className="pb-3 px-2 text-[11px] font-bold text-[#14B8A6] min-w-[200px]">Product</th>
                     <th className="pb-3 px-2 text-[11px] font-bold text-[#14B8A6] w-[110px]">Quantity</th>
-                    <th className="pb-3 px-2 text-[11px] font-bold text-[#14B8A6] w-[100px]">Unit Price <br/>(Rs.)</th>
-                    <th className="pb-3 px-2 text-[11px] font-bold text-[#14B8A6] w-[90px]">Discount <br/>(Rs.)</th>
-                    <th className="pb-3 px-2 text-[11px] font-bold text-[#14B8A6] w-[80px]">Total <br/>(Rs.)</th>
+                    <th className="pb-3 px-2 text-[11px] font-bold text-[#14B8A6] w-[100px]">Unit Price <br />(Rs.)</th>
+                    <th className="pb-3 px-2 text-[11px] font-bold text-[#14B8A6] w-[90px]">Discount <br />(Rs.)</th>
+                    <th className="pb-3 px-2 text-[11px] font-bold text-[#14B8A6] w-[80px]">Total <br />(Rs.)</th>
                     <th className="pb-3 px-2 text-[11px] font-bold text-[#14B8A6] w-[50px] text-center">Action</th>
                   </tr>
                 </thead>
@@ -1007,12 +1071,12 @@ Items -
                         </div>
                       </td>
                       <td className="py-3 px-2">
-                         <input
-                            type="number"
-                            value={item.price}
-                            onChange={(e) => handleUpdateItemPrice(item.productId, parseFloat(e.target.value) || 0)}
-                            className="w-[85px] h-[40px] px-3 border border-[#BFF0EC] rounded-[14px] text-[13px] text-[#0B818D] bg-white focus:outline-none"
-                          />
+                        <input
+                          type="number"
+                          value={item.price}
+                          onChange={(e) => handleUpdateItemPrice(item.productId, parseFloat(e.target.value) || 0)}
+                          className="w-[85px] h-[40px] px-3 border border-[#BFF0EC] rounded-[14px] text-[13px] text-[#0B818D] bg-white focus:outline-none"
+                        />
                       </td>
                       <td className="py-3 px-2">
                         <input
@@ -1024,7 +1088,7 @@ Items -
                       </td>
                       <td className="py-3 px-2">
                         <span className="text-[13px] text-[#0B818D] font-bold">
-                          {(item.qty * item.price).toFixed(2)}
+                          {calculateItemTotal(item).toFixed(2)}
                         </span>
                       </td>
                       <td className="py-3 px-2 text-center">
@@ -1038,7 +1102,7 @@ Items -
                       </td>
                     </tr>
                   ))}
-                  
+
                   {/* Inline popup for adding new product */}
                   {showProductSelector && (
                     <tr>
@@ -1138,7 +1202,7 @@ Items -
         {/* Right Summary Section */}
         <div className="w-full xl:w-[320px] shrink-0">
           <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex flex-col gap-5 sticky top-6">
-            
+
             <h3 className="text-[#134E4A] font-semibold text-[15px] flex items-center gap-3">
               <div className="w-[34px] h-[34px] bg-[#F0FDFA] rounded-full flex items-center justify-center text-[#0D9488]">
                 <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1151,32 +1215,32 @@ Items -
             <div className="flex flex-col gap-4 mt-2">
               <div className="flex justify-between items-center text-[13px]">
                 <span className="text-[#0D9488] flex items-center gap-2.5 font-medium">
-                   <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M3 9h18"></path><path d="M3 15h18"></path><path d="M9 3v18"></path><path d="M15 3v18"></path></svg>
-                   Total Items
+                  <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M3 9h18"></path><path d="M3 15h18"></path><path d="M9 3v18"></path><path d="M15 3v18"></path></svg>
+                  Total Items
                 </span>
                 <span className="font-bold text-gray-900">{formData.items.length}</span>
               </div>
-              
+
               <div className="flex justify-between items-center text-[13px]">
                 <span className="text-[#0D9488] flex items-center gap-2.5 font-medium">
-                   <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
-                   Subtotal
+                  <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                  Subtotal
                 </span>
                 <span className="font-bold text-gray-900">Rs. {getTotalAmount().toFixed(2)}</span>
               </div>
 
               <div className="flex justify-between items-center text-[13px]">
                 <span className="text-[#0D9488] flex items-center gap-2.5 font-medium">
-                   <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                     <path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"></path>
-                     <path d="m15 9-6 6"></path>
-                     <path d="M9 9h.01"></path>
-                     <path d="M15 15h.01"></path>
-                   </svg>
-                   Discount
-                   <svg className="w-[14px] h-[14px] text-[#2DD4BF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                   </svg>
+                  <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"></path>
+                    <path d="m15 9-6 6"></path>
+                    <path d="M9 9h.01"></path>
+                    <path d="M15 15h.01"></path>
+                  </svg>
+                  Discount
+                  <svg className="w-[14px] h-[14px] text-[#2DD4BF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
                 </span>
                 <input
                   type="number"
@@ -1186,19 +1250,28 @@ Items -
                 />
               </div>
 
-              <div className="flex justify-between items-center font-bold mt-2">
+              <div className="flex justify-between items-center font-bold mt-2 gap-3">
                 <span className="text-[#134E4A] text-[14px]">Grand Total</span>
-                <span className="text-[#0B818D] text-[17px]">Rs. {getTotalAmount().toFixed(2)}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[#0B818D] text-[13px]">Rs.</span>
+                  <input
+                    type="number"
+                    value={grandTotalOverride}
+                    onChange={(e) => setGrandTotalOverride(e.target.value)}
+                    placeholder={getTotalAmount().toFixed(2)}
+                    className="w-[110px] h-[36px] px-2 border border-[#BFF0EC] bg-white rounded-[10px] text-center text-sm text-gray-900 focus:outline-none"
+                  />
+                </div>
               </div>
             </div>
-            
+
             <div className="flex items-start gap-3 mt-4 bg-[#F0FDFA] p-4 rounded-[14px]">
-               <span className="text-[#0D9488] shrink-0 mt-[1px]">
-                 <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-               </span>
-               <p className="text-[12px] sm:text-[13px] text-[#0D9488] leading-relaxed font-medium">
-                 You can save the order and continue to process payment later.
-               </p>
+              <span className="text-[#0D9488] shrink-0 mt-[1px]">
+                <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              </span>
+              <p className="text-[12px] sm:text-[13px] text-[#0D9488] leading-relaxed font-medium">
+                You can save the order and continue to process payment later.
+              </p>
             </div>
 
           </div>

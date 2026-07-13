@@ -25,6 +25,7 @@ export interface Sale {
   // total item count on the sale
   qty: number;
   remark?: string;
+  deliveryDate?: string;
   items: SaleItem[];
   // canonical sale total
   totalPrice: number;

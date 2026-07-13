@@ -17,6 +17,29 @@ export interface OrderFilterParams {
   date?: string; // YYYY-MM-DD format
 }
 
+function formatDateTimeForBackend(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    return `${trimmed}T00:00:00`;
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}T/.test(trimmed)) {
+    return trimmed;
+  }
+
+  const parsed = new Date(trimmed);
+  if (Number.isNaN(parsed.getTime())) return trimmed;
+
+  const year = parsed.getFullYear();
+  const month = String(parsed.getMonth() + 1).padStart(2, '0');
+  const day = String(parsed.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}T00:00:00`;
+}
+
 function parsePaginatedResponse(raw: unknown, page: number, size: number): PaginatedResult<Sale> {
   if (!raw) return { data: [], total: 0, totalPages: 0, page, size };
 
@@ -119,8 +142,21 @@ class OrderService {
 
   async updateDuplicateOrder(id: string, payload: unknown): Promise<unknown> {
     try {
+      const normalizedPayload = { ...(payload as Record<string, unknown>) };
+      const deliveryDate =
+        (normalizedPayload.deliveryDate as string | undefined) ??
+        (normalizedPayload.delivery_date as string | undefined) ??
+        (normalizedPayload.date as string | undefined);
+
+      if (deliveryDate) {
+        const formattedDateTime = formatDateTimeForBackend(deliveryDate);
+        normalizedPayload.deliveryDate = formattedDateTime;
+        normalizedPayload.delivery_date = formattedDateTime;
+        normalizedPayload.date = formattedDateTime;
+      }
+
       // Delegate to backend endpoint for resolving/updating an order
-      const putResp = await apiClient.put(`/order/${id}/duplicate`, payload as object);
+      const putResp = await apiClient.put(`/order/${id}/duplicate`, normalizedPayload as object);
       return putResp.data;
     } catch (err) {
       console.error('orderService.updateOrder failed:', err);
@@ -130,6 +166,7 @@ class OrderService {
 
   async updateCustomerOrder(id: string, payload: Sale): Promise<unknown> {
     try {
+      const deliveryDateValue = formatDateTimeForBackend(payload.deliveryDate || payload.date);
       const requestDTO = {
         customerId: isNaN(Number(id)) ? null : Number(id),
         name: payload.name || payload.customerName,
@@ -138,7 +175,9 @@ class OrderService {
         address: payload.address,
         contact01: payload.contact01,
         contact02: payload.contact02,
-        date: payload.date,
+        date: deliveryDateValue,
+        deliveryDate: deliveryDateValue,
+        delivery_date: deliveryDateValue,
         remark: payload.remark,
         status: payload.status,
         items: payload.items?.map(item => ({
