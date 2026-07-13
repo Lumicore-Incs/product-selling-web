@@ -920,9 +920,9 @@ Items -
                   Contact Number <span className="text-[#F43F5E]">*</span>
                 </label>
                 <input
-                  name="contact02"
+                  name="contact01"
                   type="text"
-                  value={formData.contact02}
+                  value={formData.contact01}
                   onChange={handleChange}
                   className="w-full h-[44px] px-4 bg-white border border-[#BFF0EC] rounded-2xl text-[13px] text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-1 focus:ring-[#0B818D]"
                   placeholder="Enter contact number"
@@ -935,26 +935,13 @@ Items -
                   WhatsApp Number
                 </label>
                 <input
-                  name="contact01"
+                  name="contact02"
                   type="text"
-                  value={formData.contact01}
+                  value={formData.contact02}
                   onChange={handleChange}
                   className="w-full h-[44px] px-4 bg-white border border-[#BFF0EC] rounded-2xl text-[13px] text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-1 focus:ring-[#0B818D]"
                   placeholder="Enter WhatsApp number"
                   maxLength={10}
-                />
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] font-semibold text-[#0F766E]">
-                  Delivery Date
-                </label>
-                <input
-                  name="deliveryDate"
-                  type="date"
-                  value={formData.deliveryDate || getTodayDateString()}
-                  onChange={handleChange}
-                  className="w-full h-[44px] px-4 bg-white border border-[#BFF0EC] rounded-2xl text-[13px] text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-1 focus:ring-[#0B818D]"
                 />
               </div>
 
@@ -973,6 +960,19 @@ Items -
                 <div className="flex justify-end mt-1">
                   <span className="text-[11px] text-[#2DD4BF] font-medium">0 / 250</span>
                 </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-semibold text-[#0F766E]">
+                  Delivery Date
+                </label>
+                <input
+                  name="deliveryDate"
+                  type="date"
+                  value={formData.deliveryDate || getTodayDateString()}
+                  onChange={handleChange}
+                  className="w-full h-[44px] px-4 bg-white border border-[#BFF0EC] rounded-2xl text-[13px] text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-1 focus:ring-[#0B818D]"
+                />
               </div>
               {/* Remark Section */}
               <div className="flex flex-col gap-1.5 md:col-span-2">
@@ -1185,14 +1185,14 @@ Items -
                   Clear Form
                 </button>
 
-                <button
+                {/* <button
                   type="button"
                   onClick={fillSampleData}
                   className="flex-1 h-[38px] bg-[#eab308] text-white rounded-[10px] font-medium text-[13px] flex items-center justify-center gap-1.5 hover:bg-[#ca8a04] transition-colors"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                   Fill Sample
-                </button>
+                </button> */}
               </div>
             </div>
           </div>
