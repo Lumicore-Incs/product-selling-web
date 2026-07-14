@@ -4,14 +4,8 @@ import { getCurrentUser } from '../service/auth';
 import { getUserAnalytics, UserAnalytics } from '../services/orders/orderService';
 import { userService } from '../services/users/userService';
 import {
-  UsersIcon,
-  RotateCcwIcon,
-  CalendarIcon,
-  PlusIcon,
   Search,
-  ShieldAlert,
   ShieldCheck,
-  TrendingUp,
 } from 'lucide-react';
 import { PaymentModal } from '../components/payments/PaymentModal';
 import { PaymentDetailsTable } from '../components/payments/PaymentDetailsTable';
@@ -135,7 +129,7 @@ export const UserOrders = () => {
   }
 
   return (
-    <div className="relative min-h-screen bg-transparent p-4 lg:p-6 overflow-hidden font-sans">
+    <div className="relative min-h-screen bg-transparent overflow-hidden font-sans">
       {/* Figma background glowing ellipses */}
       <div className="absolute w-[543px] h-[582px] left-[1003px] top-[-137px] bg-[#7100BD] opacity-[0.12] rounded-full pointer-events-none" style={{ filter: 'blur(323.5px)' }} />
       <div className="absolute w-[386px] h-[328px] left-[492px] top-[606px] bg-[#7100BD] opacity-[0.12] rounded-full pointer-events-none" style={{ filter: 'blur(323.5px)' }} />
@@ -300,30 +294,30 @@ export const UserOrders = () => {
             )}
 
             {selectedUser && (
-              <div className="bg-white/40 backdrop-blur-xl rounded-[21px] shadow-[0_0_14px_rgba(0,0,0,0.07)] p-7 border border-white/60">
+              <div className="bg-white/40 backdrop-blur-xl rounded-[21px] shadow-[0_0_14px_rgba(0,0,0,0.07)] p-4 sm:p-7 border border-white/60">
                 {/* Refined Detail Header */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
                     <img 
                       src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=60" 
                       alt={selectedUser.name} 
-                      className="w-20 h-20 rounded-[64px] border-2 border-white shadow-sm object-cover" 
+                      className="w-14 h-14 sm:w-20 sm:h-20 rounded-[64px] border-2 border-white shadow-sm object-cover flex-shrink-0" 
                     />
-                    <div>
-                      <div className="flex items-center gap-3">
-                        <h2 className="text-[24px] font-bold text-black leading-[29px] font-['Inter']">{selectedUser.name}</h2>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                        <h2 className="text-[18px] sm:text-[24px] font-bold text-black leading-tight sm:leading-[29px] font-['Inter'] truncate">{selectedUser.name}</h2>
                         <div className="flex items-center gap-1 w-[77px] h-[18px] border border-[#0B818D] bg-[#7abcC3]/32 rounded-[14px] flex-shrink-0 justify-center">
                           <ShieldCheck className="w-3 h-3 text-[#0B818D]" />
                           <span className="text-[8px] font-normal text-[#0B818D] leading-[10px] font-['Inter']">Verified User</span>
                         </div>
                       </div>
-                      <p className="text-[18px] font-medium text-[#616161] leading-[22px] mt-1 font-['Inter']">{selectedUser.email}</p>
+                      <p className="text-[14px] sm:text-[18px] font-medium text-[#616161] leading-tight sm:leading-[22px] mt-1 font-['Inter'] truncate">{selectedUser.email}</p>
                     </div>
                   </div>
                   
-                  <div className="flex flex-col items-start sm:items-end">
-                     <p className="text-[15px] font-semibold text-[#5C626E] font-['Inter'] leading-[18px]">Total records found</p>
-                     <p className="text-[22px] font-semibold text-[#5C626E] mt-[8px] font-['Inter'] leading-[27px]">{paymentDetails.length}</p>
+                  <div className="flex flex-col items-start sm:items-end bg-white/30 sm:bg-transparent p-3 sm:p-0 rounded-xl w-full sm:w-auto">
+                     <p className="text-[13px] sm:text-[15px] font-semibold text-[#5C626E] font-['Inter'] leading-tight sm:leading-[18px]">Total records found</p>
+                     <p className="text-[20px] sm:text-[22px] font-semibold text-[#5C626E] mt-1 sm:mt-[8px] font-['Inter'] leading-tight sm:leading-[27px]">{paymentDetails.length}</p>
                   </div>
                 </div>
 
@@ -376,16 +370,16 @@ const StatCard = ({
 }) => {
   return (
     <div 
-      className="p-[18px] rounded-[21px] flex flex-col justify-between h-[93px] md:h-[95px] border border-white/40 shadow-sm relative overflow-hidden backdrop-blur-md transition-all duration-300 hover:scale-[1.02] w-full md:w-[188px] flex-shrink-0"
+      className="p-3 sm:p-[18px] rounded-[16px] sm:rounded-[21px] flex flex-col justify-between h-[85px] sm:h-[93px] md:h-[95px] border border-white/40 shadow-sm relative overflow-hidden backdrop-blur-md transition-all duration-300 hover:scale-[1.02] w-full md:w-[188px] flex-shrink-0"
       style={{ background: bgColor }}
     >
       <div>
-        <p className="text-[18px] font-bold leading-none font-['Inter']" style={{ color: titleColor }}>{title}</p>
+        <p className="text-[13px] sm:text-[18px] font-bold leading-tight font-['Inter']" style={{ color: titleColor }}>{title}</p>
       </div>
-      <div className="flex items-end justify-between mt-2">
-        <h3 className="text-[26px] font-bold leading-none font-['Inter']" style={{ color: valueColor }}>{value}</h3>
+      <div className="flex items-end justify-between mt-1 sm:mt-2">
+        <h3 className="text-[20px] sm:text-[26px] font-bold leading-none font-['Inter']" style={{ color: valueColor }}>{value}</h3>
         <div 
-          className="w-[33px] h-[33px] bg-white rounded-[9px] flex items-center justify-center shadow-sm text-center flex-shrink-0"
+          className="w-[28px] h-[28px] sm:w-[33px] sm:h-[33px] bg-white rounded-[9px] flex items-center justify-center shadow-sm text-center flex-shrink-0"
           style={{ color: titleColor }}
         >
           {icon}
