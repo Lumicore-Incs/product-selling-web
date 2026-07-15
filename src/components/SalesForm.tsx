@@ -163,67 +163,135 @@ export const SalesForm: React.FC<SalesFormProps> = ({
     let totalAmount = '';
     type ParsedQuickItem = { shortName: string; quantity: number };
     const parsedItems: ParsedQuickItem[] = [];
+    const unclassifiedLines: string[] = [];
 
     let isItemsSection = false;
 
     lines.forEach((line) => {
       const l = line.trim();
+      if (!l) return;
 
-      // Check if we're entering items section
-      if (/^items\s*[-:]/i.test(l)) {
+      // Explicit section headers
+      if (/^items\s*[-:]/i.test(l) || /^items$/i.test(l)) {
         isItemsSection = true;
         return;
       }
 
-      // Parse items (numbered list like "1. Fc - 2", "2. Bl - 3")
-      if (isItemsSection) {
-        const cleaned = l.replace(/^\d+\.\s*/, '').trim();
-        if (!cleaned) return;
-
-        const qtyMatch = cleaned.match(/^(.*?)[\s\-:]+(\d+)$/);
-        const shortName = (qtyMatch ? qtyMatch[1] : cleaned).trim();
-        const quantityValue = qtyMatch ? Number(qtyMatch[2]) : 1;
-        const quantity =
-          Number.isFinite(quantityValue) && quantityValue > 0 ? Math.trunc(quantityValue) : 1;
-
-        if (shortName) {
-          parsedItems.push({ shortName, quantity });
-        }
-        return;
-      }
-
+      // 1. Explicit Key-Value Matches (Old format)
       if (/^name\s*[-:]/i.test(l)) {
         name = l.split(/[-:]/).slice(1).join('-').trim();
+        return;
       }
-
       if (/^address\s*[-:]/i.test(l)) {
         address = l.split(/[-:]/).slice(1).join('-').trim();
+        return;
       }
-
-      // Phone no 1 / WhatsApp
       if (/phone\s*no\s*1/i.test(l) || /whatsapp/i.test(l)) {
-        const num = l.match(/\d{10}/); // 👈 EXACT 10 digits only
-        if (num) {
-          contact01 = num[0];
-        }
+        const num = l.match(/\d{10}/);
+        if (num) contact01 = num[0];
+        return;
       }
-
-      // Phone no 2 / Contact
       if (/phone\s*no\s*2/i.test(l) || /contact/i.test(l)) {
-        const num = l.match(/\d{10}/); // 👈 EXACT 10 digits only
-        if (num) {
-          contact02 = num[0];
-        }
+        const num = l.match(/\d{10}/);
+        if (num) contact02 = num[0];
+        return;
       }
-
-      // Total amount
       if (/^total\s*amount\s*[-:]/i.test(l)) {
         const amountMatch = l.match(/[-:]\s*(\d+(?:\.\d+)?)/);
         if (amountMatch) {
           totalAmount = amountMatch[1];
         }
+        return;
       }
+
+      // Clean line from bullet points (e.g., "1. vac-2" -> "vac-2")
+      const cleanedLine = l.replace(/^\d+\.\s*/, '').trim();
+      if (!cleanedLine) return;
+
+      // 2. Raw Phone Match (10 digits)
+      const phoneOnlyMatch = cleanedLine.replace(/[\s-]/g, '').match(/^0\d{9}$/);
+      if (phoneOnlyMatch) {
+        if (!contact01) contact01 = phoneOnlyMatch[0];
+        else if (!contact02) contact02 = phoneOnlyMatch[0];
+        return;
+      }
+
+      // 3. Raw Item Match
+      // Look for a known product or a format like "vac - 2" or "Se-2"
+      const qtyMatch = cleanedLine.match(/^(.*?)[\s\-:]+(\d+)$/);
+      if (qtyMatch || isItemsSection) {
+        let shortName = '';
+        let quantity = 1;
+
+        if (qtyMatch) {
+          shortName = qtyMatch[1].trim();
+          quantity = Number(qtyMatch[2]);
+        } else if (isItemsSection) {
+          shortName = cleanedLine;
+        }
+
+        if (shortName) {
+          // Verify if it's an item by checking products list or strict hyphen format
+          const isKnownProduct = products.some(p => p.shortName?.toLowerCase() === shortName.toLowerCase() || p.name?.toLowerCase() === shortName.toLowerCase());
+          const isStrictFormat = /^[a-zA-Z0-9_]+\s*[-:]\s*\d+$/.test(cleanedLine);
+
+          if (isItemsSection || isKnownProduct || isStrictFormat) {
+            parsedItems.push({ shortName, quantity: quantity > 0 ? quantity : 1 });
+            return;
+          }
+        }
+      }
+
+      // 4. Raw Total Amount Match (purely numeric, not caught as phone)
+      if (/^\d+(?:\.\d+)?$/.test(cleanedLine)) {
+        if (!totalAmount) {
+          totalAmount = cleanedLine;
+          return;
+        }
+      }
+
+      // 5. Unclassified Lines (Name or Address)
+      unclassifiedLines.push(cleanedLine);
     });
+
+    // Assign unclassified lines
+    if (unclassifiedLines.length > 0) {
+      if (!name && !address) {
+        // Try to intelligently distinguish name and address based on address keywords
+        const addressKeywords = /\b(street|st\.?|road|rd\.?|avenue|ave\.?|lane|mawatha|mw\.?|no\.?|colombo)\b/i;
+        const startsWithNumber = /^\d+[\/\-a-zA-Z]*\s+[a-zA-Z]/;
+        
+        let addressIndex = -1;
+        for (let i = 0; i < unclassifiedLines.length; i++) {
+          if (addressKeywords.test(unclassifiedLines[i]) || startsWithNumber.test(unclassifiedLines[i])) {
+            addressIndex = i;
+            break;
+          }
+        }
+
+        if (addressIndex !== -1) {
+          // We found a line that looks like an address
+          address = unclassifiedLines[addressIndex];
+          unclassifiedLines.splice(addressIndex, 1);
+          name = unclassifiedLines[0] || '';
+          
+          // If there are more unclassified lines, append them to the address
+          if (unclassifiedLines.length > 1) {
+            address += ', ' + unclassifiedLines.slice(1).join(', ');
+          }
+        } else {
+          // Fallback: first line is name, rest is address
+          name = unclassifiedLines[0];
+          if (unclassifiedLines.length > 1) {
+            address = unclassifiedLines.slice(1).join(', ');
+          }
+        }
+      } else if (!address) {
+        address = unclassifiedLines.join(', ');
+      } else if (!name) {
+        name = unclassifiedLines.join(' ');
+      }
+    }
 
     // Match item short names with products
     const matchedItems: SaleItem[] = [];
@@ -870,14 +938,13 @@ export const SalesForm: React.FC<SalesFormProps> = ({
                 value={customerInfoText}
                 onChange={(e) => setCustomerInfoText(e.target.value)}
                 className="w-full min-h-[100px] p-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 bg-slate-50/50"
-                placeholder="Name - John Doe
-Address - 123 Main St
-Phone no 1 - 0771234567
-Phone no 2 - 0112345678
-Total amount - 5000
-Items -
-1. vac-2
-2. Se-2"
+                placeholder="John Doe
+123 Main St, Colombo
+0771234567
+0112345678
+5000
+vac-2
+Se-2"
               />
               <div className="flex items-center gap-3 mt-1">
                 <button
@@ -895,7 +962,7 @@ Items -
                   Clear
                 </button>
               </div>
-              <p className="text-[11px] text-slate-500">Tip: Copy customer details from anywhere and paste above; include "- qty" after each item (e.g., "vac - 2") so quantities are captured.</p>
+              <p className="text-[11px] text-slate-500">Tip: Paste details directly without labels (Name, Address, Phones, Amount). The system auto-detects them! Include "- qty" after each item (e.g., "vac - 2").</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
