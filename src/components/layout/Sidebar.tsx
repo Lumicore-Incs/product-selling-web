@@ -289,7 +289,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             />
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center">
             <button
               onClick={onClose}
               className="p-1.5 text-[#0B818D] hover:opacity-80 transition md:hidden"

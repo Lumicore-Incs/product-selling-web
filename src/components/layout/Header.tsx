@@ -59,7 +59,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   };
 
   return (
-      <header className="w-full bg-transparent sticky top-0 z-50 border-b border-white">
+      <header className="w-full bg-transparent sticky top-0 border-b border-white">
 
       <div className="flex items-center justify-between gap-2 sm:gap-6 px-4 sm:px-8 py-5">
 

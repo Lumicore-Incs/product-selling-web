@@ -260,7 +260,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
         // Try to intelligently distinguish name and address based on address keywords
         const addressKeywords = /\b(street|st\.?|road|rd\.?|avenue|ave\.?|lane|mawatha|mw\.?|no\.?|colombo)\b/i;
         const startsWithNumber = /^\d+[\/\-a-zA-Z]*\s+[a-zA-Z]/;
-        
+
         let addressIndex = -1;
         for (let i = 0; i < unclassifiedLines.length; i++) {
           if (addressKeywords.test(unclassifiedLines[i]) || startsWithNumber.test(unclassifiedLines[i])) {
@@ -274,7 +274,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
           address = unclassifiedLines[addressIndex];
           unclassifiedLines.splice(addressIndex, 1);
           name = unclassifiedLines[0] || '';
-          
+
           // If there are more unclassified lines, append them to the address
           if (unclassifiedLines.length > 1) {
             address += ', ' + unclassifiedLines.slice(1).join(', ');
@@ -908,13 +908,13 @@ export const SalesForm: React.FC<SalesFormProps> = ({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => handleSearchCustomer(e.target.value)}
-                className="w-full bg-transparent focus:outline-none text-[13px] text-gray-700 placeholder-gray-400 font-medium"
+                className="p-2 w-full bg-transparent focus:outline-none text-[13px] text-gray-700 placeholder-gray-400 font-medium"
                 placeholder="Search existing customer by name, phone or WhatsApp..."
               />
             </div>
             <button
               type="button"
-              className="bg-[#0B818D] text-white px-6 rounded-full text-[13px] font-semibold flex items-center justify-center gap-2 hover:bg-[#096B75] transition-colors h-[46px] min-w-[150px]"
+              className="bg-[#0B818D]/70 text-white px-6 rounded-full text-[13px] font-semibold flex items-center justify-center gap-2 hover:bg-[#096B75] transition-colors h-[46px] min-w-[150px]"
             >
               <svg className="w-[18px] h-[18px]" fill="currentColor" viewBox="0 0 24 24"><path d="M16 21l-1.42-3.15L11.43 16.4l3.15-1.42L16 11.83l1.42 3.15 3.15 1.42-3.15 1.42zM7.5 15.5l-2.27-5.07L0 8.16l5.23-2.27L7.5 .82l2.27 5.07L15 8.16l-5.23 2.27z" /></svg>
               Generate Customer
@@ -962,7 +962,6 @@ Se-2"
                   Clear
                 </button>
               </div>
-              <p className="text-[11px] text-slate-500">Tip: Paste details directly without labels (Name, Address, Phones, Amount). The system auto-detects them! Include "- qty" after each item (e.g., "vac - 2").</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
@@ -1058,11 +1057,12 @@ Se-2"
           </div>
 
           {/* Products */}
-
-          <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex flex-col gap-4">
-            <div className="flex items-center justify-between mb-4">
+          {/* ================= PRODUCTS SECTION (Responsive) ================= */}
+          <div className="bg-white rounded-[24px] p-4 sm:p-6 shadow-sm border border-gray-100 flex flex-col gap-4">
+            {/* ---------- Header ---------- */}
+            <div className="flex items-center justify-between gap-3 mb-2 sm:mb-4">
               <h3 className="text-[#0B818D] font-semibold text-[15px] flex items-center gap-3">
-                <div className="w-[34px] h-[34px] bg-[#F0FDFA] rounded-full flex items-center justify-center text-[#0B818D]">
+                <div className="w-[34px] h-[34px] shrink-0 bg-[#F0FDFA] rounded-full flex items-center justify-center text-[#0B818D]">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
                   </svg>
@@ -1072,15 +1072,17 @@ Se-2"
               <button
                 type="button"
                 onClick={() => setShowProductSelector(true)}
-                className="bg-[#0B818D] text-white px-5 h-[38px] rounded-full text-[13px] font-semibold flex items-center justify-center gap-1.5 hover:bg-[#096B75] transition-colors"
+                className="bg-[#0B818D] text-white px-4 sm:px-5 h-[38px] shrink-0 rounded-full text-[13px] font-semibold flex items-center justify-center gap-1.5 hover:bg-[#096B75] transition-colors"
               >
                 <span className="text-lg leading-none mb-0.5">+</span> Add Product
               </button>
             </div>
 
-            <div className="w-full overflow-x-auto pb-4">
-              <table className="w-full text-left border-collapse min-w-[650px]">
-                <thead>
+            <div className="w-full md:overflow-x-auto pb-4">
+              {/* block on mobile -> real table from md up */}
+              <table className="w-full text-left border-collapse block md:table md:min-w-[650px]">
+                {/* Head is hidden on mobile — labels are rendered inside each cell instead */}
+                <thead className="hidden md:table-header-group">
                   <tr className="border-b-0">
                     <th className="pb-3 px-2 text-[11px] font-bold text-[#14B8A6] w-[30px]">#</th>
                     <th className="pb-3 px-2 text-[11px] font-bold text-[#14B8A6] min-w-[200px]">Product</th>
@@ -1091,20 +1093,30 @@ Se-2"
                     <th className="pb-3 px-2 text-[11px] font-bold text-[#14B8A6] w-[50px] text-center">Action</th>
                   </tr>
                 </thead>
-                <tbody className="space-y-3">
+
+                <tbody className="block md:table-row-group">
                   {formData.items.map((item, index) => (
-                    <tr key={`${item.productId}-${index}`} className="">
-                      <td className="py-3 px-2 text-[13px] text-[#14B8A6] font-semibold">{index + 1}</td>
-                      <td className="py-3 px-2">
-                        <div className="relative">
+                    <tr
+                      key={`${item.productId}-${index}`}
+                      className="block md:table-row mb-3 md:mb-0 rounded-[18px] md:rounded-none border border-[#D90000] md:border-0 bg-[#0D9488]/10 md:bg-transparent p-3 md:p-0"
+                    >
+                      {/* # */}
+                      <td className="block md:table-cell py-0 md:py-3 px-0 md:px-2 text-[13px] text-[#14B8A6] font-semibold">
+                        <span className="md:hidden text-[11px] font-bold uppercase tracking-wide">Item {index + 1}</span>
+                        <span className="hidden md:inline">{index + 1}</span>
+                      </td>
+
+                      {/* Product */}
+                      <td className="flex items-center justify-between gap-3 md:table-cell py-2.5 md:py-3 px-0 md:px-2 border-t border-[#BFF0EC]/60 md:border-0 mt-2 md:mt-0 pt-3 md:pt-3">
+                        <span className="md:hidden text-[11px] font-bold text-[#14B8A6] shrink-0">Product</span>
+                        <div className="relative flex-1 min-w-0 max-w-[62%] md:max-w-none">
                           <select
                             value={item.productId}
                             onChange={(_e) => {
                               // Custom logic to update the product inline
-                              // (Since SalesForm original logic has handleAddProduct, we just display it as select but they have to use popup if we don't change state logic)
                             }}
                             disabled
-                            className="w-full h-[40px] px-3.5 border border-[#BFF0EC] rounded-[14px] text-[13px] text-[#0B818D] bg-white appearance-none pr-8 focus:outline-none"
+                            className="w-full h-[40px] px-3.5 border border-[#BFF0EC] rounded-[14px] text-[13px] text-[#0B818D] bg-white appearance-none pr-8 focus:outline-none truncate"
                           >
                             <option value={item.productId}>{item.productName}</option>
                           </select>
@@ -1113,8 +1125,11 @@ Se-2"
                           </div>
                         </div>
                       </td>
-                      <td className="py-3 px-2">
-                        <div className="flex items-center w-[96px] h-[40px] bg-white border border-[#BFF0EC] rounded-[14px] overflow-hidden">
+
+                      {/* Quantity */}
+                      <td className="flex items-center justify-between gap-3 md:table-cell py-2.5 md:py-3 px-0 md:px-2">
+                        <span className="md:hidden text-[11px] font-bold text-[#14B8A6] shrink-0">Quantity</span>
+                        <div className="flex items-center w-[96px] h-[40px] shrink-0 bg-white border border-[#BFF0EC] rounded-[14px] overflow-hidden">
                           <button
                             type="button"
                             onClick={() => handleUpdateItemQuantity(item.productId, Math.max(1, item.qty - 1))}
@@ -1137,32 +1152,44 @@ Se-2"
                           </button>
                         </div>
                       </td>
-                      <td className="py-3 px-2">
+
+                      {/* Unit Price */}
+                      <td className="flex items-center justify-between gap-3 md:table-cell py-2.5 md:py-3 px-0 md:px-2">
+                        <span className="md:hidden text-[11px] font-bold text-[#14B8A6] shrink-0">Unit Price (Rs.)</span>
                         <input
                           type="number"
                           value={item.price}
                           onChange={(e) => handleUpdateItemPrice(item.productId, parseFloat(e.target.value) || 0)}
-                          className="w-[85px] h-[40px] px-3 border border-[#BFF0EC] rounded-[14px] text-[13px] text-[#0B818D] bg-white focus:outline-none"
+                          className="w-[96px] md:w-[85px] h-[40px] px-3 border border-[#BFF0EC] rounded-[14px] text-[13px] text-[#0B818D] bg-white focus:outline-none"
                         />
                       </td>
-                      <td className="py-3 px-2">
+
+                      {/* Discount */}
+                      <td className="flex items-center justify-between gap-3 md:table-cell py-2.5 md:py-3 px-0 md:px-2">
+                        <span className="md:hidden text-[11px] font-bold text-[#14B8A6] shrink-0">Discount (Rs.)</span>
                         <input
                           type="number"
                           value="0"
                           readOnly
-                          className="w-[75px] h-[40px] px-3 border border-[#BFF0EC] rounded-[14px] text-[13px] text-[#0B818D] bg-white focus:outline-none"
+                          className="w-[96px] md:w-[75px] h-[40px] px-3 border border-[#BFF0EC] rounded-[14px] text-[13px] text-[#0B818D] bg-white focus:outline-none"
                         />
                       </td>
-                      <td className="py-3 px-2">
+
+                      {/* Total */}
+                      <td className="flex items-center justify-between gap-3 md:table-cell py-2.5 md:py-3 px-0 md:px-2">
+                        <span className="md:hidden text-[11px] font-bold text-[#14B8A6] shrink-0">Total (Rs.)</span>
                         <span className="text-[13px] text-[#0B818D] font-bold">
                           {calculateItemTotal(item).toFixed(2)}
                         </span>
                       </td>
-                      <td className="py-3 px-2 text-center">
+
+                      {/* Action */}
+                      <td className="flex items-center justify-between gap-3 md:table-cell py-2.5 md:py-3 px-0 md:px-2 md:text-center">
+                        <span className="md:hidden text-[11px] font-bold text-[#14B8A6] shrink-0">Action</span>
                         <button
                           type="button"
                           onClick={() => handleRemoveProduct(item.productId)}
-                          className="w-[34px] h-[34px] mx-auto flex items-center justify-center text-[#F43F5E] bg-[#FFF1F2] rounded-xl hover:bg-rose-100 transition-colors"
+                          className="w-[34px] h-[34px] md:mx-auto flex items-center justify-center text-[#F43F5E] bg-[#FFF1F2] rounded-xl hover:bg-rose-100 transition-colors"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                         </button>
@@ -1170,12 +1197,17 @@ Se-2"
                     </tr>
                   ))}
 
-                  {/* Inline popup for adding new product */}
+                  {/* ---------- Inline popup for adding new product ---------- */}
                   {showProductSelector && (
-                    <tr>
-                      <td className="py-3 px-2 text-[13px] text-[#14B8A6] font-semibold">{formData.items.length + 1}</td>
-                      <td className="py-3 px-2">
-                        <div className="relative">
+                    <tr className="block md:table-row mb-3 md:mb-0 rounded-[18px] md:rounded-none border border-dashed border-[#BFF0EC] md:border-0 bg-[#F0FDFA]/40 md:bg-transparent p-3 md:p-0">
+                      <td className="block md:table-cell py-0 md:py-3 px-0 md:px-2 text-[13px] text-[#14B8A6] font-semibold">
+                        <span className="md:hidden text-[11px] font-bold uppercase tracking-wide">New item {formData.items.length + 1}</span>
+                        <span className="hidden md:inline">{formData.items.length + 1}</span>
+                      </td>
+
+                      <td className="flex items-center justify-between gap-3 md:table-cell py-2.5 md:py-3 px-0 md:px-2 border-t border-[#BFF0EC]/60 md:border-0 mt-2 md:mt-0 pt-3 md:pt-3">
+                        <span className="md:hidden text-[11px] font-bold text-[#14B8A6] shrink-0">Product</span>
+                        <div className="relative flex-1 min-w-0 max-w-[62%] md:max-w-none">
                           <select
                             value={selectedProductId}
                             onChange={(e) => setSelectedProductId(e.target.value)}
@@ -1193,8 +1225,10 @@ Se-2"
                           </div>
                         </div>
                       </td>
-                      <td className="py-3 px-2">
-                        <div className="flex items-center w-[96px] h-[40px] bg-white border border-[#BFF0EC] rounded-[14px] overflow-hidden">
+
+                      <td className="flex items-center justify-between gap-3 md:table-cell py-2.5 md:py-3 px-0 md:px-2">
+                        <span className="md:hidden text-[11px] font-bold text-[#14B8A6] shrink-0">Quantity</span>
+                        <div className="flex items-center w-[96px] h-[40px] shrink-0 bg-white border border-[#BFF0EC] rounded-[14px] overflow-hidden">
                           <button
                             type="button"
                             onClick={() => setSelectedProductQuantity(String(Math.max(1, (parseInt(selectedProductQuantity) || 1) - 1)))}
@@ -1217,27 +1251,48 @@ Se-2"
                           </button>
                         </div>
                       </td>
-                      <td colSpan={4} className="py-3 px-2">
+
+                      {/* colSpan only matters from md up; on mobile this is a block */}
+                      <td colSpan={4} className="block md:table-cell py-2.5 md:py-3 px-0 md:px-2">
                         <div className="flex gap-2">
-                          <button type="button" onClick={handleAddProduct} disabled={!selectedProductId} className="h-[40px] px-4 bg-[#0B818D] text-white rounded-[14px] text-[12px] font-semibold">Add</button>
-                          <button type="button" onClick={() => setShowProductSelector(false)} className="h-[40px] px-4 bg-gray-100 text-gray-600 rounded-[14px] text-[12px] font-semibold">Cancel</button>
+                          <button
+                            type="button"
+                            onClick={handleAddProduct}
+                            disabled={!selectedProductId}
+                            className="flex-1 md:flex-none h-[40px] px-4 bg-[#0B818D] text-white rounded-[14px] text-[12px] font-semibold disabled:opacity-50"
+                          >
+                            Add
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setShowProductSelector(false)}
+                            className="flex-1 md:flex-none h-[40px] px-4 bg-gray-100 text-gray-600 rounded-[14px] text-[12px] font-semibold"
+                          >
+                            Cancel
+                          </button>
                         </div>
                       </td>
                     </tr>
                   )}
                 </tbody>
               </table>
+
               <div className="mt-2">
-                <button type="button" className="text-[#0B818D] text-[13px] font-semibold flex items-center gap-1.5 hover:opacity-80" onClick={() => setShowProductSelector(true)}>
+                <button
+                  type="button"
+                  className="text-[#0B818D] text-[13px] font-semibold flex items-center gap-1.5 hover:opacity-80"
+                  onClick={() => setShowProductSelector(true)}
+                >
                   <span className="text-lg leading-none mb-0.5">+</span> Add another product
                 </button>
               </div>
-              {/* Action Buttons */}
-              <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 mt-4 pt-4 border-t border-gray-100">
+
+              {/* ---------- Action Buttons ---------- */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mt-4 pt-4 border-t border-gray-100">
                 <button
                   type="submit"
                   disabled={isLoading || isSaveDisabled}
-                  className="flex-1 h-[38px] bg-[#4ade80] text-white rounded-[10px] font-medium text-[13px] flex items-center justify-center gap-1.5 hover:bg-[#3bc06c] transition-colors disabled:opacity-50"
+                  className="p-2 flex-1 h-[38px] bg-[#4ade80] text-white rounded-[10px] font-medium text-[13px] flex items-center justify-center gap-1.5 hover:bg-[#3bc06c] transition-colors "
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></polyline><polyline points="7 3 7 8 15 8" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></polyline></svg>
                   {isLoading ? 'Saving...' : (isEditing ? 'Update Sale' : 'Save Sale')}
@@ -1246,23 +1301,15 @@ Se-2"
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="flex-1 h-[38px] bg-[#ef4444] text-white rounded-[10px] font-medium text-[13px] flex items-center justify-center gap-1.5 hover:bg-[#dc2626] transition-colors"
+                  className="p-2 flex-1 h-[38px] bg-[#ef4444] text-white rounded-[10px] font-medium text-[13px] flex items-center justify-center gap-1.5 hover:bg-[#dc2626] transition-colors"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                   Clear Form
                 </button>
-
-                {/* <button
-                  type="button"
-                  onClick={fillSampleData}
-                  className="flex-1 h-[38px] bg-[#eab308] text-white rounded-[10px] font-medium text-[13px] flex items-center justify-center gap-1.5 hover:bg-[#ca8a04] transition-colors"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                  Fill Sample
-                </button> */}
               </div>
             </div>
           </div>
+
 
         </div>
 
