@@ -143,7 +143,6 @@ const StatCard = ({ icon: Icon, label, value, accentColor = 'teal' }: StatCardPr
 // ─── Dashboard ───────────────────────────────────────────────────────────────
 
 export const Dashboard = () => {
-  const { addNotification } = useNotification();
 
   const [stats, setStats] = useState({
     total_order: '0',
@@ -161,7 +160,6 @@ export const Dashboard = () => {
 
   const [sales, setSales] = useState<Sale[]>([]);
   const [salesLoading, setSalesLoading] = useState(true);
-  const [salesError, setSalesError] = useState('');
   const [showTodayOnly, setShowTodayOnly] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
@@ -501,11 +499,6 @@ export const Dashboard = () => {
 
         {/* Table area */}
         <div className="p-2">
-          {salesError && (
-            <p className="text-red-500 text-center py-10 text-sm">{salesError}</p>
-          )}
-
-          {!salesError && (
             <SalesTable
               sales={sales}
               isLoading={salesLoading}
@@ -531,7 +524,7 @@ export const Dashboard = () => {
                 pageSize,
                 total: totalCount,
                 totalPages,
-                pageSizeOptions: [5, 10, 20],
+                pageSizeOptions: [10, 20, 50, 100],
                 onPrev: () => setCurrentPage((p) => Math.max(0, p - 1)),
                 onNext: () => setCurrentPage((p) => Math.min(totalPages - 1, p + 1)),
                 onPageSizeChange: (size) => {
@@ -540,7 +533,6 @@ export const Dashboard = () => {
                 },
               }}
             />
-          )}
         </div>
       </div>
     </div>

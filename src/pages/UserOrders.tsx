@@ -141,31 +141,33 @@ export const UserOrders = () => {
       <div className="relative max-w-7xl mx-auto z-10 space-y-6">
         {/* Modern Compact Header (Frame 40) */}
         <div 
-          className="relative flex flex-col md:flex-row md:items-center justify-between min-h-[96px] md:h-[96px] p-6 md:p-0 md:px-8 rounded-[35px] border border-white/80 shadow-[0_0_31px_rgba(255,255,255,0.25)] bg-white/40 backdrop-blur-xl gap-4 md:gap-0"
+          className="relative flex flex-col md:flex-row md:items-center justify-between min-h-[96px] p-6 md:p-4 md:px-8 rounded-[35px] border border-white/80 shadow-[0_0_31px_rgba(255,255,255,0.25)] bg-white/40 backdrop-blur-xl gap-4 md:gap-6"
         >
-          {/* ChatGPT Image Apr 24, 2026, 01_10_57 AM 1 */}
-          <div className="hidden md:block absolute left-[38px] top-[-22px] w-[128px] h-[105px]">
-            <img 
-              src={new URL('../assets/dashboard_analytics.png', import.meta.url).href} 
-              alt="Analytics Illustration" 
-              className="w-[128px] h-[105px] object-contain"
-            />
-          </div>
+          <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6 w-full">
+            {/* ChatGPT Image Apr 24, 2026, 01_10_57 AM 1 */}
+            <div className="hidden md:block w-[128px] h-[105px] flex-shrink-0 -mt-8 relative z-10">
+              <img 
+                src={new URL('../assets/dashboard_analytics.png', import.meta.url).href} 
+                alt="Analytics Illustration" 
+                className="w-full h-full object-contain drop-shadow-md"
+              />
+            </div>
 
-          {/* Heading Text Group */}
-          <div className="md:pl-[159px] flex flex-col justify-center">
-            <h1 className="text-[28px] font-extrabold leading-[35px] bg-gradient-to-r from-[#004D55] to-[#16A1AF] bg-clip-text text-transparent font-['Plus_Jakarta_Sans']">
-              Analytics Dashboard
-            </h1>
-            <p className="text-[14px] font-bold text-[#868686] font-['Plus_Jakarta_Sans'] mt-1">
-              Real-time user performance metrics
-            </p>
+            {/* Heading Text Group */}
+            <div className="flex flex-col justify-center text-center md:text-left z-10">
+              <h1 className="text-[28px] font-extrabold leading-[35px] bg-gradient-to-r from-[#004D55] to-[#16A1AF] bg-clip-text text-transparent font-['Plus_Jakarta_Sans']">
+                Analytics Dashboard
+              </h1>
+              <p className="text-[14px] font-bold text-[#868686] font-['Plus_Jakarta_Sans'] mt-1">
+                Real-time user performance metrics
+              </p>
+            </div>
           </div>
 
           {/* Add Settlement Button */}
           <button
             onClick={() => setIsPaymentModalOpen(true)}
-            className="w-[151px] h-[42px] bg-[#0B818D] hover:bg-[#096B75] text-white rounded-[10px] font-medium flex items-center justify-center flex-shrink-0 transition-all shadow-md font-['Inter'] text-[16px] leading-[19px]"
+            className="w-[151px] h-[42px] bg-[#0B818D] hover:bg-[#096B75] text-white rounded-[10px] font-medium flex items-center justify-center flex-shrink-0 transition-all shadow-md font-['Inter'] text-[16px] leading-[19px] z-10"
           >
             + Add settlement
           </button>
@@ -174,7 +176,7 @@ export const UserOrders = () => {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* User List Sidebar (Frame 41) */}
           <div className="lg:col-span-1 flex flex-col gap-4 lg:w-[296px] w-full flex-shrink-0">
-            <div className="bg-white/40 backdrop-blur-xl rounded-[35px] shadow-[0_0_27px_rgba(0,0,0,0.06)] p-6 border border-white/60 min-h-[478px]">
+            <div className="bg-white/40 backdrop-blur-xl rounded-[35px] shadow-[0_0_27px_rgba(0,0,0,0.06)] p-6 border border-white/60 lg:min-h-[478px] min-h-[auto]">
               <div className="flex items-center justify-between mb-4 px-1">
                 <h2 className="text-[20px] font-semibold text-[#000000] font-['Inter']">User Directory</h2>
                 <div className="w-6 h-6 flex items-center justify-center text-black">
@@ -194,7 +196,7 @@ export const UserOrders = () => {
                 />
               </div>
 
-              <div className="space-y-2 max-h-[55vh] overflow-y-auto pr-1 custom-scrollbar">
+              <div className="space-y-2 max-h-[30vh] lg:max-h-[55vh] overflow-y-auto pr-1 custom-scrollbar">
                 {filteredDirectoryUsers.map(user => {
                   const isSelected = selectedUserId === user.id;
                   return (
@@ -370,16 +372,16 @@ const StatCard = ({
 }) => {
   return (
     <div 
-      className="p-3 sm:p-[18px] rounded-[16px] sm:rounded-[21px] flex flex-col justify-between h-[85px] sm:h-[93px] md:h-[95px] border border-white/40 shadow-sm relative overflow-hidden backdrop-blur-md transition-all duration-300 hover:scale-[1.02] w-full md:w-[188px] flex-shrink-0"
+      className="p-3 sm:p-4 rounded-[16px] sm:rounded-[21px] flex flex-col justify-between min-h-[95px] h-auto border border-white/40 shadow-sm relative overflow-hidden backdrop-blur-md transition-all duration-300 hover:scale-[1.02] w-full"
       style={{ background: bgColor }}
     >
       <div>
-        <p className="text-[13px] sm:text-[18px] font-bold leading-tight font-['Inter']" style={{ color: titleColor }}>{title}</p>
+        <p className="text-[13px] sm:text-[15px] lg:text-[16px] font-bold leading-tight font-['Inter']" style={{ color: titleColor }}>{title}</p>
       </div>
-      <div className="flex items-end justify-between mt-1 sm:mt-2">
-        <h3 className="text-[20px] sm:text-[26px] font-bold leading-none font-['Inter']" style={{ color: valueColor }}>{value}</h3>
+      <div className="flex items-end justify-between mt-2 sm:mt-3">
+        <h3 className="text-[20px] sm:text-[24px] lg:text-[26px] font-bold leading-none font-['Inter'] truncate pr-2" style={{ color: valueColor }}>{value}</h3>
         <div 
-          className="w-[28px] h-[28px] sm:w-[33px] sm:h-[33px] bg-white rounded-[9px] flex items-center justify-center shadow-sm text-center flex-shrink-0"
+          className="w-[28px] h-[28px] sm:w-[32px] sm:h-[32px] bg-white rounded-[9px] flex items-center justify-center shadow-sm text-center flex-shrink-0"
           style={{ color: titleColor }}
         >
           {icon}
