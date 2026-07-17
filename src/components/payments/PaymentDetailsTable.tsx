@@ -112,13 +112,13 @@ export const PaymentDetailsTable: React.FC<PaymentDetailsTableProps> = ({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between px-2">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-2 gap-3 sm:gap-0">
         <h3 className="text-[18px] font-medium text-[#323232] flex items-center gap-2 font-['Inter']">
           <Receipt className="w-[20px] h-[20px] text-[#323232]" />
           Payment Settlements
         </h3>
         
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
           {showSuccess && (
             <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest animate-in fade-in slide-in-from-right-2 duration-300">
               Updated just now
