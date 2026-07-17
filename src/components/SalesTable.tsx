@@ -329,6 +329,32 @@ export const SalesTable: React.FC<SalesTableProps> = ({
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
+            {/* Page Size Selector */}
+            {serverPagination && (
+              <div className="relative">
+                <select
+                  value={serverPagination.pageSize}
+                  onChange={(e) => serverPagination.onPageSizeChange(Number(e.target.value))}
+                  className="appearance-none text-sm cursor-pointer focus:outline-none"
+                  style={{
+                    background: 'rgba(255,255,255,0.15)',
+                    border: '1px solid rgba(255,255,255,0.25)',
+                    borderRadius: '10px',
+                    padding: '6px 28px 6px 12px',
+                    color: '#fff',
+                  }}
+                >
+                  {serverPagination.pageSizeOptions.map((size) => (
+                    <option key={size} value={size} style={{ color: '#000' }}>
+                      {size} rows
+                    </option>
+                  ))}
+                  <option value="999999" style={{ color: '#000' }}>All rows</option>
+                </select>
+                <ChevronDownIcon className="absolute right-2 top-2.5 w-4 h-4 text-white pointer-events-none" />
+              </div>
+            )}
+
             <div className="relative flex-1 sm:flex-none sm:w-72">
               <SearchIcon className="absolute left-3 top-2.5 w-4 h-4 text-white" />
               <input
