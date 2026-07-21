@@ -363,16 +363,16 @@ export const ExportOrder = () => {
                   {product.name}
                 </button>
               ))}
-              <button
+              {/* <button
                 type="button"
                 onClick={() => handleFilterClick('import', 'Import', 'import')}
-                className={`px-3 py-2 rounded-full text-sm font-medium border transition-all duration-200 ${selectedProductId === 'import'
+                className={` px-3 py-2 rounded-full text-sm font-medium border transition-all duration-200 ${selectedProductId === 'import'
                     ? 'bg-[#16a34a] text-white border-emerald-600'
                     : 'bg-[#d1fae5] text-emerald-900 border-emerald-200 hover:bg-emerald-50'
                   }`}
               >
                 Import
-              </button>
+              </button> */}
             </div>
           </div>
 
