@@ -24,8 +24,9 @@ function toMonthKey(date: Date) {
 /* ==================== Main Component ==================== */
 export const SalesSummary = () => {
   const now = new Date();
+  const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-  const [selectedMonth, setSelectedMonth] = useState<string>(toMonthKey(nextMonth));
+  const [selectedMonth, setSelectedMonth] = useState<string>(toMonthKey(currentMonth));
   const [users, setUsers] = useState<User[]>([]);
   const [summary, setSummary] = useState<UserSummaryResponse | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
@@ -33,6 +34,7 @@ export const SalesSummary = () => {
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [sortDir, setSortDir] = useState<'desc' | 'asc'>('desc');
+  const [sortBy, setSortBy] = useState<'qty' | 'date'>('qty');
 
   /* ---- load users on mount ---- */
   useEffect(() => {
@@ -91,11 +93,17 @@ export const SalesSummary = () => {
   /* ---- summary items for right panel, sorted ---- */
   const displayedItems = useMemo(() => {
     if (!summary?.summery) return [];
-    const sorted = [...summary.summery].sort((a, b) =>
-      sortDir === 'desc' ? (b.qty ?? 0) - (a.qty ?? 0) : (a.qty ?? 0) - (b.qty ?? 0),
-    );
+    const sorted = [...summary.summery].sort((a, b) => {
+      if (sortBy === 'qty') {
+        return sortDir === 'desc' ? (b.qty ?? 0) - (a.qty ?? 0) : (a.qty ?? 0) - (b.qty ?? 0);
+      } else {
+        const dateA = new Date(a.date || 0).getTime();
+        const dateB = new Date(b.date || 0).getTime();
+        return sortDir === 'desc' ? dateB - dateA : dateA - dateB;
+      }
+    });
     return sorted;
-  }, [summary, sortDir]);
+  }, [summary, sortDir, sortBy]);
 
   /* ---- month label ---- */
   const monthLabel = useMemo(() => {
@@ -315,14 +323,41 @@ export const SalesSummary = () => {
                         </span>
                       )}
                     </h3>
-                    {/* Sort toggle */}
-                    <button
-                      onClick={() => setSortDir((d) => (d === 'desc' ? 'asc' : 'desc'))}
-                      className="flex items-center gap-1.5 text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition"
-                    >
-                      Qty
-                      {sortDir === 'desc' ? <ArrowDown size={13} /> : <ArrowUp size={13} />}
-                    </button>
+                    {/* Sort toggles */}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          if (sortBy === 'date') setSortDir((d) => (d === 'desc' ? 'asc' : 'desc'));
+                          else { setSortBy('date'); setSortDir('desc'); }
+                        }}
+                        className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition ${
+                          sortBy === 'date'
+                            ? 'text-indigo-600 bg-indigo-50 hover:bg-indigo-100'
+                            : 'text-gray-500 hover:bg-gray-100'
+                        }`}
+                      >
+                        Date
+                        {sortBy === 'date' && (
+                          sortDir === 'desc' ? <ArrowDown size={13} /> : <ArrowUp size={13} />
+                        )}
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (sortBy === 'qty') setSortDir((d) => (d === 'desc' ? 'asc' : 'desc'));
+                          else { setSortBy('qty'); setSortDir('desc'); }
+                        }}
+                        className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition ${
+                          sortBy === 'qty'
+                            ? 'text-indigo-600 bg-indigo-50 hover:bg-indigo-100'
+                            : 'text-gray-500 hover:bg-gray-100'
+                        }`}
+                      >
+                        Qty
+                        {sortBy === 'qty' && (
+                          sortDir === 'desc' ? <ArrowDown size={13} /> : <ArrowUp size={13} />
+                        )}
+                      </button>
+                    </div>
                   </div>
 
                   <div className="overflow-x-auto">

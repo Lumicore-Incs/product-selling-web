@@ -45,7 +45,6 @@ const getNavItems = (userRole: string): NavItem[] => {
   // USER Specific items
   if (isUser) {
     items.push({ icon: FileUp, label: 'Add New Order', to: '/sale', end: true });
-    items.push({ icon: Copy, label: 'Duplicate Orders', to: '/sale/duplicate' });
   }
 
   // SUPER USER Specific items
