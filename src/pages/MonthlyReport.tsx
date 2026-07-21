@@ -40,8 +40,9 @@ function sortByDate(data: MonthlyOrderData[]): MonthlyOrderData[] {
 
 export const MonthlyReport = () => {
   const now = new Date();
+  const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-  const [selectedMonth, setSelectedMonth] = useState<string>(toMonthKey(nextMonth));
+  const [selectedMonth, setSelectedMonth] = useState<string>(toMonthKey(currentMonth));
   const [users, setUsers] = useState<User[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -49,6 +50,7 @@ export const MonthlyReport = () => {
   const [monthlyData, setMonthlyData] = useState<MonthlyOrderData[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<'desc' | 'asc'>('desc');
+  const [sortBy, setSortBy] = useState<'qty' | 'date'>('date');
   const [dateFilter, setDateFilter] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
@@ -152,12 +154,18 @@ export const MonthlyReport = () => {
     if (dateFilter) {
       filtered = filtered.filter((d) => d.date.includes(dateFilter));
     }
-    // Primary sort: always by date asc, secondary: user-chosen order by totalOrders
-    const byDate = sortByDate(filtered);
-    return sortDir === 'desc'
-      ? [...byDate].sort((a, b) => b.totalOrders - a.totalOrders)
-      : [...byDate].sort((a, b) => a.totalOrders - b.totalOrders);
-  }, [monthlyData, dateFilter, sortDir]);
+    if (sortBy === 'qty') {
+      return [...filtered].sort((a, b) =>
+        sortDir === 'desc' ? b.totalOrders - a.totalOrders : a.totalOrders - b.totalOrders
+      );
+    } else {
+      return [...filtered].sort((a, b) => {
+        const dateA = new Date(a.date).getTime();
+        const dateB = new Date(b.date).getTime();
+        return sortDir === 'desc' ? dateB - dateA : dateA - dateB;
+      });
+    }
+  }, [monthlyData, dateFilter, sortDir, sortBy]);
 
   /* ==================== RENDER ==================== */
   return (
@@ -575,21 +583,56 @@ export const MonthlyReport = () => {
                   <div className="px-4 sm:px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <h3 className="text-sm font-bold text-gray-900">Monthly Order Breakdown</h3>
                     <div className="flex items-center gap-2">
-                      <input
-                        type="date"
-                        value={dateFilter}
-                        onChange={(e) => setDateFilter(e.target.value)}
-                        className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 w-full sm:w-auto"
-                        placeholder="Filter by date"
-                      />
-                      {dateFilter && (
-                        <button
-                          onClick={() => setDateFilter('')}
-                          className="text-xs text-gray-400 hover:text-gray-600 transition px-2 py-1.5 border border-gray-200 rounded-lg"
-                        >
-                          Clear
-                        </button>
-                      )}
+                      <button
+                        onClick={() => {
+                          if (sortBy === 'date') setSortDir((d) => (d === 'desc' ? 'asc' : 'desc'));
+                          else { setSortBy('date'); setSortDir('desc'); }
+                        }}
+                        className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition ${
+                          sortBy === 'date'
+                            ? 'text-indigo-600 bg-indigo-50 hover:bg-indigo-100'
+                            : 'text-gray-500 hover:bg-gray-100'
+                        }`}
+                      >
+                        Date
+                        {sortBy === 'date' && (
+                          sortDir === 'desc' ? <ArrowDown size={13} /> : <ArrowUp size={13} />
+                        )}
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (sortBy === 'qty') setSortDir((d) => (d === 'desc' ? 'asc' : 'desc'));
+                          else { setSortBy('qty'); setSortDir('desc'); }
+                        }}
+                        className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition ${
+                          sortBy === 'qty'
+                            ? 'text-indigo-600 bg-indigo-50 hover:bg-indigo-100'
+                            : 'text-gray-500 hover:bg-gray-100'
+                        }`}
+                      >
+                        Qty
+                        {sortBy === 'qty' && (
+                          sortDir === 'desc' ? <ArrowDown size={13} /> : <ArrowUp size={13} />
+                        )}
+                      </button>
+                      
+                      <div className="flex items-center gap-2 ml-1 sm:ml-2 border-l border-gray-200 pl-2 sm:pl-3">
+                        <input
+                          type="date"
+                          value={dateFilter}
+                          onChange={(e) => setDateFilter(e.target.value)}
+                          className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 w-full sm:w-auto"
+                          placeholder="Filter by date"
+                        />
+                        {dateFilter && (
+                          <button
+                            onClick={() => setDateFilter('')}
+                            className="text-xs text-gray-400 hover:text-gray-600 transition px-2 py-1.5 border border-gray-200 rounded-lg"
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
 
