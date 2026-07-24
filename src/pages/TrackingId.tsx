@@ -135,12 +135,12 @@ export const TrackingId: React.FC = () => {
           <table className="min-w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-4 py-5 text-left text-xs font-bold uppercase tracking-wider flex items-center justify-center">Order Date</th>
-                <th className="px-4 py-5 text-left text-xs font-bold uppercase tracking-wider">Waybill Id</th>
-                <th className="px-4 py-5 text-left text-xs font-bold uppercase tracking-wider">Order ID</th>
-                <th className="px-4 py-5 text-left text-xs font-bold uppercase tracking-wider flex items-center justify-center">Customer Name</th>
-                <th className="px-4 py-5 text-left text-xs font-bold uppercase tracking-wider">Phone Number</th>
-                <th className="px-4 py-5 text-left text-xs font-bold uppercase tracking-wider">Status</th>
+                <th className="px-4 py-5 text-left text-sm font-medium text-gray-700 whitespace-nowrap">Order Date</th>
+                <th className="px-4 py-5 text-left text-sm font-medium text-gray-700 whitespace-nowrap">Waybill Id</th>
+                <th className="px-4 py-5 text-left text-sm font-medium text-gray-700 whitespace-nowrap">Order Id</th>
+                <th className="px-4 py-5 text-left text-sm font-medium text-gray-700 whitespace-nowrap">Customer Name</th>
+                <th className="px-4 py-5 text-left text-sm font-medium text-gray-700 whitespace-nowrap">Phone Number</th>
+                <th className="px-4 py-5 text-left text-sm font-medium text-gray-700 whitespace-nowrap">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
