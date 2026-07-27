@@ -59,7 +59,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   };
 
   return (
-      <header className="w-full bg-transparent sticky top-0 border-b border-white">
+      <header className="w-full bg-transparent sticky top-0 border-b border-white z-50">
 
       <div className="flex items-center justify-between gap-2 sm:gap-6 px-4 sm:px-8 py-5">
 
@@ -112,8 +112,8 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
 
             {/* DROPDOWN */}
             <div
-              className={`absolute -right-14 sm:right-0 mt-3 w-[300px] sm:w-96 bg-white rounded-2xl shadow-2xl border p-4 z-50 max-h-96 overflow-y-auto ${
-                showNotifications ? 'opacity-100 visible' : 'opacity-0 invisible'
+              className={`absolute -right-12 sm:right-0 mt-3 w-[280px] sm:w-96 bg-white rounded-2xl shadow-2xl border p-4 z-50 max-h-96 overflow-y-auto transition-all transform origin-top-right ${
+                showNotifications ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'
               }`}
             >
               {notifications.length === 0 ? (

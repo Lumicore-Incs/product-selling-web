@@ -498,7 +498,7 @@ export const MonthlyReport = () => {
 
                     {/* ---- DESKTOP chart: vertical bars ---- */}
                     <div className="hidden sm:block h-72 sm:h-80">
-                      <div className="h-full flex items-end justify-between gap-1 px-1">
+                      <div className="h-full flex items-stretch justify-between gap-1 px-1">
                         {(() => {
                           const maxCount = Math.max(...chartData.map((d) => d.totalItems), 1);
                           return chartData.map((item, idx) => {
@@ -511,23 +511,23 @@ export const MonthlyReport = () => {
                             return (
                               <div
                                 key={idx}
-                                className="flex-1 flex flex-col items-center justify-end gap-1 group"
+                                className="flex-1 h-full flex flex-col items-center justify-end group"
                                 title={`${item.date}: ${item.totalItems} items`}
                               >
-                                <div className="relative w-full h-full flex flex-col justify-end">
+                                <div className="relative w-full flex-1 flex flex-col justify-end">
                                   <div
-                                    className="w-full bg-gradient-to-t from-purple-500 to-purple-400 rounded-t-lg transition-all duration-300 hover:from-purple-600 hover:to-purple-500 cursor-pointer shadow-sm"
+                                    className="w-full bg-gradient-to-t from-purple-500 to-purple-400 rounded-t-lg transition-all duration-500 hover:from-purple-600 hover:to-purple-500 cursor-pointer shadow-sm"
                                     style={{
                                       height: `${heightPercent}%`,
                                       minHeight: heightPercent > 0 ? '3px' : '0',
                                     }}
                                   >
-                                    <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                                    <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
                                       {item.totalItems}
                                     </div>
                                   </div>
                                 </div>
-                                <p className="text-[10px] text-gray-500 text-center truncate w-full">
+                                <p className="text-[10px] text-gray-500 text-center truncate w-full mt-1 shrink-0">
                                   {dateStr}
                                 </p>
                               </div>
