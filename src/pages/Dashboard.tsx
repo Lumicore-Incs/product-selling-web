@@ -2,12 +2,12 @@ import { Briefcase, ShoppingBag, Truck, XCircle, Loader } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertSnackbar } from '../components/AlertSnackbar';
 import { BackgroundIcons } from '../components/BackgroundIcons';
+import { DashboardCharts } from '../components/DashboardCharts';
 import { SalesTable } from '../components/SalesTable';
 import { Sale } from '../models/sales';
 import { getCurrentUser } from '../service/auth';
 import { getDashboardStats } from '../service/dashboard';
 import { getAllProducts } from '../service/product';
-import { useNotification } from '../context/NotificationContext';
 import {
   getAllCustomerOrdersPaginated,
   getOrdersPaginated,
@@ -403,6 +403,9 @@ export const Dashboard = () => {
           />
         </div>
       </div>
+
+      {/* ─── Charts Section ──────────────────────────────────────────────── */}
+      <DashboardCharts sales={sales} />
 
       {/* ─── Sales Section ───────────────────────────────────────────────── */}
       <div
