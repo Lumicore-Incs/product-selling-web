@@ -11,6 +11,16 @@ export const getAllStock = async (): Promise<StockItem[]> => {
   }
 };
 
+export const getStockQty = async (): Promise<any> => {
+  try {
+    const response = await axios.get('/stockes/stockQty');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching stock quantity data:', error);
+    throw error;
+  }
+};
+
 export const addStock = async (stockItem: Omit<StockItem, 'stock_id'>): Promise<StockItem> => {
   try {
     // Ensure backend receives totalQuantity as well (use quantity when totalQuantity not provided)
