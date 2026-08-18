@@ -3,7 +3,7 @@ import { BackgroundIcons } from '../components/BackgroundIcons';
 import Filters from '../components/stock/Filters';
 import StockForm, { StockItem } from '../components/stock/StockForm';
 import StockTable from '../components/stock/StockTable';
-import { getAllStock, addStock, updateStock, deleteStock } from '../services/stock/stockService';
+import { getAllStock, addStock, updateStock, deleteStock, getStockQty } from '../services/stock/stockService';
 
 import Spinner from '../components/Spinner';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -12,6 +12,7 @@ import { AlertSnackbar } from '../components/AlertSnackbar';
 export const StockManagement = () => {
   const [items, setItems] = useState<StockItem[]>([]);
   const [editItem, setEditItem] = useState<StockItem | null>(null);
+  const [apiProductSummaries, setApiProductSummaries] = useState<{name: string, total: number}[] | null>(null);
   const [filters, setFilters] = useState({ type: 'All', date: '', status: 'All' });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,6 +32,25 @@ export const StockManagement = () => {
       setError(null);
       const stockData = await getAllStock();
       setItems(stockData as StockItem[]);
+      
+      try {
+        const qtyData = await getStockQty();
+        if (Array.isArray(qtyData)) {
+          const mapped = qtyData.map((item: any) => ({
+            name: item.type || item.name || item.stockType || Object.keys(item)[0],
+            total: Number(item.quantity || item.totalQuantity || item.total || Object.values(item)[0] || 0)
+          }));
+          setApiProductSummaries(mapped);
+        } else if (qtyData && typeof qtyData === 'object') {
+          const mapped = Object.entries(qtyData).map(([name, total]) => ({
+            name,
+            total: Number(total)
+          }));
+          setApiProductSummaries(mapped);
+        }
+      } catch (qtyErr) {
+        console.error("Could not fetch API stock quantities:", qtyErr);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch data');
     } finally {
@@ -107,12 +127,14 @@ export const StockManagement = () => {
   const totalDamaged = damageItems.reduce((sum, item) => sum + Math.abs(item.quantity), 0);
 
   // Product summaries for top cards
-  const productSummaries = Object.entries(
+  const computedSummaries = Object.entries(
     items.reduce((acc, item) => {
       acc[item.type] = (acc[item.type] || 0) + Number(item.quantity);
       return acc;
     }, {} as Record<string, number>)
   ).map(([name, total]) => ({ name, total }));
+
+  const productSummaries = apiProductSummaries && apiProductSummaries.length > 0 ? apiProductSummaries : computedSummaries;
 
   const summaryColors = [
     { text: 'text-[#540863]', num: 'text-[#540863]' },
