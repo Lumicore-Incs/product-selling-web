@@ -6,7 +6,7 @@ import { DashboardCharts } from '../components/DashboardCharts';
 import { SalesTable } from '../components/SalesTable';
 import { Sale } from '../models/sales';
 import { getCurrentUser } from '../service/auth';
-import { getDashboardStats } from '../service/dashboard';
+import { getDashboardStats, getChartData } from '../service/dashboard';
 import { getAllProducts } from '../service/product';
 import {
   getAllCustomerOrdersPaginated,
@@ -189,6 +189,8 @@ export const Dashboard = () => {
     setCurrentPage(0);
   };
 
+  const [chartData, setChartData] = useState<any>(null);
+
   const fetchData = useCallback(async () => {
     const filters: OrderFilterParams = {
       search: debouncedSearch,
@@ -207,8 +209,11 @@ export const Dashboard = () => {
         cancelledOrders: String(statsData.cancel_order || 0),
         processingOrders: String(statsData.processing_order || 0),
       });
+      
+      const chartResult = await getChartData();
+      setChartData(chartResult);
     } catch (err) {
-      console.error('Failed to fetch dashboard stats:', err);
+      console.error('Failed to fetch dashboard stats/chart:', err);
     } finally {
       setLoading(false);
     }
@@ -405,7 +410,7 @@ export const Dashboard = () => {
       </div>
 
       {/* ─── Charts Section ──────────────────────────────────────────────── */}
-      <DashboardCharts sales={sales} />
+      <DashboardCharts data={chartData} />
 
       {/* ─── Sales Section ───────────────────────────────────────────────── */}
       <div

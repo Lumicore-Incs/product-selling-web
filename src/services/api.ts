@@ -230,6 +230,16 @@ export const dashboardApi = {
     }
   },
 
+  getChartData: async (): Promise<any> => {
+    try {
+      const response = await api.get<any>('/dashboard/chartData');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching dashboard chart data:', error);
+      throw error;
+    }
+  },
+
   exportSalesExcel: async (productName: string): Promise<Blob> => {
     try {
       const encodedName = encodeURIComponent(productName);
