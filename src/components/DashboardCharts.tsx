@@ -30,58 +30,10 @@ const CustomLegend = (props: any) => {
   );
 };
 
-export const DashboardCharts = ({ sales = [] }: { sales?: Sale[] }) => {
-  
-  // Calculate real data from sales
-  const { revenueData, sellingData, topCustomers } = useMemo(() => {
-    // 1. Revenue by Customer
-    const revenueMap = new Map<string, number>();
-    sales.forEach(sale => {
-      const name = sale.customerName || sale.name || 'Unknown';
-      const amount = sale.totalPrice || 0;
-      revenueMap.set(name, (revenueMap.get(name) || 0) + amount);
-    });
-
-    let revData = Array.from(revenueMap.entries())
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 5); // top 5 customers
-      
-    if (revData.length === 0) {
-      revData = [{ name: 'No Data', value: 0 }];
-    }
-
-    // 2. Selling rate by customer (Area Chart)
-    const top3 = revData.slice(0, 3).map(r => r.name);
-    
-    // Default empty week
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const dailyDataMap = new Map<string, any>();
-    days.forEach(d => dailyDataMap.set(d, { name: d, A: 0, B: 0, C: 0 }));
-
-    sales.forEach(sale => {
-      const dateStr = sale.date || sale.deliveryDate;
-      const dateObj = dateStr ? new Date(dateStr) : new Date();
-      const dayName = days[dateObj.getDay()];
-      const customer = sale.customerName || sale.name || 'Unknown';
-      
-      const dayData = dailyDataMap.get(dayName);
-      if (dayData) {
-        if (customer === top3[0]) dayData.A += (sale.totalPrice || 0);
-        else if (customer === top3[1]) dayData.B += (sale.totalPrice || 0);
-        else if (customer === top3[2]) dayData.C += (sale.totalPrice || 0);
-      }
-    });
-
-    // To make area chart look good, if values are 0, we can keep them 0
-    const sellData = Array.from(dailyDataMap.values());
-
-    return { 
-      revenueData: revData, 
-      sellingData: sellData,
-      topCustomers: top3 
-    };
-  }, [sales]);
+export const DashboardCharts = ({ data }: { data?: any }) => {
+  const revenueData = data?.revenueData || [{ name: 'No Data', value: 0 }];
+  const sellingData = data?.sellingData || [];
+  const topCustomers = data?.topCustomers || [];
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-5 sm:mb-7">

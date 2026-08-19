@@ -46,3 +46,13 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     return DEFAULT_STATS;
   }
 }
+
+export async function getChartData() {
+  try {
+    const response = await dashboardApi.getChartData();
+    return response.data || response;
+  } catch (error) {
+    console.error('Failed to fetch chart data:', error);
+    return null;
+  }
+}
