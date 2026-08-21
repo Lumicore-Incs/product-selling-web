@@ -6,6 +6,7 @@ interface Props {
   onEdit: (item: StockItem) => void;
   onDelete: (id: number) => void;
   filterType?: string;
+  filterMonth?: string;
   filterDate?: string;
   filterStatus?: string;
 }
@@ -23,14 +24,22 @@ const statusBadgeClass = (status: StockItem['status']) => {
   }
 };
 
-const StockTable: React.FC<Props> = ({ items, onEdit, onDelete, filterType, filterDate, filterStatus }) => {
+const StockTable: React.FC<Props> = ({ items, onEdit, onDelete, filterType, filterMonth, filterDate, filterStatus }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 5;
   const filteredItems = items.filter((item) => {
     const matchesType = !filterType || filterType === 'All' || item.type.toLowerCase() === filterType.toLowerCase();
-    const matchesDate = !filterDate || new Date(item.date).toISOString().split('T')[0] === filterDate;
+    
+    let matchesMonth = true;
+    if (filterMonth && filterMonth !== '') {
+      const itemMonth = new Date(item.date).getMonth() + 1; // 1-12
+      matchesMonth = itemMonth.toString() === filterMonth;
+    }
+
     const matchesStatus = !filterStatus || filterStatus === 'All' || item.status === filterStatus;
-    return matchesType && matchesDate && matchesStatus;
+    const matchesDate = !filterDate || new Date(item.date).toISOString().split('T')[0] === filterDate;
+    
+    return matchesType && matchesMonth && matchesDate && matchesStatus;
   });
   const totalPages = Math.ceil(filteredItems.length / rowsPerPage);
   const paginatedItems = filteredItems.slice(

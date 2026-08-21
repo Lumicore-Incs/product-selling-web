@@ -13,7 +13,7 @@ export const StockManagement = () => {
   const [items, setItems] = useState<StockItem[]>([]);
   const [editItem, setEditItem] = useState<StockItem | null>(null);
   const [apiProductSummaries, setApiProductSummaries] = useState<{name: string, total: number}[] | null>(null);
-  const [filters, setFilters] = useState({ type: 'All', date: '', status: 'All' });
+  const [filters, setFilters] = useState({ type: 'All', month: '', date: '', status: 'All' });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -119,8 +119,8 @@ export const StockManagement = () => {
     }
   };
 
-  const handleFilterChange = ({ type, date, status }: { type: string; date: string; status: string }) => {
-    setFilters({ type, date, status });
+  const handleFilterChange = ({ type, month, date, status }: { type: string; month: string; date: string; status: string }) => {
+    setFilters({ type, month, date, status });
   };
 
   const damageItems = items.filter((item) => item.status === 'DAMAGE');
@@ -267,6 +267,7 @@ export const StockManagement = () => {
         onEdit={handleEdit}
         onDelete={handleDeleteRequest}
         filterType={filters.type}
+        filterMonth={filters.month}
         filterDate={filters.date}
         filterStatus={filters.status}
       />

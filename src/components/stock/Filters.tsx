@@ -4,6 +4,7 @@ import { StockItem } from './StockForm';
 interface FiltersProps {
   onFilterChange: (filters: {
     type: string;
+    month: string;
     date: string;
     status: string;
   }) => void;
@@ -13,6 +14,7 @@ interface FiltersProps {
 const Filters: React.FC<FiltersProps> = ({ onFilterChange, existingItems }) => {
   const [currentFilters, setCurrentFilters] = React.useState({
     type: 'All',
+    month: '',
     date: '',
     status: 'All',
   });
@@ -40,7 +42,7 @@ const Filters: React.FC<FiltersProps> = ({ onFilterChange, existingItems }) => {
   };
 
   const handleReset = () => {
-    updateFilters({ type: 'All', date: '', status: 'All' });
+    updateFilters({ type: 'All', month: '', date: '', status: 'All' });
   };
 
   return (
@@ -109,6 +111,30 @@ const Filters: React.FC<FiltersProps> = ({ onFilterChange, existingItems }) => {
             onChange={(e) => updateFilters({ date: e.target.value })}
             className="w-full h-[32px] border border-[#BCC1CB] rounded-[8px] bg-transparent pl-3 pr-8 text-[12px] text-[#949494] outline-none [color-scheme:light]"
           />
+        </div>
+      </div>
+
+      {/* Filter by Month */}
+      <div className="w-full xl:flex-1 xl:max-w-[273px]">
+        <label className="block text-[18px] font-semibold text-[#414141] mb-[5px]">
+          Filter by month
+        </label>
+        <div className="relative">
+          <select
+            value={currentFilters.month}
+            onChange={(e) => updateFilters({ month: e.target.value })}
+            className="w-full h-[32px] border border-[#BCC1CB] rounded-[8px] bg-transparent pl-3 pr-8 text-[12px] text-[#949494] appearance-none outline-none"
+          >
+            <option value="">All</option>
+            <option value="1">First month</option>
+            <option value="2">Second month</option>
+            <option value="3">Third month</option>
+          </select>
+          <div className="absolute right-[10px] top-[8px] pointer-events-none">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M6 9L12 15L18 9" stroke="#949494" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
         </div>
       </div>
 
