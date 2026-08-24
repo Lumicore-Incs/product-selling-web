@@ -232,7 +232,7 @@ export const dashboardApi = {
 
   getChartData: async (): Promise<any> => {
     try {
-      const response = await api.get<any>('/dashboard/chartData');
+      const response = await api.get<any>('/dashboard/weekly_orders');
       return response.data;
     } catch (error) {
       console.error('Error fetching dashboard chart data:', error);
