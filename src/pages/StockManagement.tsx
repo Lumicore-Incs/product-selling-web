@@ -126,7 +126,7 @@ export const StockManagement = () => {
   const damageItems = items.filter((item) => item.status === 'DAMAGE');
   const totalDamaged = damageItems.reduce((sum, item) => sum + Math.abs(item.quantity), 0);
 
-  // Product summaries for top cards
+  // Product summaries for top cards (Raw total including damage)
   const computedSummaries = Object.entries(
     items.reduce((acc, item) => {
       acc[item.type] = (acc[item.type] || 0) + Number(item.quantity);
@@ -134,7 +134,15 @@ export const StockManagement = () => {
     }, {} as Record<string, number>)
   ).map(([name, total]) => ({ name, total }));
 
-  const productSummaries = apiProductSummaries && apiProductSummaries.length > 0 ? apiProductSummaries : computedSummaries;
+  const rawProductSummaries = apiProductSummaries && apiProductSummaries.length > 0 ? apiProductSummaries : computedSummaries;
+
+  // Subtract damaged items from the total count for the top boxes
+  const productSummaries = rawProductSummaries.map(summary => {
+    const damagedQtyForProduct = items
+      .filter(item => (item.type === summary.name || item.type?.toLowerCase() === summary.name?.toLowerCase()) && item.status === 'DAMAGE')
+      .reduce((sum, item) => sum + Math.abs(Number(item.quantity)), 0);
+    return { ...summary, total: summary.total - damagedQtyForProduct };
+  });
 
   const summaryColors = [
     { text: 'text-[#540863]', num: 'text-[#540863]' },
