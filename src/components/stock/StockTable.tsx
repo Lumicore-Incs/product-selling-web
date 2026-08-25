@@ -65,9 +65,7 @@ const StockTable: React.FC<Props> = ({ items, onEdit, onDelete, filterType, filt
               <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Quantity
               </th>
-              <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Total Qty
-              </th>
+
               <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Status
               </th>
@@ -78,8 +76,8 @@ const StockTable: React.FC<Props> = ({ items, onEdit, onDelete, filterType, filt
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {paginatedItems.length > 0 ? (
-              paginatedItems.map((item) => (
-                <tr key={item.stock_id ?? JSON.stringify(item)} className="hover:bg-gray-50 transition">
+              paginatedItems.map((item, index) => (
+                <tr key={item.stock_id ?? `row-${currentPage}-${index}`} className="hover:bg-gray-50 transition">
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                       {item.type}
@@ -91,9 +89,7 @@ const StockTable: React.FC<Props> = ({ items, onEdit, onDelete, filterType, filt
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                     <span className="text-sm font-medium text-gray-900">{item.quantity}</span>
                   </td>
-                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm font-medium text-gray-900">{item.totalQuantity}</span>
-                  </td>
+
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${statusBadgeClass(item.status)}`}>
                       {item.status.split('_').map(word => word.charAt(0) + word.slice(1).toLowerCase()).join(' ')}
@@ -129,7 +125,7 @@ const StockTable: React.FC<Props> = ({ items, onEdit, onDelete, filterType, filt
               ))
             ) : (
               <tr>
-                <td colSpan={6} className="px-4 sm:px-6 py-4 text-center text-gray-500">
+                <td colSpan={5} className="px-4 sm:px-6 py-4 text-center text-gray-500">
                   No records found
                 </td>
               </tr>
@@ -142,9 +138,9 @@ const StockTable: React.FC<Props> = ({ items, onEdit, onDelete, filterType, filt
       <div className="md:hidden">
         <div className="divide-y divide-gray-200">
           {paginatedItems.length > 0 ? (
-            paginatedItems.map((item) => (
+            paginatedItems.map((item, index) => (
               <div
-                key={item.stock_id ?? JSON.stringify(item)}
+                key={item.stock_id ?? `mobile-row-${currentPage}-${index}`}
                 className="p-4 space-y-3"
               >
                 <div className="flex items-center justify-between gap-2">
@@ -165,10 +161,7 @@ const StockTable: React.FC<Props> = ({ items, onEdit, onDelete, filterType, filt
                     <div className="text-gray-500 text-xs uppercase font-semibold">Quantity</div>
                     <div className="font-medium text-gray-900">{item.quantity}</div>
                   </div>
-                  <div>
-                    <div className="text-gray-500 text-xs uppercase font-semibold">Total Qty</div>
-                    <div className="font-medium text-gray-900">{item.totalQuantity}</div>
-                  </div>
+
                 </div>
 
                 <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
