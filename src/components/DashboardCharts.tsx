@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import {
   AreaChart,
   Area,
@@ -11,7 +10,6 @@ import {
   Bar,
   Legend
 } from 'recharts';
-import { Sale } from '../models/sales';
 
 const CustomLegend = (props: any) => {
   const { payload } = props;

@@ -36,14 +36,35 @@ export const StockManagement = () => {
       try {
         const qtyData = await getStockQty();
         if (Array.isArray(qtyData)) {
-          const mapped = qtyData.map((item: any) => ({
-            name: item.type || item.name || item.stockType || Object.keys(item)[0],
-            total: Number(item.quantity || item.totalQuantity || item.total || Object.values(item)[0] || 0)
+          // Aggregate by name in case the backend returns duplicate types
+          const aggregated = qtyData.reduce((acc: any, item: any) => {
+            const name = item.type || item.name || item.stockType || Object.keys(item)[0];
+            const val = Number(item.quantity || item.totalQuantity || item.total || Object.values(item)[0] || 0);
+            const status = item.status ? item.status.toString().toUpperCase() : '';
+            
+            // Normalize name
+            const normalizedName = name ? name.toString().toUpperCase() : 'UNKNOWN';
+            
+            // Only add to total if it is NOT a DAMAGE record
+            // If backend sends status along with qty, we skip DAMAGE.
+            if (status !== 'DAMAGE') {
+              if (acc[normalizedName]) {
+                acc[normalizedName] += val;
+              } else {
+                acc[normalizedName] = val;
+              }
+            }
+            return acc;
+          }, {});
+
+          const mapped = Object.entries(aggregated).map(([name, total]) => ({
+            name,
+            total: Number(total)
           }));
           setApiProductSummaries(mapped);
         } else if (qtyData && typeof qtyData === 'object') {
           const mapped = Object.entries(qtyData).map(([name, total]) => ({
-            name,
+            name: name.toUpperCase(),
             total: Number(total)
           }));
           setApiProductSummaries(mapped);
@@ -126,23 +147,21 @@ export const StockManagement = () => {
   const damageItems = items.filter((item) => item.status === 'DAMAGE');
   const totalDamaged = damageItems.reduce((sum, item) => sum + Math.abs(item.quantity), 0);
 
-  // Product summaries for top cards (Raw total including damage)
+  // Product summaries for top cards (Raw total excluding damage if computed from items)
   const computedSummaries = Object.entries(
     items.reduce((acc, item) => {
-      acc[item.type] = (acc[item.type] || 0) + Number(item.quantity);
+      if (item.status !== 'DAMAGE') {
+        const type = item.type ? item.type.toUpperCase() : 'UNKNOWN';
+        acc[type] = (acc[type] || 0) + Number(item.quantity);
+      }
       return acc;
     }, {} as Record<string, number>)
   ).map(([name, total]) => ({ name, total }));
 
-  const rawProductSummaries = apiProductSummaries && apiProductSummaries.length > 0 ? apiProductSummaries : computedSummaries;
-
-  // Subtract damaged items from the total count for the top boxes
-  const productSummaries = rawProductSummaries.map(summary => {
-    const damagedQtyForProduct = items
-      .filter(item => (item.type === summary.name || item.type?.toLowerCase() === summary.name?.toLowerCase()) && item.status === 'DAMAGE')
-      .reduce((sum, item) => sum + Math.abs(Number(item.quantity)), 0);
-    return { ...summary, total: summary.total - damagedQtyForProduct };
-  });
+  // We use apiProductSummaries if available, else computed from items.
+  // Since we already excluded damages during mapping of apiProductSummaries or computedSummaries,
+  // we DO NOT need to subtract damagedQtyForProduct again.
+  const productSummaries = apiProductSummaries && apiProductSummaries.length > 0 ? apiProductSummaries : computedSummaries;
 
   const summaryColors = [
     { text: 'text-[#540863]', num: 'text-[#540863]' },

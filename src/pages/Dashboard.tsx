@@ -410,10 +410,6 @@ export const Dashboard = () => {
       </div>
 
       {/* ─── Charts Section ──────────────────────────────────────────────── */}
-      <div className="bg-white p-4 rounded-xl shadow mb-4 text-xs overflow-auto max-h-40 border border-red-500">
-        <h4 className="font-bold text-red-600 mb-2">DEBUG: API Response for Chart Data</h4>
-        <pre>{chartData ? JSON.stringify(chartData, null, 2) : 'Loading or Null'}</pre>
-      </div>
       <DashboardCharts data={chartData} />
 
       {/* ─── Sales Section ───────────────────────────────────────────────── */}

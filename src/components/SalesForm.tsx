@@ -413,12 +413,6 @@ export const SalesForm: React.FC<SalesFormProps> = ({
     }
   };
 
-
-  const ensureLeadingZero = (phone?: string) => {
-    if (!phone) return '';
-    return phone.startsWith('0') ? phone : `0${phone}`;
-  };
-
   // Lazy-load all customers once for lookup
   const ensureCustomersLoaded = async () => {
     if (allCustomers !== null) return allCustomers;
@@ -833,38 +827,9 @@ export const SalesForm: React.FC<SalesFormProps> = ({
     setSearchResults([]);
     setShowSearchResults(false);
     setPriceWarnings(new Set());
-  };
-
-  // Fill the form with sample data for faster testing
-  const fillSampleData = () => {
-    const sampleProduct = defaultProduct ?? products[0] ?? null;
-    const sampleItems: SaleItem[] = sampleProduct
-      ? [
-        {
-          productId: sampleProduct.productId == null ? '' : String(sampleProduct.productId),
-          productName: sampleProduct.name,
-          qty: 2,
-          price: sampleProduct.price,
-          total: 2 * sampleProduct.price,
-        },
-      ]
-      : [];
-
-    setFormData({
-      name: 'John Doe',
-      customerName: 'John Doe',
-      customerId: '',
-      address: '123 Sample Street',
-      contact01: '0771234563',
-      contact02: '0771234566',
-      status: 'pending',
-      qty: sampleProduct ? '2' : '',
-      remark: 'Sample order',
-      nic: '',
-      deliveryDate: getTodayDateString(),
-      items: sampleItems,
-    });
-    setSnackbar({ open: true, message: 'Sample data loaded', type: 'success' });
+    if (isEditing) {
+      onCancelEdit();
+    }
   };
 
   // Disable save if required fields are empty
