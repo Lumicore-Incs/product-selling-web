@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { PaymentDetail, paymentService, PaymentDetailRequest } from '../../services/payments/paymentService';
 import { 
-  Calendar, Receipt, Loader2, Hash, RefreshCw, AlertCircle, Edit2, Trash2, X, Save
+  Calendar, Receipt, Loader2, RefreshCw, AlertCircle, Edit2, Trash2, X, Save
 } from 'lucide-react';
 
 interface PaymentDetailsTableProps {

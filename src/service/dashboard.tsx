@@ -50,7 +50,70 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 export async function getChartData() {
   try {
     const response = await dashboardApi.getChartData();
-    return response.data || response;
+    const rawData = response.data || response;
+
+    // The backend returns a List<WeeklyUserOrderDto> which is a JSON Array.
+    if (Array.isArray(rawData)) {
+      
+      // If no data for this week, return empty formatted data
+      if (rawData.length === 0) {
+        return {
+          sellingData: [],
+          topCustomers: [],
+          revenueData: [{ name: 'No Data', value: 0 }]
+        };
+      }
+
+      // If backend has data, map it to the frontend format
+      const userTotals: Record<string, number> = {};
+      
+      const parsedData = rawData.map((item: any) => {
+        let dayStr = '';
+        let ordersMap: any = {};
+        
+        // Dynamically find properties since we don't know exact DTO field names
+        for (const key of Object.keys(item)) {
+          if (typeof item[key] === 'string') dayStr = item[key];
+          else if (typeof item[key] === 'object' && item[key] !== null) ordersMap = item[key];
+        }
+        
+        const mappedItem: any = { name: dayStr.substring(0, 3).toUpperCase() || 'DAY' };
+        for (const [user, qty] of Object.entries(ordersMap)) {
+          userTotals[user] = (userTotals[user] || 0) + Number(qty);
+          mappedItem[user] = Number(qty);
+        }
+        return mappedItem;
+      });
+
+      // Get top 3 customers
+      const topCustomers = Object.entries(userTotals)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(entry => entry[0]);
+        
+      // Format selling data with A, B, C keys for the chart
+      const sellingData = parsedData.map((item: any) => {
+        const newItem: any = { name: item.name };
+        if (topCustomers[0]) newItem['A'] = item[topCustomers[0]] || 0;
+        if (topCustomers[1]) newItem['B'] = item[topCustomers[1]] || 0;
+        if (topCustomers[2]) newItem['C'] = item[topCustomers[2]] || 0;
+        return newItem;
+      });
+
+      // Dummy revenue mapping based on quantities (since backend only sends qty)
+      const revenueData = topCustomers.map(user => ({
+        name: user,
+        value: userTotals[user] * 1500 // Assuming avg price 1500
+      }));
+
+      return {
+        sellingData,
+        topCustomers,
+        revenueData: revenueData.length > 0 ? revenueData : [{ name: 'No Data', value: 0 }]
+      };
+    }
+
+    return rawData;
   } catch (error) {
     console.error('Failed to fetch chart data:', error);
     return null;

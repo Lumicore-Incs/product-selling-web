@@ -25,7 +25,6 @@ export const SalesManagement: React.FC = () => {
   const [currentSale, setCurrentSale] = useState<Sale | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<{ role: string } | null>(null);
   const [snackbar, setSnackbar] = useState<{
@@ -178,7 +177,6 @@ export const SalesManagement: React.FC = () => {
   };
 
   const exportSales = async (exportType: string) => {
-    setIsExporting(true);
     setError(null);
     try {
       let endpoint = '';
@@ -212,7 +210,6 @@ export const SalesManagement: React.FC = () => {
       setError(errorMessage);
       setSnackbar({ open: true, message: errorMessage, type: 'error' });
     } finally {
-      setIsExporting(false);
       setShowExportPopup(false);
     }
   };
