@@ -240,6 +240,16 @@ export const dashboardApi = {
     }
   },
 
+  getDailyOrdersChartData: async (date: string): Promise<any> => {
+    try {
+      const response = await api.get<any>(`/dashboard/daily_orders/${date}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching dashboard daily chart data:', error);
+      throw error;
+    }
+  },
+
   exportSalesExcel: async (productName: string): Promise<Blob> => {
     try {
       const encodedName = encodeURIComponent(productName);

@@ -49,21 +49,17 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 
 export async function getChartData() {
   try {
-    const response = await dashboardApi.getChartData();
-    const rawData = response.data || response;
+    const today = new Date().toISOString().split('T')[0];
+    const [weeklyResponse, dailyResponse] = await Promise.all([
+      dashboardApi.getChartData().catch(() => null),
+      dashboardApi.getDailyOrdersChartData(today).catch(() => null)
+    ]);
+    const rawData = weeklyResponse?.data || weeklyResponse || [];
+    const rawDaily = dailyResponse?.data || dailyResponse;
 
     // The backend returns a List<WeeklyUserOrderDto> which is a JSON Array.
     if (Array.isArray(rawData)) {
       
-      // If no data for this week, return empty formatted data
-      if (rawData.length === 0) {
-        return {
-          sellingData: [],
-          topCustomers: [],
-          revenueData: [{ name: 'No Data', value: 0 }]
-        };
-      }
-
       // If backend has data, map it to the frontend format
       const userTotals: Record<string, number> = {};
       
@@ -100,11 +96,31 @@ export async function getChartData() {
         return newItem;
       });
 
-      // Dummy revenue mapping based on quantities (since backend only sends qty)
-      const revenueData = topCustomers.map(user => ({
-        name: user,
-        value: userTotals[user] * 1500 // Assuming avg price 1500
-      }));
+      // Map daily revenue based on dailyResponse
+      let revenueData: any[] = [];
+      if (rawDaily) {
+        if (Array.isArray(rawDaily)) {
+           revenueData = rawDaily.map((item: any) => {
+             let name = 'Unknown';
+             let value = 0;
+             for (const key of Object.keys(item)) {
+               if (typeof item[key] === 'string') name = item[key];
+               else if (typeof item[key] === 'number') value = item[key];
+             }
+             return { name, value };
+           });
+        } else if (typeof rawDaily === 'object') {
+           revenueData = Object.entries(rawDaily).map(([k, v]) => ({ name: k, value: Number(v) || 0 }));
+        }
+      }
+
+      if (revenueData.length === 0 && topCustomers.length > 0) {
+        // Fallback to dummy data
+        revenueData = topCustomers.map(user => ({
+          name: user,
+          value: userTotals[user] * 1500 // Assuming avg price 1500
+        }));
+      }
 
       return {
         sellingData,

@@ -75,7 +75,7 @@ export const DashboardCharts = ({ data }: { data?: any }) => {
               <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} tickCount={5} tickFormatter={(val) => `$${(val / 1000).toFixed(0)}k`} />
               <Tooltip
                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                formatter={(value: any) => [`$${Number(value).toLocaleString()}`, 'Amount']}
+                formatter={(value: any, name: any) => [`${Number(value).toLocaleString()}`, name]}
               />
               <Legend verticalAlign="top" align="right" content={<CustomLegend />} />
               <Area name={topCustomers[0] || 'A'} type="monotone" dataKey="A" stroke="#0d9488" strokeWidth={2} fillOpacity={1} fill="url(#colorA)" />
