@@ -49,7 +49,7 @@ export const DashboardCharts = ({ data }: { data?: any }) => {
         <div className="flex justify-between items-start mb-6">
           <div>
             <h3 className="text-gray-900 font-bold text-lg">Selling Chart</h3>
-            <p className="text-[#8F8F8F] text-xs mt-1">Daily selling rate by customer ($)</p>
+            <p className="text-[#8F8F8F] text-xs mt-1">Daily selling rate by customer</p>
           </div>
         </div>
 
@@ -72,7 +72,7 @@ export const DashboardCharts = ({ data }: { data?: any }) => {
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
               <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} dy={10} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} tickCount={5} tickFormatter={(val) => `$${(val / 1000).toFixed(0)}k`} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} ticks={[0, 10, 20, 30, 40, 50]} domain={[0, (dataMax: number) => Math.max(dataMax, 50)]} tickFormatter={(val) => val.toLocaleString()} />
               <Tooltip
                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                 formatter={(value: any, name: any) => [`${Number(value).toLocaleString()}`, name]}
@@ -99,7 +99,7 @@ export const DashboardCharts = ({ data }: { data?: any }) => {
       >
         <div className="mb-6">
           <h3 className="text-gray-900 font-bold text-lg">Revenue by Customer</h3>
-          <p className="text-[#8F8F8F] text-xs mt-1">Daily revenue breakdown ($)</p>
+          <p className="text-[#8F8F8F] text-xs mt-1">Daily revenue breakdown</p>
         </div>
 
         <div className="h-[250px] w-full mt-4">
@@ -107,11 +107,11 @@ export const DashboardCharts = ({ data }: { data?: any }) => {
             <BarChart data={revenueData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }} barSize={32}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
               <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} dy={10} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} tickCount={5} tickFormatter={(val) => `$${(val / 1000).toFixed(0)}k`} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} ticks={[0, 10, 20, 30, 40, 50]} domain={[0, (dataMax: number) => Math.max(dataMax, 50)]} tickFormatter={(val) => val.toLocaleString()} />
               <Tooltip
                 cursor={{ fill: '#f3f4f6' }}
                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                formatter={(value: any) => [`$${Number(value).toLocaleString()}`, 'Revenue']}
+                formatter={(value: any) => [`${Number(value).toLocaleString()}`, 'Revenue']}
               />
               <Bar dataKey="value" fill="#92487A" radius={[4, 4, 4, 4]} />
             </BarChart>
