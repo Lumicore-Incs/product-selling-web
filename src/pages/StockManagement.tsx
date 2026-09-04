@@ -88,8 +88,9 @@ export const StockManagement = () => {
 
     try {
       setIsLoading(true);
-      if (editItem?.stock_id) {
-        await updateStock(editItem.stock_id, data);
+      const targetId = editItem?.id || editItem?.stock_id;
+      if (targetId) {
+        await updateStock(targetId, data);
         // After successful update, refresh the list to ensure we have latest data
         await fetchStockData();
         // Clear form by resetting editItem
@@ -130,7 +131,7 @@ export const StockManagement = () => {
       // If backend returns a message in resp.message or resp, show it
       const message = resp?.message ?? (typeof resp === 'string' ? resp : 'Deleted successfully');
       setSnackbar({ open: true, message, type: 'success' });
-      setItems(items.filter((i) => i.stock_id !== confirmTarget));
+      setItems(items.filter((i) => (i.id || i.stock_id) !== confirmTarget));
     } catch (err: any) {
       const msg = err?.response?.data?.message || err?.message || 'Failed to delete stock item';
       setSnackbar({ open: true, message: msg, type: 'error' });
@@ -266,7 +267,7 @@ export const StockManagement = () => {
                 <h4 className="text-[18px] font-medium text-[#E44A5E] uppercase mb-2">PRODUCT DETAILS</h4>
                 <div className="max-h-[80px] overflow-y-auto space-y-1 scrollbar-hide">
                   {damageItems.map((item, idx) => (
-                    <div key={item.stock_id || idx} className="flex justify-between items-center">
+                    <div key={item.id || item.stock_id || idx} className="flex justify-between items-center">
                       <span className="text-[14px] font-medium text-[#414141] truncate mr-2">{item.type}</span>
                       <span className="text-[14px] text-[#757B87]">Qty : {Math.abs(item.quantity)}</span>
                     </div>
