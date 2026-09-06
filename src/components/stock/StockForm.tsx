@@ -6,6 +6,7 @@ import { getAllProducts } from '../../service/product';
 import { Product } from '../../models/product';
 
 export interface StockItem {
+  id?: number;
   stock_id?: number;
   type: string;
   date: string;
@@ -38,8 +39,15 @@ const StockForm: React.FC<Props> = ({ onSubmit, initialValues, mode = 'add' }) =
   React.useEffect(() => {
     if (initialValues) {
       Object.entries(initialValues).forEach(([key, value]) => {
-        setValue(key as keyof StockItem, value);
+        if (key === 'date' && value && typeof value === 'string') {
+          // HTML5 date input expects YYYY-MM-DD format
+          setValue('date', value.split('T')[0]);
+        } else {
+          setValue(key as keyof StockItem, value);
+        }
       });
+      // Scroll to top so user sees the edit form
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
       reset({
         type: '',
