@@ -67,11 +67,12 @@ export const DailyReport = () => {
     const selectedDateGroup = groupedByDate.find((g) => g.date === selectedDate);
     if (!selectedDateGroup) return;
 
-    const headers = ['Product ID', 'Product Name', 'Short Name', 'Quantity', 'Last Updated'];
+    const headers = ['Product ID', 'Product Name', 'Short Name', 'Category', 'Quantity', 'Last Updated'];
     const rows = selectedDateGroup.items.map((item) => [
       item.productId || 'N/A',
       item.productName || 'Unknown',
       item.productShortName || '-',
+      item.category || '-',
       item.totalQty,
       new Date(item.lastTime).toLocaleString(),
     ]);
@@ -332,6 +333,11 @@ export const DailyReport = () => {
                             {product.productShortName && (
                               <p style={{ fontSize: '12px', color: '#949494', marginTop: '2px' }}>
                                 Short: {product.productShortName}
+                              </p>
+                            )}
+                            {product.category !== undefined && product.category !== null && (
+                              <p style={{ fontSize: '12px', color: '#949494', marginTop: '2px' }}>
+                                Category: {product.category}
                               </p>
                             )}
                           </div>
