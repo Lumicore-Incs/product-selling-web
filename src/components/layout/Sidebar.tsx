@@ -111,8 +111,8 @@ const getHelpSettingsItems = (userRole: string): NavItem[] => {
       icon: BarChart3,
       label: 'Reports',
       children: [
-        { label: 'monthly sale summery', to: '/monthly-report' },
-        { label: 'monthly delevery summery', to: '/reports' },
+        { label: 'Monthly Sale Summery', to: '/monthly-report' },
+        { label: 'Monthly Delevery Summery', to: '/sales-summary' },
         { label: 'Daily Report', to: '/daily-report' },
       ],
     });

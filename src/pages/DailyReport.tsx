@@ -174,7 +174,7 @@ export const DailyReport = () => {
             }}
           >
             <div>
-              <p style={{ fontSize: '16px', fontWeight: 600, color: '#129D30' }}>Total Records</p>
+              <p style={{ fontSize: '16px', fontWeight: 600, color: '#129D30' }}>Total Orders</p>
               <p style={{ fontSize: '25px', fontWeight: 600, color: '#129D30', marginTop: '4px' }}>
                 {summary.totalQty}
               </p>
