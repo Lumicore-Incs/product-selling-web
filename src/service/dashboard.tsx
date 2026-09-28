@@ -81,18 +81,17 @@ export async function getChartData() {
         return mappedItem;
       });
 
-      // Get top 3 customers
-      const topCustomers = Object.entries(userTotals)
+      // Get all customers
+      const allCustomers = Object.entries(userTotals)
         .sort((a, b) => b[1] - a[1])
-        .slice(0, 3)
         .map(entry => entry[0]);
         
-      // Format selling data with A, B, C keys for the chart
+      // Format selling data with customer names for the chart
       const sellingData = parsedData.map((item: any) => {
         const newItem: any = { name: item.name };
-        if (topCustomers[0]) newItem['A'] = item[topCustomers[0]] || 0;
-        if (topCustomers[1]) newItem['B'] = item[topCustomers[1]] || 0;
-        if (topCustomers[2]) newItem['C'] = item[topCustomers[2]] || 0;
+        allCustomers.forEach(customer => {
+          newItem[customer] = item[customer] || 0;
+        });
         return newItem;
       });
 
@@ -114,9 +113,9 @@ export async function getChartData() {
         }
       }
 
-      if (revenueData.length === 0 && topCustomers.length > 0) {
+      if (revenueData.length === 0 && allCustomers.length > 0) {
         // Fallback to dummy data
-        revenueData = topCustomers.map(user => ({
+        revenueData = allCustomers.map(user => ({
           name: user,
           value: userTotals[user] * 1500 // Assuming avg price 1500
         }));
@@ -124,7 +123,7 @@ export async function getChartData() {
 
       return {
         sellingData,
-        topCustomers,
+        customers: allCustomers,
         revenueData: revenueData.length > 0 ? revenueData : [{ name: 'No Data', value: 0 }]
       };
     }
