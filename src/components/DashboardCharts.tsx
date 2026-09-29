@@ -14,7 +14,7 @@ import {
 const CustomLegend = (props: any) => {
   const { payload } = props;
   return (
-    <div className="flex gap-4 items-center justify-end text-sm text-gray-500 absolute top-[-30px] right-0">
+    <div className="flex gap-4 items-center justify-end text-sm text-gray-500 absolute top-[-30px] right-0 flex-wrap">
       {payload.map((entry: any, index: number) => (
         <div key={`item-${index}`} className="flex items-center gap-1.5">
           <div
@@ -28,10 +28,23 @@ const CustomLegend = (props: any) => {
   );
 };
 
+const CHART_COLORS = [
+  '#0d9488', // teal
+  '#ea580c', // orange
+  '#3977a8', // blue
+  '#9333ea', // purple
+  '#db2777', // pink
+  '#059669', // emerald
+  '#d97706', // amber
+  '#dc2626', // red
+  '#2563eb', // blue
+  '#4f46e5', // indigo
+];
+
 export const DashboardCharts = ({ data }: { data?: any }) => {
   const revenueData = data?.revenueData || [{ name: 'No Data', value: 0 }];
   const sellingData = data?.sellingData || [];
-  const topCustomers = data?.topCustomers || [];
+  const customers = data?.customers || [];
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-5 sm:mb-7">
@@ -57,18 +70,15 @@ export const DashboardCharts = ({ data }: { data?: any }) => {
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={sellingData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
               <defs>
-                <linearGradient id="colorA" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#0d9488" stopOpacity={0.1}/>
-                  <stop offset="95%" stopColor="#0d9488" stopOpacity={0}/>
-                </linearGradient>
-                <linearGradient id="colorB" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#ea580c" stopOpacity={0.1}/>
-                  <stop offset="95%" stopColor="#ea580c" stopOpacity={0}/>
-                </linearGradient>
-                <linearGradient id="colorC" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3977a8" stopOpacity={0.1}/>
-                  <stop offset="95%" stopColor="#3977a8" stopOpacity={0}/>
-                </linearGradient>
+                {customers.map((customer: string, index: number) => {
+                  const color = CHART_COLORS[index % CHART_COLORS.length];
+                  return (
+                    <linearGradient key={`color-${index}`} id={`color-${index}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={color} stopOpacity={0.1}/>
+                      <stop offset="95%" stopColor={color} stopOpacity={0}/>
+                    </linearGradient>
+                  );
+                })}
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
               <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} dy={10} />
@@ -78,9 +88,21 @@ export const DashboardCharts = ({ data }: { data?: any }) => {
                 formatter={(value: any, name: any) => [`${Number(value).toLocaleString()}`, name]}
               />
               <Legend verticalAlign="top" align="right" content={<CustomLegend />} />
-              <Area name={topCustomers[0] || 'A'} type="monotone" dataKey="A" stroke="#0d9488" strokeWidth={2} fillOpacity={1} fill="url(#colorA)" />
-              <Area name={topCustomers[1] || 'B'} type="monotone" dataKey="B" stroke="#ea580c" strokeWidth={2} fillOpacity={1} fill="url(#colorB)" />
-              <Area name={topCustomers[2] || 'C'} type="monotone" dataKey="C" stroke="#3977a8" strokeWidth={2} fillOpacity={1} fill="url(#colorC)" />
+              {customers.map((customer: string, index: number) => {
+                const color = CHART_COLORS[index % CHART_COLORS.length];
+                return (
+                  <Area
+                    key={customer}
+                    name={customer}
+                    type="monotone"
+                    dataKey={customer}
+                    stroke={color}
+                    strokeWidth={2}
+                    fillOpacity={1}
+                    fill={`url(#color-${index})`}
+                  />
+                );
+              })}
             </AreaChart>
           </ResponsiveContainer>
         </div>
