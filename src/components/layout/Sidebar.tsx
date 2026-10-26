@@ -62,10 +62,10 @@ const getNavItems = (userRole: string): NavItem[] => {
   if (isSuperUser || isAdmin) {
     items.push({
       icon: UsersIcon,
-      label: 'user operation',
+      label: 'User Operation',
       children: [
         { label: 'User List', to: '/users' },
-        { label: 'salary increment', to: '/user-orders' },
+        { label: 'Salary Increment', to: '/user-orders' },
       ],
     });
   }
@@ -82,7 +82,7 @@ const getNavItems = (userRole: string): NavItem[] => {
       label: 'My Order',
       children: [
         { label: 'Duplicate Orders', to: '/sale/duplicate' },
-        { label: 'orders operation', to: '/my-orders' },
+        { label: 'Orders Operation', to: '/my-orders' },
       ],
     });
   }
@@ -114,6 +114,7 @@ const getHelpSettingsItems = (userRole: string): NavItem[] => {
         { label: 'Monthly Sale Summery', to: '/monthly-report' },
         { label: 'Monthly Delevery Summery', to: '/sales-summary' },
         { label: 'Daily Report', to: '/daily-report' },
+        { label: 'Export Report', to: '/export-report' },
       ],
     });
   }

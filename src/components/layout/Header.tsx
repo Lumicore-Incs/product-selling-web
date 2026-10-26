@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   SearchIcon,
   BellIcon,
@@ -111,41 +112,44 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
             </button>
 
             {/* DROPDOWN */}
-            <div
-              className={`absolute -right-12 sm:right-0 mt-3 w-[280px] sm:w-96 bg-white rounded-2xl shadow-2xl border p-4 z-50 max-h-96 overflow-y-auto transition-all transform origin-top-right ${
-                showNotifications ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'
-              }`}
-            >
-              {notifications.length === 0 ? (
-                <div className="text-center py-6">
-                  <BellIcon size={30} className="mx-auto text-gray-300" />
-                  <p className="text-gray-500 text-sm">No notifications</p>
-                </div>
-              ) : (
-                notifications.map((notif) => {
-                  const Icon =
-                    notif.type === 'success' ? CheckCircleIcon :
-                    notif.type === 'error' ? AlertCircleIcon :
-                    notif.type === 'warning' ? AlertTriangleIcon :
-                    InfoIcon;
+            {createPortal(
+              <div
+                className={`fixed top-20 right-4 sm:right-8 w-[280px] sm:w-96 bg-white rounded-2xl shadow-2xl border p-4 z-[9999] max-h-[calc(100vh-6rem)] overflow-y-auto transition-all transform origin-top-right ${
+                  showNotifications ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'
+                }`}
+              >
+                {notifications.length === 0 ? (
+                  <div className="text-center py-6">
+                    <BellIcon size={30} className="mx-auto text-gray-300" />
+                    <p className="text-gray-500 text-sm">No notifications</p>
+                  </div>
+                ) : (
+                  notifications.map((notif) => {
+                    const Icon =
+                      notif.type === 'success' ? CheckCircleIcon :
+                      notif.type === 'error' ? AlertCircleIcon :
+                      notif.type === 'warning' ? AlertTriangleIcon :
+                      InfoIcon;
 
-                  return (
-                    <div key={notif.id} className="flex gap-3 p-3 border rounded-lg mb-2">
-                      <Icon size={20} />
-                      <div className="flex-1">
-                        <p className="text-sm">{notif.message}</p>
-                        <p className="text-xs text-gray-400">
-                          {notif.timestamp.toLocaleTimeString()}
-                        </p>
+                    return (
+                      <div key={notif.id} className="flex gap-3 p-3 border rounded-lg mb-2">
+                        <Icon size={20} />
+                        <div className="flex-1">
+                          <p className="text-sm">{notif.message}</p>
+                          <p className="text-xs text-gray-400">
+                            {notif.timestamp.toLocaleTimeString()}
+                          </p>
+                        </div>
+                        <button onClick={() => removeNotification(notif.id)}>
+                          <XIcon size={16} />
+                        </button>
                       </div>
-                      <button onClick={() => removeNotification(notif.id)}>
-                        <XIcon size={16} />
-                      </button>
-                    </div>
-                  );
-                })
-              )}
-            </div>
+                    );
+                  })
+                )}
+              </div>,
+              document.body,
+            )}
           </div>
 
           {/* PROFILE */}
