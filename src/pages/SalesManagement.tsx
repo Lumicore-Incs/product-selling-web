@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useLocation, useNavigate, useOutletContext } from 'react-router-dom';
 import { AlertSnackbar } from '../components/AlertSnackbar';
 import { BackgroundIcons } from '../components/BackgroundIcons';
-import { SalesForm } from '../components/SalesForm';
+import { SalesForm, type SalesLeadPrefill } from '../components/SalesForm';
 import { SalesTable } from '../components/SalesTable';
 import { Sale as TableSale } from '../models/sales';
 
@@ -21,6 +21,9 @@ interface OutletContext {
 
 export const SalesManagement: React.FC = () => {
   const { salesTitle } = useOutletContext<OutletContext>();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [leadPrefill, setLeadPrefill] = useState<SalesLeadPrefill | null>(null);
   const [sales, setSales] = useState<Sale[]>([]);
   const [currentSale, setCurrentSale] = useState<Sale | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -40,6 +43,14 @@ export const SalesManagement: React.FC = () => {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const state = location.state as { leadPrefill?: SalesLeadPrefill } | null;
+    if (!state?.leadPrefill) return;
+
+    setLeadPrefill(state.leadPrefill);
+    navigate(location.pathname, { replace: true, state: null });
+  }, [location.key, location.pathname, location.state, navigate]);
 
   const handleSearchChange = (value: string) => {
     setSearch(value);
@@ -316,6 +327,8 @@ export const SalesManagement: React.FC = () => {
             onUpdate={updateSale}
             currentSale={currentSale}
             isEditing={isEditing}
+            leadPrefill={leadPrefill}
+            onLeadPrefillApplied={() => setLeadPrefill(null)}
             onCancelEdit={() => {
               setCurrentSale(null);
               setIsEditing(false);

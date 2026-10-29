@@ -75,14 +75,19 @@ const getNavItems = (userRole: string): NavItem[] => {
     items.push({ icon: Layers, label: 'Stock', to: '/stock' });
   }
 
-  // MY ORDER - Super User and Admin (User already added above)
-  if (isSuperUser || isAdmin) {
+  // MY ORDER
+  if (isSuperUser || isAdmin || isUser) {
     items.push({
       icon: Copy,
       label: 'My Order',
       children: [
-        { label: 'Duplicate Orders', to: '/sale/duplicate' },
-        { label: 'Orders Operation', to: '/my-orders' },
+        ...(isSuperUser || isAdmin
+          ? [
+              { label: 'Duplicate Orders', to: '/sale/duplicate' },
+              { label: 'Orders Operation', to: '/my-orders' },
+            ]
+          : []),
+        { label: 'Leads Setup', to: '/leads-setup' },
       ],
     });
   }

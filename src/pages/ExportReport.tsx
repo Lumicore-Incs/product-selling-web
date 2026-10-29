@@ -1,7 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { CalendarRange, Download, FileBarChart2 } from 'lucide-react';
-import * as XLSX from 'xlsx';
-import orderExportService, { OrderExport } from '../services/orders/orderExportService';
+import orderExportService, { type OrderExport } from '../services/orders/orderExportService';
 
 const getDatesInRange = (startDate: string, endDate: string): string[] => {
   const dates: string[] = [];
@@ -21,7 +20,9 @@ export const ExportReport = () => {
   const [orders, setOrders] = useState<OrderExport[]>([]);
   const [exportDates, setExportDates] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState('');
+  const [exportError, setExportError] = useState('');
   const [hasSubmitted, setHasSubmitted] = useState(false);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -30,6 +31,7 @@ export const ExportReport = () => {
 
     setLoading(true);
     setError('');
+    setExportError('');
     setHasSubmitted(true);
     setExportDates([]);
     try {
@@ -49,39 +51,33 @@ export const ExportReport = () => {
     }
   };
 
-  const handleExcelDownload = () => {
-    const headers = [
-      'Customer Id',
-      'Name',
-      'Address',
-      'Contact 01',
-      'Contact 02',
-      'Date',
-      'Waybill Id',
-      'Price',
-      'Status',
-    ];
+  const handleExcelDownload = async () => {
+    if (exporting || exportDates.length === 0) return;
 
-    exportDates.forEach((date) => {
-      const dailyOrders = orders.filter((order) => order.date?.slice(0, 10) === date);
-      const worksheet = XLSX.utils.json_to_sheet(
-        dailyOrders.map((order) => ({
-          'Customer Id': order.customerId,
-          Name: order.name,
-          Address: order.address,
-          'Contact 01': order.contact01,
-          'Contact 02': order.contact02,
-          Date: order.date,
-          'Waybill Id': order.waybillId,
-          Price: order.price,
-          Status: order.status,
-        })),
-        { header: headers },
-      );
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Export Report');
-      XLSX.writeFile(workbook, `export-report-${date}.xlsx`);
-    });
+    setExporting(true);
+    setExportError('');
+    try {
+      const { createDailyExportWorkbook } = await import('../services/orders/orderExportWorkbook');
+
+      for (const date of exportDates) {
+        const dailyOrders = orders.filter((order) => order.date?.slice(0, 10) === date);
+        const workbook = await createDailyExportWorkbook(date, dailyOrders);
+        const downloadUrl = URL.createObjectURL(workbook);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = `export-report-${date}.xlsx`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 10000);
+        await new Promise((resolve) => window.setTimeout(resolve, 200));
+      }
+    } catch (exportFailure) {
+      console.error('Failed to create Excel report:', exportFailure);
+      setExportError('Failed to create Excel report. Please try again.');
+    } finally {
+      setExporting(false);
+    }
   };
 
   return (
@@ -198,18 +194,23 @@ export const ExportReport = () => {
               )}
               <button
                 type="button"
-                onClick={handleExcelDownload}
-                disabled={loading || exportDates.length === 0 || Boolean(error)}
+                onClick={() => void handleExcelDownload()}
+                disabled={loading || exporting || exportDates.length === 0}
                 className="inline-flex items-center gap-2 rounded-lg border border-[#0B818D] px-3 py-2 text-sm font-semibold text-[#0B818D] transition hover:bg-[#0B818D]/10 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Download size={16} />
-                Export Excel
-                {exportDates.length > 0 && !loading && !error && (
+                {exporting ? 'Preparing Excel…' : 'Export Excel'}
+                {exportDates.length > 0 && !loading && !exporting && !error && (
                   <span>({exportDates.length} files)</span>
                 )}
               </button>
             </div>
           </div>
+          {exportError && (
+            <p className="border-t border-gray-200 px-5 py-3 text-sm text-red-600" role="alert">
+              {exportError}
+            </p>
+          )}
           {error ? (
             <p className="px-5 py-8 text-center text-sm text-red-600" role="alert">{error}</p>
           ) : (
