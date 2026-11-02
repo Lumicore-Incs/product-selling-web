@@ -332,12 +332,6 @@ export const SalesManagement: React.FC = () => {
             onRefresh={refreshData}
             searchTerm={search}
             onSearchChange={handleSearchChange}
-            onStatusChange={async (saleId, newStatus) => {
-              const sale = sales.find((s) => s.id === saleId);
-              if (!sale) return;
-              const updatedSale = { ...sale, status: newStatus };
-              await updateSale(updatedSale);
-            }}
             serverPagination={{
               page,
               pageSize,
