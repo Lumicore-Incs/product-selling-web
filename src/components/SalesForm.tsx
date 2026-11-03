@@ -9,6 +9,15 @@ interface SalesFormProps {
   currentSale: Sale | null;
   isEditing: boolean;
   onCancelEdit: () => void;
+  leadPrefill?: SalesLeadPrefill | null;
+  onLeadPrefillApplied?: () => void;
+}
+
+export interface SalesLeadPrefill {
+  name: string;
+  contact01: string;
+  contact02: string;
+  address: string;
 }
 
 const getTodayDateString = () => {
@@ -53,6 +62,8 @@ export const SalesForm: React.FC<SalesFormProps> = ({
   currentSale,
   isEditing,
   onCancelEdit,
+  leadPrefill,
+  onLeadPrefillApplied,
 }) => {
   const [formData, setFormData] = useState({
     customerName: '',
@@ -123,6 +134,22 @@ export const SalesForm: React.FC<SalesFormProps> = ({
 
     loadProducts();
   }, []);
+
+  useEffect(() => {
+    if (!leadPrefill || isEditing) return;
+
+    setFormData((previous) => ({
+      ...previous,
+      name: leadPrefill.name,
+      customerName: leadPrefill.name,
+      customerId: '',
+      address: leadPrefill.address,
+      contact01: leadPrefill.contact01,
+      contact02: leadPrefill.contact02,
+    }));
+    setCustomerInfoText('');
+    onLeadPrefillApplied?.();
+  }, [isEditing, leadPrefill, onLeadPrefillApplied]);
 
   useEffect(() => {
     if (currentSale && isEditing) {
@@ -351,6 +378,58 @@ export const SalesForm: React.FC<SalesFormProps> = ({
       message: message,
       type: 'success',
     });
+  };
+
+  const copySaleDetails = async () => {
+    const itemsToCopy = formData.items.map((item) => ({ ...item }));
+    const selectedProduct = products.find(
+      (product) => (product.productId == null ? '' : String(product.productId)) === selectedProductId
+    );
+    const selectedQuantity = parseInt(selectedProductQuantity, 10);
+
+    if (selectedProduct && Number.isFinite(selectedQuantity) && selectedQuantity > 0) {
+      const selectedProductIdValue =
+        selectedProduct.productId == null ? '' : String(selectedProduct.productId);
+      const existingItem = itemsToCopy.find((item) => item.productId === selectedProductIdValue);
+
+      if (existingItem) {
+        existingItem.qty += selectedQuantity;
+      } else {
+        itemsToCopy.push({
+          productId: selectedProductIdValue,
+          productName: selectedProduct.name,
+          qty: selectedQuantity,
+          price: selectedProduct.price,
+          total: selectedQuantity * selectedProduct.price,
+        });
+      }
+    }
+
+    const details = [
+      formData.customerName.trim() && `Name: ${formData.customerName.trim()}`,
+      formData.contact01.trim() && `Contact: ${formData.contact01.trim()}`,
+      formData.contact02.trim() && `WhatsApp: ${formData.contact02.trim()}`,
+      formData.address.trim() && `Address: ${formData.address.trim()}`,
+      itemsToCopy.length > 0 &&
+        `Products:\n${itemsToCopy.map((item) => `- ${item.productName}: ${item.qty}`).join('\n')}`,
+    ].filter(Boolean);
+
+    if (details.length === 0) {
+      setSnackbar({ open: true, message: 'No customer or product details to copy.', type: 'error' });
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(details.join('\n'));
+      setSnackbar({ open: true, message: 'Sale details copied to clipboard.', type: 'success' });
+    } catch (error) {
+      console.error('Failed to copy sale details:', error);
+      setSnackbar({
+        open: true,
+        message: 'Unable to copy details. Please allow clipboard access and try again.',
+        type: 'error',
+      });
+    }
   };
 
   // Search customers by name or contact number
@@ -911,7 +990,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({
 vac-2
 Se-2"
               />
-              <div className="flex items-center gap-3 mt-1">
+              <div className="flex flex-wrap items-center gap-3 mt-1">
                 <button
                   type="button"
                   onClick={parseCustomerInfoText}
@@ -925,6 +1004,13 @@ Se-2"
                   className="px-4 py-2 bg-slate-500 hover:bg-slate-600 text-white text-xs font-medium rounded-md transition-colors"
                 >
                   Clear
+                </button>
+                <button
+                  type="button"
+                  onClick={copySaleDetails}
+                  className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-medium rounded-md transition-colors"
+                >
+                  Copy Details
                 </button>
               </div>
             </div>

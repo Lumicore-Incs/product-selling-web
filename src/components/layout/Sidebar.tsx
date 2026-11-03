@@ -62,10 +62,10 @@ const getNavItems = (userRole: string): NavItem[] => {
   if (isSuperUser || isAdmin) {
     items.push({
       icon: UsersIcon,
-      label: 'user operation',
+      label: 'User Operation',
       children: [
         { label: 'User List', to: '/users' },
-        { label: 'salary increment', to: '/user-orders' },
+        { label: 'Salary Increment', to: '/user-orders' },
       ],
     });
   }
@@ -75,14 +75,19 @@ const getNavItems = (userRole: string): NavItem[] => {
     items.push({ icon: Layers, label: 'Stock', to: '/stock' });
   }
 
-  // MY ORDER - Super User and Admin (User already added above)
-  if (isSuperUser || isAdmin) {
+  // MY ORDER
+  if (isSuperUser || isAdmin || isUser) {
     items.push({
       icon: Copy,
       label: 'My Order',
       children: [
-        { label: 'Duplicate Orders', to: '/sale/duplicate' },
-        { label: 'orders operation', to: '/my-orders' },
+        ...(isSuperUser || isAdmin
+          ? [
+              { label: 'Duplicate Orders', to: '/sale/duplicate' },
+              { label: 'Orders Operation', to: '/my-orders' },
+            ]
+          : []),
+        { label: 'Leads Setup', to: '/leads-setup' },
       ],
     });
   }
@@ -114,6 +119,7 @@ const getHelpSettingsItems = (userRole: string): NavItem[] => {
         { label: 'Monthly Sale Summery', to: '/monthly-report' },
         { label: 'Monthly Delevery Summery', to: '/sales-summary' },
         { label: 'Daily Report', to: '/daily-report' },
+        { label: 'Export Report', to: '/export-report' },
       ],
     });
   }

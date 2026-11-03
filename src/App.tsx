@@ -7,6 +7,8 @@ import { DailyReport } from './pages/DailyReport';
 import { Dashboard } from './pages/Dashboard';
 import { DuplicateSales } from './pages/DuplicateSales';
 import { ExportOrder } from './pages/ExportOrder';
+import { ExportReport } from './pages/ExportReport';
+import { LeadsSetup } from './pages/LeadsSetup';
 import { ProductManagement } from './pages/ProductManagement';
 import { SalesManagement } from './pages/SalesManagement';
 import { Settings } from './pages/Settings';
@@ -131,6 +133,8 @@ export function App() {
             <Route path="users" element={<Users />} />
             <Route path="user-orders" element={<UserOrders />} />
             <Route path="daily-report" element={<DailyReport />} />
+            <Route path="export-report" element={<ExportReport />} />
+            <Route path="leads-setup" element={<LeadsSetup />} />
             <Route path="monthly-report" element={<MonthlyReport />} />
             <Route path="profile" element={<UserProfile />} />
             <Route path="settings" element={<Settings />} />
