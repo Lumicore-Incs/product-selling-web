@@ -272,7 +272,7 @@ export const SalesManagement: React.FC = () => {
             >
               ✕
             </button>
-            <h3 className="text-lg sm:text-xl font-semibold mb-4">Export Item</h3>
+            <h3 className="   text-lg sm:text-xl font-semibold mb-4">Export Item</h3>
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <button
                 onClick={() => {
