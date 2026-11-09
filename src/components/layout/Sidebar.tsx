@@ -85,6 +85,7 @@ const getNavItems = (userRole: string): NavItem[] => {
           ? [
               { label: 'Duplicate Orders', to: '/sale/duplicate' },
               { label: 'Orders Operation', to: '/my-orders' },
+              { label: 'Checking Delivery', to: '/checking-delivery' },
             ]
           : []),
         { label: 'Leads Setup', to: '/leads-setup' },
